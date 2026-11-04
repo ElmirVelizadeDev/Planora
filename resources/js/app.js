@@ -1,11 +1,11 @@
 import './bootstrap';
 
 import { createApp } from 'vue';
+import { createPinia } from 'pinia';
+import router from './router';
+import App from './App.vue';
 
-const app = createApp({
-    mounted() {
-        console.log('Planora Vue application is running!');
-    },
-});
-
-app.mount('#app');
+createApp(App)
+    .use(createPinia())
+    .use(router)
+    .mount('#app');
