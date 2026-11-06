@@ -1,0 +1,24 @@
+.workspace-header { position: sticky; top: 0; z-index: 20; display: flex; min-height: 78px; align-items: center; justify-content: space-between; gap: 18px; padding: 0 clamp(18px, 3vw, 42px); border-bottom: 1px solid var(--color-border); background: var(--workspace-header-background, var(--color-surface)); }
+.workspace-header-start, .workspace-header-actions { display: flex; min-width: 0; align-items: center; }
+.workspace-header-start { gap: 14px; }
+.workspace-header-actions { gap: 12px; }
+.workspace-header-context { display: grid; gap: 3px; }
+.workspace-header-eyebrow { color: var(--color-text-secondary); font-size: 9px; font-weight: 700; letter-spacing: .15em; text-transform: uppercase; }
+.workspace-header-eyebrow { display: flex; align-items: center; gap: 5px; }
+.workspace-header-eyebrow img { display: block; width: 16px; height: 16px; object-fit: contain; }
+.workspace-header-label { overflow: hidden; color: var(--workspace-header-label-color, var(--color-text)); font-size: 13px; font-weight: 650; text-overflow: ellipsis; white-space: nowrap; }
+.workspace-menu-button { display: none; width: 38px; height: 38px; flex: 0 0 38px; align-content: center; justify-items: center; gap: 4px; padding: 0; border: 1px solid var(--color-border); border-radius: 11px; background: var(--color-surface); cursor: pointer; }
+.workspace-menu-button span { width: 15px; height: 2px; border-radius: 2px; background: var(--color-text-secondary); }
+
+@media (max-width: 820px) {
+    .workspace-menu-button { display: grid; }
+    .workspace-header { min-height: 68px; }
+}
+
+@media (max-width: 520px) {
+    .workspace-header { gap: 9px; padding-right: 12px; padding-left: 12px; }
+    .workspace-header-start { gap: 9px; }
+    .workspace-header-actions { gap: 7px; }
+    .workspace-header-eyebrow { display: none; }
+    .workspace-header-label { max-width: 76px; font-size: 12px; }
+}

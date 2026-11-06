@@ -3,3 +3,5 @@
 breadcrumbs
 "><slot /></div>
 </template>
+
+<style src="../../../css/components/Breadcrumbs.css"></style>

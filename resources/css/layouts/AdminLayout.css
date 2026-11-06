@@ -1,0 +1,7 @@
+@import './workspace-layout.css';
+
+.admin-layout {
+    --sidebar-expanded-width: 252px;
+    --sidebar-collapsed-width: 76px;
+    background: var(--color-background);
+}

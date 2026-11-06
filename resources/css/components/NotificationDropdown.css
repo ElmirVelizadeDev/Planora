@@ -1,0 +1,15 @@
+.notification-menu { position: relative; }
+.notification-trigger { position: relative; display: grid; width: 40px; height: 40px; place-items: center; border: 0; border-radius: 12px; color: var(--color-text-secondary); background: transparent; cursor: pointer; }
+.notification-trigger:hover, .notification-trigger[aria-expanded='true'] { color: var(--color-primary); background: #f5f6ff; }
+.notification-trigger svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.7; }
+.notification-popover { position: absolute; top: calc(100% + 10px); right: -46px; z-index: 40; width: min(300px, calc(100vw - 32px)); overflow: hidden; border: 1px solid var(--color-border); border-radius: 15px; background: var(--color-surface); box-shadow: var(--shadow-soft); }
+.notification-heading { display: grid; gap: 4px; padding: 16px 17px; border-bottom: 1px solid var(--color-border); }
+.notification-heading strong { color: var(--color-text); font-size: 13px; }
+.notification-heading span, .notification-empty > span:last-child { color: var(--color-text-secondary); font-size: 10px; }
+.notification-empty { display: grid; justify-items: center; gap: 8px; padding: 28px 18px 30px; text-align: center; }
+.notification-empty-icon { display: grid; width: 36px; height: 36px; place-items: center; border-radius: 12px; color: var(--color-primary); background: #eef0ff; font-size: 17px; }
+.notification-empty strong { color: var(--color-text); font-size: 11px; }
+
+@media (max-width: 520px) {
+    .notification-trigger { width: 34px; height: 34px; }
+}

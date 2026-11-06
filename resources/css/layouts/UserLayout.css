@@ -1,0 +1,6 @@
+@import './workspace-layout.css';
+
+.user-layout {
+    --sidebar-expanded-width: 252px;
+    --sidebar-collapsed-width: 76px;
+}

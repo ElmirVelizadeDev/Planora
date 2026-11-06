@@ -18,7 +18,7 @@ export const routes = [
     },
     {
         path: '/',
-        component: () => import('../layouts/DashboardLayout.vue'),
+        component: () => import('../layouts/UserLayout.vue'),
         meta: { requiresAuth: true },
         children: [
             { path: 'dashboard', name: 'dashboard', component: appPage('dashboard', 'Index') },

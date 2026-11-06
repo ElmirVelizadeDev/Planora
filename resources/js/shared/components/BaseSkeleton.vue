@@ -3,3 +3,5 @@
 baseskeleton
 "><slot /></div>
 </template>
+
+<style src="../../../css/components/BaseSkeleton.css"></style>
