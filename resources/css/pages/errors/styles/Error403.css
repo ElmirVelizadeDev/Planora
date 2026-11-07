@@ -1,0 +1,8 @@
+.page-error403 { display: grid; min-height: 100vh; place-items: center; padding: 24px; background: var(--color-background); }
+.error403-card { width: min(100%, 460px); padding: 36px; border: 1px solid var(--color-border); border-radius: var(--radius-card); background: var(--color-surface); box-shadow: var(--shadow-soft); text-align: center; }
+.error403-code { display: inline-grid; min-width: 58px; min-height: 32px; place-items: center; border-radius: 20px; color: var(--color-primary); background: #f0f2ff; font-size: 12px; font-weight: 700; }
+.error403-card h1 { margin: 18px 0 8px; color: var(--color-text); font-size: 26px; }
+.error403-card p { margin: 0 0 22px; color: var(--color-text-secondary); }
+.error403-card button { min-height: 42px; padding: 0 20px; border: 0; border-radius: 10px; color: #fff; background: var(--color-primary); cursor: pointer; font: inherit; font-weight: 700; }
+.error403-card button:disabled { cursor: wait; opacity: .7; }
+.error403-card small { display: block; margin-top: 12px; color: #a33131; }

@@ -57,24 +57,24 @@
         <div class="workspace-sidebar-bottom">
             <div v-if="variant === 'user'" class="workspace-sidebar-account">
                 <RouterLink class="workspace-account-link" :to="{ name: 'profile.show' }" @click="closeOnMobile">
-                    <span class="workspace-account-avatar" aria-hidden="true">AM</span>
-                    <span v-if="!collapsed || mobileOpen" class="workspace-account-copy"><strong>Alex Morgan</strong><small>Personal account</small></span>
+                    <span class="workspace-account-avatar" aria-hidden="true">{{ accountInitials }}</span>
+                    <span v-if="!collapsed || mobileOpen" class="workspace-account-copy"><strong>{{ accountName }}</strong><small>Personal account</small></span>
                     <span v-if="!collapsed || mobileOpen" class="workspace-account-chevron" aria-hidden="true">···</span>
                 </RouterLink>
-                <button class="workspace-logout-link" type="button" disabled :title="collapsed ? 'Logout is unavailable' : undefined">
+                <button class="workspace-logout-link" type="button" aria-haspopup="dialog" :title="collapsed ? 'Sign out' : undefined" @click="requestLogout">
                     <span class="workspace-nav-icon" aria-hidden="true">↪</span>
-                    <span v-if="!collapsed || mobileOpen" class="workspace-nav-label">Logout</span>
+                    <span v-if="!collapsed || mobileOpen" class="workspace-nav-label">Sign out</span>
                 </button>
             </div>
             <div v-else-if="variant === 'admin'" class="workspace-sidebar-account admin-sidebar-account">
                 <RouterLink class="workspace-account-link" :to="{ name: 'admin.settings.index' }" @click="closeOnMobile">
-                    <span class="workspace-account-avatar" aria-hidden="true">PA</span>
-                    <span v-if="!collapsed || mobileOpen" class="workspace-account-copy"><strong>Planora Admin</strong><small>Administrator</small></span>
+                    <span class="workspace-account-avatar" aria-hidden="true">{{ accountInitials }}</span>
+                    <span v-if="!collapsed || mobileOpen" class="workspace-account-copy"><strong>{{ accountName }}</strong><small>Administrator</small></span>
                     <span v-if="!collapsed || mobileOpen" class="workspace-account-chevron" aria-hidden="true">···</span>
                 </RouterLink>
-                <button class="workspace-logout-link" type="button" disabled :title="collapsed ? 'Logout is unavailable' : undefined">
+                <button class="workspace-logout-link" type="button" aria-haspopup="dialog" :title="collapsed ? 'Sign out' : undefined" @click="requestLogout">
                     <span class="workspace-nav-icon" aria-hidden="true">↪</span>
-                    <span v-if="!collapsed || mobileOpen" class="workspace-nav-label">Logout</span>
+                    <span v-if="!collapsed || mobileOpen" class="workspace-nav-label">Sign out</span>
                 </button>
             </div>
             <button
@@ -95,7 +95,10 @@
 </template>
 
 <script setup>
+import { computed } from 'vue';
 import { RouterLink } from 'vue-router';
+import { useAuthStore } from '../../features/auth/stores/authStore.js';
+import { useLogoutConfirmation } from '../../features/auth/composables/useLogoutConfirmation.js';
 
 const props = defineProps({
     variant: { type: String, required: true },
@@ -107,10 +110,15 @@ const props = defineProps({
 });
 
 const emit = defineEmits(['toggle-collapse', 'close']);
+const auth = useAuthStore();
+const { requestLogout } = useLogoutConfirmation();
+const accountName = computed(() => auth.user?.name || (props.variant === 'admin' ? 'Administrator' : 'Your account'));
+const accountInitials = computed(() => accountName.value.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join('').toUpperCase());
 
 function closeOnMobile() {
     if (props.mobileOpen) emit('close');
 }
+
 </script>
 
 <style src="../../../css/components/WorkspaceSidebar.css"></style>

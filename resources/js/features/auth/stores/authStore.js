@@ -41,24 +41,23 @@ export const useAuthStore = defineStore('auth', () => {
 
     async function login(credentials) {
         const response = await loginRequest(credentials);
-        user.value = response.data.data ?? response.data;
+        const payload = response.data.data ?? response.data;
+        user.value = payload.user ?? payload;
         initialized.value = true;
-        return user.value;
+        return { user: user.value, redirectTo: payload.redirect_to };
     }
 
     async function register(attributes) {
         const response = await registerRequest(attributes);
-        user.value = response.data.data ?? response.data;
+        const payload = response.data.data ?? response.data;
+        user.value = payload.user ?? payload;
         initialized.value = true;
-        return user.value;
+        return { user: user.value, redirectTo: payload.redirect_to || '/dashboard' };
     }
 
     async function logout() {
-        try {
-            await logoutRequest();
-        } finally {
-            clearUser();
-        }
+        await logoutRequest();
+        clearUser();
     }
 
     function clearUser() {

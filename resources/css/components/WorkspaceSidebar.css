@@ -27,6 +27,7 @@
 .workspace-sidebar-footnote { display: flex; align-items: center; gap: 8px; padding: 12px 10px 0; border-top: 1px solid var(--color-border); color: var(--color-text-secondary); font-size: 10px; }
 .workspace-status-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--color-primary); }
 .workspace-sidebar-close { display: none; }
+.workspace-logout-error { padding: 0 10px; color: #a33131; font-size: 11px; }
 
 @media (max-width: 820px) {
     .workspace-sidebar-backdrop { position: fixed; inset: 0; display: block; border: 0; background: #0b1220a6; z-index: 29; }

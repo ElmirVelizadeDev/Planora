@@ -7,21 +7,22 @@
             @close="mobileSidebarOpen = false"
         />
         <div class="workspace-main">
-            <AdminHeader @toggle-sidebar="mobileSidebarOpen = !mobileSidebarOpen" />
+            <AppHeader variant="admin" @toggle-sidebar="toggleSidebar" />
             <div class="workspace-content">
                 <RouterView />
             </div>
+            <WorkspaceFooter />
         </div>
     </div>
 </template>
 
 <script setup>
-import { ref } from 'vue';
-import AdminHeader from '../shared/components/AdminHeader.vue';
+import AppHeader from '../shared/components/layout/AppHeader.vue';
+import WorkspaceFooter from '../shared/components/WorkspaceFooter.vue';
 import AdminSidebar from '../shared/components/AdminSidebar.vue';
+import { useWorkspaceSidebar } from '../shared/composables/useWorkspaceSidebar.js';
 
-const sidebarCollapsed = ref(false);
-const mobileSidebarOpen = ref(false);
+const { sidebarCollapsed, mobileSidebarOpen, toggleSidebar } = useWorkspaceSidebar();
 </script>
 
 <style src="../../css/layouts/AdminLayout.css" scoped></style>

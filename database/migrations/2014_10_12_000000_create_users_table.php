@@ -20,13 +20,19 @@ return new class extends Migration
             $table->string('username')->nullable()->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
-            $table->enum('role', ['user', 'seller'])->default('user');
-            $table->enum('status', ['active', 'inactive', 'banned'])->default('active');
+            $table->enum('role', ['user', 'moderator', 'admin'])->default('user')->index();
+            $table->enum('status', ['active', 'inactive', 'suspended', 'banned'])->default('active')->index();
+            $table->json('moderator_permissions')->nullable();
+            $table->text('status_reason')->nullable();
+            $table->foreignId('status_changed_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->timestamp('status_changed_at')->nullable();
             $table->string('phone')->nullable();
             $table->string('profile_photo')->nullable();
             $table->timestamp('last_login_at')->nullable();
             $table->rememberToken();
             $table->timestamps();
+            $table->softDeletes();
+            $table->index(['role', 'status', 'created_at']);
         });
     }
 

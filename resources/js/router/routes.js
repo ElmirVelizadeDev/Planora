@@ -19,7 +19,7 @@ export const routes = [
     {
         path: '/',
         component: () => import('../layouts/UserLayout.vue'),
-        meta: { requiresAuth: true },
+        meta: { requiresAuth: true, requiresRole: 'user' },
         children: [
             { path: 'dashboard', name: 'dashboard', component: appPage('dashboard', 'Index') },
             { path: 'tasks', name: 'tasks.index', component: appPage('tasks', 'Index') },
