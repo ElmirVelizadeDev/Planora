@@ -2,271 +2,381 @@
 
 **Plan your day. Shape your future.**
 
-Planora is an in-development task planning and productivity application built with Laravel and Vue 3. It combines a Laravel web/API backend with a Vue single-page application (SPA), with separate User and Admin interface areas.
+Planora is a Laravel and Vue single-page application for personal productivity, with an administration area for managing accounts and monitoring account activity. The current repository has a functional authentication and user-administration foundation. The task, project, calendar, and related productivity screens are mostly UI scaffolding and are not yet end-to-end workflows backed by application data.
 
-The repository currently establishes the application shell, responsive dashboard prototypes, and a small session-authentication API. Most task, project, reporting, and account-management screens are structural placeholders; they are not yet end-to-end product features.
+This README describes the implementation in this repository. Features listed as planned or scaffolded below should not be treated as available product functionality.
 
 ## Project Overview
 
-The Laravel web routes serve one Blade document as the Vue mount point. Vue Router renders the appropriate authentication, User, Admin, or error view inside the SPA. User and Admin pages have separate layouts, headers, and navigation. The frontend uses Axios to call Laravel's versioned API; at present, only a small set of authentication and current-user endpoints is registered.
+Planora brings sign-in, a personal workspace shell, and account administration together in one web application. Its current working user-facing flows are registration with email OTP verification, login/logout, and role-aware access. Administrators can inspect and manage user accounts through the Admin Panel. Productivity screens establish the intended workspace structure, but task and project persistence is not yet implemented.
 
-The two dashboards are visual prototypes populated with static demonstration data. They are useful for evaluating layout and styling, but their counts and activity do not represent database records.
+### User types
+
+| Role | Current capabilities |
+|---|---|
+| User | Sign in to an active, verified account and access the personal workspace shell. Productivity data workflows are not yet implemented. |
+| Moderator | Has explicitly assigned user-management permissions in the backend. Seeded moderators can view users. The current Vue Admin route guard requires the admin role, so the moderator management UI is not currently accessible end-to-end. |
+| Admin | Access the Admin Panel and its implemented user-management API and UI, subject to the last-active-admin protections. |
 
 ## Features and Implementation Status
 
-### Implemented UI
+### Implemented
 
-- Separate User and Admin layouts with shared header/sidebar placement.
-- Responsive workspace navigation with desktop collapse and a mobile drawer.
-- User dashboard prototype with static task summaries, task rows, and upcoming deadlines.
-- Admin dashboard prototype with static platform summaries, sample users, and sample activity.
-- Planora logo, app icon, and favicon assets in `public/images/branding/`.
-- Shared CSS variables, base styles, and component-, layout-, and page-level stylesheets.
+- Laravel-backed session login and logout, current-user lookup, Remember Me, and role-aware post-login redirects.
+- Registration with server-side validation and a six-digit email verification OTP. In the local development environment, registration is database-only: no email is sent and the developer reads the code from the OTP table. The account is created only after successful verification.
+- Admin Dashboard account statistics, recent registrations, status distribution, and recorded account activity loaded through the Admin users API.
+- Admin Users Management: server-side search, role/status/verification/date filters, sorting, pagination (up to 10 records per page), refresh, and account statistics.
+- User create, view, and edit flows; profile avatar upload/removal; role and moderator-permission management; account status changes; activity records; soft deletion and restore.
+- Backend validation, role middleware, policies, moderator permission checks, self-account restrictions, and protection against removing the last active administrator.
+- Responsive User, Admin, and Authentication layouts and a shared Planora component/style system.
+- A trusted, repeatable development seeder for 20 sample accounts (1 admin, 3 moderators, 16 users).
 
-### Partially implemented
+### Partial or scaffolded
 
-- **Session authentication API:** Laravel has login, registration, logout, and current-user endpoints. The Vue auth store and API module call these endpoints, but Login and Register pages are empty presentation shells and do not submit forms. Authentication is therefore not complete as a user-facing flow.
-- **Authorization:** Vue route metadata and guards include authentication and role checks. The Admin role path is not currently usable end-to-end: the users table role enum is limited to `user` and `seller`, and the API `UserResource` does not return a role. There are no server-side Admin API routes or mapped policies.
-- **Profile, search, and notifications:** Header/profile controls and pages provide UI structure only. The User sidebar displays a sample identity; it is not loaded from the authenticated account. Search has no connected search handler or API, notifications show a static empty state, the sidebar Logout controls are disabled, and profile destinations are not functional account workflows.
-- **Feature scaffolding:** User and Admin routes, page files, feature components, and API service module locations exist for tasks, projects, categories, calendar, settings, statistics, and other areas. Most routed pages are empty shells and feature API service modules are empty. Some domain Form Requests define validation rules, but the corresponding controllers/services remain scaffolds and are not connected to routes.
-
-### Not implemented as working product features
-
-- Persistent task, subtask, project, category, tag, calendar, or notification workflows.
-- User management, Admin operations, roles/permissions, reports, or analytics backed by application data.
-- Password reset and email verification workflows. Their page/controller/request scaffolds or supporting migration pieces do not constitute working endpoints.
+- The User Dashboard displays account information, but task totals and task activity are placeholders because the task workflow is not connected to persisted data.
+- Task and Category models, requests, controllers/services, and UI components exist in various stages, but migrations and registered CRUD endpoints for tasks, projects, and categories are absent. Calendar, reports, tags, notifications, settings, and several Admin pages are also shells or partial UI.
+- Forgot Password and Reset Password pages explain that recovery is unavailable. A password reset token table and request/controller scaffolding exist, but no password recovery API routes are registered.
+- Email delivery is not used by the local registration flow. Outside the local environment, the registration service attempts to use Laravel Mail; an operational SMTP/provider configuration has not been verified by this project documentation.
+- Moderators can be authorized by the backend for limited user management, but the Vue Admin layout is guarded for admins only. This currently prevents moderator access through the SPA.
 
 ## Technology Stack
 
-Versions below are taken from the repository lockfiles; the runtime versions shown are the local development environment used when this README was audited.
+Dependency versions are taken from the checked-in lockfiles. Version constraints are shown where the project declares a range rather than an exact runtime requirement.
 
-| Area | Technology | Version |
-|---|---|---:|
-| Backend | PHP | `^8.1` (`8.1.10` locally) |
-| Backend | Laravel Framework | `10.50.4` |
-| Backend | Laravel Sanctum | `3.3.3` |
-| Frontend | Vue | `3.5.44` |
-| Frontend | Vue Router | `4.6.4` |
-| Frontend | Pinia | `3.0.4` |
-| Frontend | Axios | `1.21.0` |
-| Build | Vite | `5.4.21` |
-| Build | `@vitejs/plugin-vue` | `6.0.10` |
-| Build | Laravel Vite Plugin | `1.3.0` |
-| Database | MySQL | Configured by `.env.example` |
-| Local tooling | Node.js / npm | `v24.15.0` / `11.12.1` locally |
-| Local tooling | Composer | `2.10.3` locally |
+| Area | Technology | Project requirement / locked version |
+|---|---|---|
+| Backend runtime | PHP | `^8.1` |
+| Backend framework | Laravel Framework | `^10.10` / `v10.50.4` |
+| API authentication | Laravel Sanctum | `^3.3` / `v3.3.3` |
+| HTTP client library | Guzzle | `^7.2` / `7.16.1` |
+| Database | MySQL | Selected in `.env.example`; configure the version supported by the deployment's Laravel/PHP setup |
+| Frontend | Vue | `^3.5.44` / `3.5.44` |
+| Routing | Vue Router | `^4.6.4` / `4.6.4` |
+| State management | Pinia | `^3.0.4` / `3.0.4` |
+| HTTP client | Axios | `^1.6.4` / `1.21.0` |
+| Asset build | Vite | `^5.0.0` / `5.4.21` |
+| Vue integration | `@vitejs/plugin-vue` | `^6.0.10` / `6.0.10` |
+| Laravel/Vite integration | `laravel-vite-plugin` | `^1.0.0` / `1.3.0` |
 
-The local tooling versions are informational, not declared project-wide version requirements. The project has no separate icon or chart library dependency.
+The Vue Vite plugin declares Node.js `^20.19.0` or `>=22.12.0`; use a compatible Node.js release and npm. Bootstrap and a third-party UI component framework are not listed dependencies; the application uses its own Vue components and CSS.
 
 ## Architecture
 
 ### Request and rendering flow
 
 ```mermaid
-flowchart TD
-    Browser[Browser]
-    Web[Laravel web routes]
-    Blade[welcome.blade.php<br/>Vite assets and app mount]
-    Vue[Vue 3 SPA]
-    Router[Vue Router<br/>lazy-loaded routes and guards]
-    Layout[User, Admin, or Auth layout]
-    Page[Page component]
-    Axios[Central Axios client]
-    API[Laravel API routes<br/>/api/v1]
-    Sanctum[Sanctum stateful session<br/>and CSRF middleware]
-    Auth[AuthController and auth requests]
-    User[(Eloquent User model<br/>configured database)]
-
-    Browser --> Web --> Blade --> Vue
-    Vue --> Router --> Layout --> Page
-    Page --> Axios --> API --> Sanctum --> Auth --> User
+flowchart LR
+    Browser --> LaravelWeb[Laravel web routes]
+    LaravelWeb --> Blade[welcome Blade SPA shell]
+    Blade --> Vue[Vue 3 application]
+    Vue --> Router[Vue Router]
+    Router --> Layouts[Auth, User, or Admin layout]
+    Layouts --> Pages[Lazy-loaded Vue pages]
+    Pages --> Pinia[Pinia auth store]
+    Pages --> Axios[Shared Axios client]
+    Axios --> Api[Laravel /api/v1 routes]
+    Api --> Sanctum[Sanctum stateful session and CSRF]
+    Sanctum --> Laravel[Controllers, requests, policies, services]
+    Laravel --> Database[(Eloquent models and configured database)]
 ```
-
-The diagram's API path describes the current authentication integration; it does not imply that feature pages already have data endpoints.
 
 ### Backend
 
-- `routes/web.php` serves the SPA Blade shell at `/` and frontend paths, excluding the `/api` and `/sanctum` prefixes.
-- `routes/api.php` mounts `routes/api/v1.php` under `/api/v1`.
-- The API middleware group enables Sanctum's stateful frontend request handling. Login and registration validate requests, establish a Laravel session, and regenerate it; logout invalidates the session.
-- The registered application API currently consists of:
+- `routes/web.php` serves the SPA shell and applies session, active-account, role, and management-access middleware to application paths.
+- `routes/api.php` mounts the versioned routes in `routes/api/v1.php` under `/api/v1`.
+- The API uses Sanctum's stateful SPA middleware. The frontend initializes the CSRF cookie, sends same-origin cookies and XSRF data, and calls the versioned API.
+- Authentication and user-management operations are organized into API controllers, Form Requests, JSON Resources, Eloquent models, policies, middleware, and services under `app/`.
+- Admin user listing and statistics use `UserManagementQueryService`; mutation and audit behavior is in `UserManagementService` and `UserActivityLogger`.
+- There are no separate Role or Permission database models. Roles are values on `users.role`; moderator permissions are stored as JSON on the user and constrained by `config/user_management.php`.
 
-  | Method | Endpoint | Access |
-  |---|---|---|
-  | `POST` | `/api/v1/auth/login` | Public, throttled |
-  | `POST` | `/api/v1/auth/register` | Public, throttled |
-  | `POST` | `/api/v1/auth/logout` | `auth:sanctum` |
-  | `GET` | `/api/v1/user` | `auth:sanctum` |
+The currently registered API surface is intentionally focused on authentication and account administration:
 
-- The repository migrations define the users table, password reset tokens, failed jobs, Sanctum personal access tokens, and a guarded `deleted_at` addition for users. The current `User` model uses Laravel authentication, Sanctum, notifications, factories, and soft deletes.
-- `Task` and `Category` models, several controllers/services, request classes, and policies exist as scaffolds. There is no project model, no task/category/project schema migration, and no registered CRUD API for these domains.
+| Method | Endpoint | Purpose / access |
+|---|---|---|
+| `POST` | `/api/v1/auth/login` | Session login; 10 requests/minute |
+| `POST` | `/api/v1/auth/register` | Start pending registration; 5 requests/minute |
+| `POST` | `/api/v1/auth/register/verify` | Verify OTP and create/sign in the user; 10 requests/minute |
+| `POST` | `/api/v1/auth/register/resend` | Replace pending OTP; 3 requests/minute |
+| `POST` | `/api/v1/auth/logout` | Authenticated logout |
+| `GET` | `/api/v1/user` | Current active authenticated user |
+| `GET` | `/api/v1/admin/users` | Authorized user list, filters, pagination, and statistics |
+| `POST` | `/api/v1/admin/users` | Admin-only user creation |
+| `GET` | `/api/v1/admin/users/{user}` | Authorized user details and permitted activity |
+| `PATCH` | `/api/v1/admin/users/{user}` | Admin-only profile update |
+| `POST` | `/api/v1/admin/users/{user}/password` | Admin changes their own password after current-password validation |
+| `DELETE` | `/api/v1/admin/users/{user}` | Authorized soft delete (admin only) |
+| `POST` | `/api/v1/admin/users/{userId}/restore` | Restore an authorized soft-deleted account |
+| `PATCH` | `/api/v1/admin/users/{user}/role` | Admin-only role change |
+| `PATCH` | `/api/v1/admin/users/{user}/status` | Admin or specifically permitted moderator status change |
+| `PUT` | `/api/v1/admin/users/{user}/permissions` | Admin-only moderator permission update |
+| `GET` | `/api/v1/admin/users/activity` | Authorized user activity listing |
+| `GET` | `/api/v1/admin/users/roles-permissions` | View role/permission definitions |
+
+Other controller and request files in the repository do not imply that their domain APIs are registered. The route list is the source of truth for the active API surface.
 
 ### Frontend
 
-- `resources/views/welcome.blade.php` is the single Blade SPA entry point. It provides the `#app` mount and loads the CSS/JavaScript entries through Laravel's Vite integration.
-- `resources/js/app.js` mounts Vue, Pinia, and Vue Router. `resources/js/App.vue` renders the active route.
-- Vue Router uses HTML5 history at the domain root and lazy-loads route components. User, Admin, and authentication routes use separate layouts.
-- Pinia currently has an authentication store. `resources/js/shared/services/api.js` is the centralized Axios client; it uses `/api/v1` by default, sends cookies and XSRF data, and emits a `planora:api-error` browser event for HTTP errors.
-- Shared headers, sidebars, and other UI components are under `resources/js/shared/components/`. Feature-oriented components and service-module locations are under `resources/js/features/`.
-- CSS is split across shared variables/base styles, component and layout styles, and page styles. `components.css` and `utilities.css` are currently empty files imported by the CSS entry point.
+- `resources/views/welcome.blade.php` is the SPA entry point; Vite loads `resources/css/app.css` and `resources/js/app.js`.
+- `resources/js/app.js` mounts Vue, Pinia, and Vue Router. Route pages are lazy-loaded from `resources/js/router/routes.js`; `guards.js` checks session identity and roles for routes marked protected.
+- Authentication state and requests live in `resources/js/features/auth/`. The shared Axios client is `resources/js/shared/services/api.js`.
+- Feature-specific UI and API helpers are organized under `resources/js/features/`; shared controls and layout components are under `resources/js/shared/`.
+- Styles are split into CSS variables/base styles, shared components/layouts, and feature/page styles under `resources/css/`.
 
-### Project structure
+### Important project directories
 
-```text
-Planora/
-├── app/
-│   ├── Enums/
-│   ├── Exceptions/
-│   ├── Http/                 # Controllers, middleware, requests, resources
-│   ├── Models/
-│   ├── Policies/
-│   ├── Providers/
-│   └── Services/
-├── bootstrap/
-├── config/
-├── database/                 # Factories, migrations, seeders
-├── docs/
-├── public/images/branding/
-├── resources/
-│   ├── css/                  # Global, component, layout, and page styles
-│   ├── js/
-│   │   ├── features/
-│   │   ├── layouts/
-│   │   ├── pages/            # admin, app, auth, errors
-│   │   ├── router/
-│   │   └── shared/           # Components and Axios client
-│   └── views/welcome.blade.php
-├── routes/                   # web.php, api.php, api/v1.php
-├── tests/                    # Feature and Unit examples
-├── .env.example
-├── composer.json / composer.lock
-├── package.json / package-lock.json
-└── vite.config.js
-```
+| Path | Purpose |
+|---|---|
+| `app/Http/Controllers` | Web/API request handlers |
+| `app/Http/Requests` | Server-side request validation and authorization |
+| `app/Http/Resources` | API response serialization |
+| `app/Models` | Eloquent models for users, registrations, activity, and scaffolded domains |
+| `app/Policies`, `app/Http/Middleware` | Authorization and request access controls |
+| `app/Services` | Registration, dashboard, and user-management operations |
+| `database/migrations` | Database schema history |
+| `database/seeders` | Local development fixtures |
+| `resources/js/pages` | Vue route pages for Admin, User, Auth, and errors |
+| `resources/js/features` | Feature components, stores, and API helpers |
+| `resources/js/router` | Vue Router records and guards |
+| `resources/css` | Application, layout, component, and page styles |
+| `routes` | Laravel web, API, and console route definitions |
+| `tests/Feature`, `tests/Unit` | PHPUnit feature and unit tests |
+| `docs` | Supporting API, architecture, database, security, and OTP notes |
+
+## Authentication and Authorization
+
+### Login and sessions
+
+- Laravel's default `web` guard uses the session driver and Eloquent `User` provider. The SPA uses Sanctum's stateful cookie authentication; it does not issue a custom Remember Me token.
+- Login validates email/password and optional `remember`, requires an allowed role, active account status, and verified email, updates `last_login_at`, records activity, and regenerates the session.
+- Remember Me passes the checkbox value to Laravel's `attempt` call. The configured persistent remember lifetime defaults to 43,200 minutes (30 days); the regular session lifetime defaults to 120 minutes. Logout invalidates the session and Laravel remember token.
+- Login redirects admins to `/admin/dashboard`, users to `/dashboard`, and moderators to the management area allowed by their assigned permission. The current Vue guard's admin-only layout means moderator UI access is incomplete, as noted above.
+- Workspace paths require an authenticated active account and an accepted role. The Admin users paths also require management access. API operations use `auth:sanctum`, active-account middleware, role checks, and policies/requests as appropriate.
+
+### Registration and passwords
+
+- Public registration accepts a name, email, password, and password confirmation. The backend normalizes the email, checks uniqueness, prohibits a client-supplied role, and applies the `NotCommonRegistrationPassword` rule.
+- Self-registration passwords must be 8–128 characters and match confirmation. Common and predictable patterns are rejected; uppercase, digits, and symbols are not individually mandatory. The User model hashes password assignments, and registration stores only a hash in its pending record.
+- After successful OTP verification, the account receives the `user` role, active status, and a verified email timestamp. Public registration cannot select admin or moderator.
+- Admin-created accounts have stricter server-side password rules (minimum 12 characters, mixed case, and numbers) and can be assigned one of the supported roles.
+
+### Roles, permissions, and account status
+
+Supported roles are `admin`, `moderator`, and `user`. Supported account statuses are `active`, `inactive`, `suspended`, and `banned`.
+
+- Admins have full user-management permission. Moderators receive explicitly assigned permissions such as viewing users, viewing allowed activity, and managing non-admin user statuses. Users have no administrative permissions.
+- Admin policies restrict create/update/delete and sensitive operations. Self role/status changes and self deletion are blocked. The service serializes critical admin changes and prevents the last active admin from being demoted, deactivated, suspended, banned, or deleted.
+- Suspended, banned, and inactive users are blocked from protected web/API areas by active-account middleware. Admin user deletion is soft deletion; an authorized restore operation returns the account to active status.
+- Vue navigation guards improve navigation UX but are not a security boundary. Backend middleware, authorization, validation, and policies enforce access to APIs.
+
+## Email OTP Verification — Local Development
+
+The local registration workflow is database-only so a developer can verify registration without configuring SMTP:
+
+1. Registration validates the submitted details and checks the email against `users`.
+2. A six-digit code is generated. Registration data is saved separately in `pending_registrations`; its password is Laravel-hashed.
+3. An OTP record is stored in `email_verification_otps`. The OTP hash is stored in all environments. When `APP_ENV=local`, the same row also has the readable development-only value in `otp_code`.
+4. No SMTP, Gmail, or other mail transport is called in the local environment. The verification page explains where to find the local code; the API does not return the code.
+5. A correct, unexpired OTP creates the verified `user` account inside a database transaction, then removes the OTP and pending-registration rows and logs the user in. A wrong, expired, exhausted, or reused OTP does not create an account.
+
+Current limits in `RegistrationService`: OTP lifetime is 5 minutes, maximum incorrect attempts are 5, and resend cooldown is 60 seconds. Login, registration, verify, and resend routes also have per-minute throttles. Resending replaces the stored hash/code, invalidating the prior code. Pending registrations expire after 24 hours.
+
+For local development, inspect the code in MySQL/phpMyAdmin:
+
+~~~sql
+SELECT email, otp_code, expires_at, attempts, last_sent_at
+FROM email_verification_otps
+WHERE email = 'your-registration-email@example.com';
+~~~
+
+Outside `local`, the code field is null and only the hash remains in the OTP table; the service attempts delivery through the configured Laravel Mail transport. The checked-in `.env.example` uses Mailpit defaults and does not provide real SMTP credentials. Production delivery therefore requires the deployment operator to configure and verify an appropriate mail provider. Never enable readable OTP storage outside local development or publish OTP values.
+
+Expired pending registration and OTP data are purged by `auth:purge-expired-registrations`, scheduled every five minutes. The application host must run Laravel's scheduler (see [Registration OTP notes](docs/REGISTRATION_OTP.md)).
+
+## Admin Panel and User Management
+
+The Vue Admin Dashboard loads its figures and recent activity from the protected Admin users and activity APIs; these are database-backed rather than fixed demo values. It displays total, active, suspended, and administrator counts, account-status distribution, recent registrations, and recorded activity.
+
+The Users Management screen supports:
+
+- Paginated user listing with a maximum of 10 records per page, search by name/email, role/status/verification/date filters, and supported sort modes.
+- Total, active, inactive, suspended, banned, and recent ordinary-user registration statistics. The “new users” calculation uses `created_at` within the preceding 30 days and only role `user`; normal Eloquent soft-delete scoping excludes deleted accounts.
+- User creation, details viewing, and editing. The form supports names, email, optional username/phone/avatar, account role/status at creation, and moderator permissions where applicable.
+- Role and status changes, moderation reasons for suspended/banned states, and activity history where permitted.
+- Soft delete and restore. The backend enforces policy checks, self-account restrictions, and last-active-admin protection.
+
+The Admin Vue route includes the Users Index and Create page; View and Edit are presented in the Index page's modal flows. Moderator permissions exist in the backend, but the Vue Admin layout currently requires the admin role, so moderators cannot use the management interface through the current SPA routing.
+
+## Database and Seeders
+
+Configure the database through `.env`; `.env.example` selects MySQL. The checked-in migrations define these main tables:
+
+| Table | Purpose |
+|---|---|
+| `users` | Account profile, unique email/username, verified timestamp, password hash, role/status, moderator permission JSON, status-change metadata, phone/avatar, last login, remember token, timestamps, and soft-delete timestamp |
+| `email_verification_otps` | Per-email OTP hash, local-only readable code, expiry, attempt count, resend timestamp |
+| `pending_registrations` | Temporary name/email/password hash and 24-hour expiry, separate from real user accounts |
+| `user_activity_logs` | Account event, description, optional JSON context, affected user and actor references |
+| `password_reset_tokens` | Laravel's password-reset token storage schema; no reset endpoint is currently wired |
+| `personal_access_tokens` | Sanctum token table; current SPA authentication uses stateful sessions |
+| `failed_jobs` | Laravel failed queue jobs |
+
+There are currently no migrations defining task, project, category, subtask, tag, calendar-event, or notification data tables. Some corresponding models/UI scaffolds exist, but these are not implemented persistent features.
+
+### Seeded local accounts
+
+`DatabaseSeeder` calls `PlanoraUsersSeeder`, which defines 20 local test accounts: 1 admin, 3 moderators, and 16 regular users. Newly created fixtures have verified email and the same demo password. The seeder is idempotent by email: it creates missing fixture accounts and, for an existing matching email, only fills `email_verified_at` if it is null; it does not overwrite the existing account's password, role, or profile. Moderator fixtures are assigned `users.view`.
+
+| Name | Email | Role |
+|---|---|---|
+| Admin | `admin@gmail.com` | admin |
+| Moderator One | `moderator1@gmail.com` | moderator |
+| Moderator Two | `moderator2@gmail.com` | moderator |
+| Moderator Three | `moderator3@gmail.com` | moderator |
+| User One | `user1@gmail.com` | user |
+| User Two | `user2@gmail.com` | user |
+| User Three | `user3@gmail.com` | user |
+| User Four | `user4@gmail.com` | user |
+| User Five | `user5@gmail.com` | user |
+| User Six | `user6@gmail.com` | user |
+| User Seven | `user7@gmail.com` | user |
+| User Eight | `user8@gmail.com` | user |
+| User Nine | `user9@gmail.com` | user |
+| User Ten | `user10@gmail.com` | user |
+| User Eleven | `user11@gmail.com` | user |
+| User Twelve | `user12@gmail.com` | user |
+| User Thirteen | `user13@gmail.com` | user |
+| User Fourteen | `user14@gmail.com` | user |
+| User Fifteen | `user15@gmail.com` | user |
+| User Sixteen | `user16@gmail.com` | user |
+
+The password for newly created fixtures is `password`. These are public, local-only demo credentials, not secure credentials. Do not use them in a deployed environment. If an account with a fixture email already exists, the seeder preserves its existing password and role; inspect that row if the local account no longer matches the fixture credentials. The seeder does not truncate tables or remove other accounts.
 
 ## Requirements
 
-- PHP 8.1 or newer within the Laravel constraint (`^8.1`).
+- PHP 8.1+ satisfying the Composer constraint and required Laravel PHP extensions.
 - Composer.
-- Node.js and npm compatible with the locked frontend toolchain.
-- MySQL for the database configuration shown in `.env.example`.
+- Node.js `^20.19.0` or `>=22.12.0` and npm, as required by the locked Vue/Vite plugin toolchain.
+- MySQL and a database created for the application.
 
 ## Installation and Setup
 
-From a terminal with PHP, Composer, Node.js, npm, and MySQL available:
+From a terminal with the prerequisites installed:
 
-```bash
+~~~sh
 git clone https://github.com/ElmirVelizadeDev/Planora.git
 cd Planora
 composer install
 npm ci
-```
+~~~
 
-Create the local environment file. On macOS/Linux:
+Create a local environment file:
 
-```bash
+~~~sh
+# macOS / Linux
 cp .env.example .env
-```
+~~~
 
-On Windows PowerShell:
-
-```powershell
+~~~powershell
+# Windows PowerShell
 Copy-Item .env.example .env
-```
+~~~
 
-Edit `.env` with the local application URL and database name/credentials, then generate the Laravel key and apply migrations:
+Edit `.env` and set the local app URL and database name/user/password. Create the database in MySQL first, then initialize the app and apply the schema plus local fixtures:
 
-```bash
+~~~sh
 php artisan key:generate
-php artisan migrate
-```
+php artisan migrate --seed
+php artisan storage:link
+~~~
 
-Create the configured database before migrating. The checked-in seeder does not create demo users or feature data.
+`migrate --seed` applies outstanding migrations and runs the idempotent Planora fixture seeder; it does not reset existing tables. Do not use `migrate:fresh` on a database with data because that command drops tables. `storage:link` enables public access to uploaded user avatars on the configured public disk.
 
-Start Laravel and Vite in separate terminals:
+Run the Laravel server and Vite in separate terminals:
 
-```bash
+~~~sh
 php artisan serve
-```
+~~~
 
-```bash
+~~~sh
 npm run dev
-```
+~~~
 
-Open `http://127.0.0.1:8000`. During Vite development, the User and Admin dashboard routes are intentionally previewable without authentication at `/dashboard` and `/admin/dashboard`. This development-only guard bypass does not sign in a user and does not make other protected routes public.
+Open the URL printed by `php artisan serve` (normally `http://127.0.0.1:8000`). Set `APP_ENV=local` for the database-readable, no-email OTP development behavior described above. Local demo accounts can be used to explore role-specific pages.
 
 ## Environment Configuration
 
-Start from [`.env.example`](.env.example). The Laravel setup needs an application key, `APP_URL`, and database connection settings (`DB_CONNECTION`, `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME`, and `DB_PASSWORD`). `config/database.php` supports Laravel's configured connections; the example selects MySQL.
+Use [`.env.example`](.env.example) as the starting point. The minimum local setup includes:
 
-The Axios base URL defaults to `/api/v1`; `VITE_API_BASE_URL` can override it for a deployment with a different API URL. Sanctum stateful domains and CORS origins are configured through Laravel config and environment fallbacks; review `config/sanctum.php` and `config/cors.php` when using a separate frontend origin or a custom local domain.
+- `APP_ENV`, `APP_KEY`, `APP_URL`, and `APP_DEBUG`.
+- `DB_CONNECTION`, `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME`, and `DB_PASSWORD`.
+- Session/cookie settings. The example uses a 120-minute session and sets `SESSION_REMEMBER_LIFETIME=43200`; set `SESSION_SECURE_COOKIE=true` when serving over HTTPS.
+- Mail settings only when using the non-local registration mail path. The local database-only flow does not require SMTP.
 
-Keep `.env` local. It is ignored by Git; do not commit application keys, database credentials, or service secrets.
+The shared Axios client defaults to `/api/v1`; `VITE_API_BASE_URL` can override the API base URL. If the frontend uses a separate origin or a custom domain, review Sanctum stateful domains, CORS, session domain, and CSRF setup in `config/sanctum.php`, `config/cors.php`, and `config/session.php`.
+
+Keep `.env` local. Do not commit application keys, database credentials, mail credentials, or OTP values.
 
 ## Development Workflow
 
 | Command | Purpose |
 |---|---|
-| `npm run dev` | Run Vite's frontend development server alongside Laravel. |
-| `npm run build` | Build production assets into the ignored `public/build/` directory. |
-| `php artisan serve` | Run Laravel's local HTTP server. |
-| `php artisan migrate` | Apply outstanding database migrations to the configured database. |
-| `php artisan test` | Run the existing PHPUnit suite. |
+| `php artisan serve` | Start Laravel's local web server |
+| `npm run dev` | Start Vite with hot reload |
+| `npm run build` | Build production assets into `public/build` |
+| `php artisan migrate` | Apply outstanding migrations |
+| `php artisan migrate --seed` | Apply migrations and run the idempotent Planora user fixtures |
+| `php artisan db:seed --class=PlanoraUsersSeeder` | Run only the Planora fixture seeder |
+| `php artisan route:list` | Inspect registered Laravel routes |
+| `php artisan migrate:status` | Inspect migration state |
+| `php artisan optimize:clear` | Clear Laravel's cached config/routes/views/events |
+| `php artisan test` | Run the PHPUnit suite |
+| `php artisan auth:purge-expired-registrations` | Manually purge expired unverified registrations and OTPs |
+| `php artisan schedule:work` | Run the Laravel scheduler in a foreground development process |
 
 ## Testing and Validation
 
-The repository includes two example PHPUnit tests: one checks that `GET /` returns a successful response, and one is a trivial unit assertion. They are smoke-test examples, not meaningful feature, authorization, API-contract, or frontend coverage. No JavaScript test script is defined in `package.json`.
+Backend tests are in `tests/Feature` and `tests/Unit`; the feature tests cover authentication/OTP and Admin user-management flows. Run them with `php artisan test`. Feature tests expect the project's configured test database to be available; `phpunit.xml` does not enable an in-memory SQLite database by default, so configure a safe test database before running them.
 
-The frontend can be validated with `npm run build`. The current CSS entry imports the empty `resources/css/components.css` and `resources/css/utilities.css` files, which can cause empty-stylesheet warnings during the build.
+There is no JavaScript test script in `package.json`. Validate frontend compilation with `npm run build`. For a documentation-only or code change review, `git diff --check` catches whitespace errors.
 
-## Security and Known Limitations
+## Security and Development Notes
 
-- Login and registration endpoints are throttled and use Form Request validation. Laravel hashes passwords through the `User` model's `hashed` cast. Sanctum's stateful session, cookie, and CSRF mechanisms are configured for first-party SPA requests.
-- Client-side route guards are navigation controls, not security boundaries. The only registered protected APIs use `auth:sanctum`; server-side Admin authorization for product APIs is not implemented.
-- Admin routes declare `requiresRole: 'admin'`, but the users migration only permits `user` and `seller`, and `UserResource` omits role data. The current API therefore cannot supply the Admin role needed by the production frontend guard. Admin role/permission design is unfinished.
-- The `status` column supports `active`, `inactive`, and `banned`, but the login controller does not enforce those account states. Soft-deleted users are excluded through Eloquent's soft-delete scope.
-- Login/register pages are not wired to the API, logout buttons in the workspace sidebar are disabled, and password-reset/email-verification controllers have no registered endpoints.
-- Do not treat the current UI prototypes or client-side guards as production-ready authentication, authorization, or business functionality.
+- Passwords are hashed by Laravel; user resources hide the password and remember token.
+- Registration OTP hashes are stored in the OTP table. Only local development also stores a readable `otp_code`; it is hidden from model serialization and never returned from registration APIs. Keep `APP_ENV` correct and do not expose the local database publicly.
+- Registration pending data, including the password hash, is held outside `users`. The transaction creates a verified user only after valid OTP confirmation.
+- Rate limits are applied to login, registration, verification, and resend endpoints. Server-side Form Requests, middleware, policies, and service checks are required even when the Vue router also guards pages.
+- Laravel stateful cookies and CSRF protection are used for SPA requests. Use HTTPS and secure cookie settings in deployments.
+- Role/status changes and destructive account actions must use the protected backend endpoints; client-side controls alone are not authorization.
+- Avatar uploads are validated as JPG/JPEG/PNG/WebP, dimension-limited to 4096×4096, and limited to 2 MB by the user-management requests. The public storage symlink is needed to serve saved files.
+- The development seeder password is intentionally simple and shared. Do not seed these accounts into production.
+- In the non-local environment, OTP delivery depends on configured Laravel Mail transport. The checked-in example targets Mailpit; configure a real provider and validate delivery separately before relying on it.
 
 ## Current Development Status
 
-### Completed foundation
+### Working foundation
 
-- Laravel 10 and Vue 3 are integrated through Vite and a Blade SPA shell.
-- Root-based Vue Router, lazy-loaded route groups, Pinia initialization, and a central Axios client are configured.
-- Distinct User, Admin, and authentication layouts are present.
-- User/Admin dashboard layouts and branding have a responsive visual prototype.
-- A small session-authentication API and users-table migrations exist.
+- Laravel 10 and Vue 3 are integrated through Vite and the Blade SPA shell.
+- Session/Sanctum authentication, role/status enforcement, Remember Me, local database OTP registration, and registration cleanup scheduling are implemented.
+- Admin user listing/management endpoints, policy checks, account activity logging, dashboard account statistics, and user fixtures are implemented.
+- Responsive shared layouts and user/admin/auth page styling are present.
 
-### In progress / prototype
+### In progress / incomplete
 
-- Authentication has backend endpoints and frontend state plumbing, but no working auth forms or complete account flows.
-- User and Admin dashboards show static sample values only.
-- Many routed User and Admin pages are empty shells. Feature services, controllers, and data models are not yet connected into CRUD workflows.
-
-### Known gaps
-
-- No task, project, category, or related feature schema/API has been implemented.
-- Admin role authorization is not usable end-to-end, and account status enforcement is missing.
-- Password reset, email verification, profile/settings persistence, notifications, reports, and analytics are incomplete.
-- Automated coverage is limited to the two example tests; frontend tests are absent.
+- User Dashboard task metrics are placeholders and no task CRUD persistence is available.
+- Task/category/project/calendar-related pages and feature folders are present, but the corresponding full database schema and API workflows are not registered/implemented.
+- Several Admin navigation destinations (roles, tasks, projects, categories, tags, reports, notifications, settings, activity detail) remain partial or scaffolded. The user list and user activity API are implemented, but not every linked page is a complete workflow.
+- Forgot/reset password routes render informative unavailable pages; a recovery API is not currently registered.
+- Moderator management authorization exists in backend code but is mismatched with the admin-only Vue route guard.
+- Public email delivery requires a separately configured and tested provider outside the local development path.
 
 ## Roadmap
 
-### Foundation in place
+The repository's current development priorities are to complete productivity data models and APIs, connect User Dashboard and feature pages to persisted operations, reconcile moderator UI access with its backend permissions, implement password recovery, and expand automated test coverage. These are incomplete areas, not features claimed as available today.
 
-- Laravel/Vue SPA integration and Vite build.
-- User/Admin layout separation, route structure, and static dashboard prototypes.
-- Initial Sanctum session-auth API and users-table structure.
+## Documentation
 
-### Next priorities
-
-1. Define and implement server-side role/permission checks and account-status enforcement.
-2. Complete and test the login/registration UI and authentication lifecycle.
-3. Design task, project, category, and related database schemas and API contracts.
-4. Connect User feature pages to validated, authorized backend operations.
-5. Implement Admin endpoints and data-backed user/platform management.
-6. Add meaningful backend and frontend tests before extending reports, notifications, and analytics.
+- [Registration OTP lifecycle and scheduler setup](docs/REGISTRATION_OTP.md)
+- Additional documentation files under `docs/` include API, architecture, security, database, and roadmap materials; some are still documentation scaffolds.
 
 ## License
 
