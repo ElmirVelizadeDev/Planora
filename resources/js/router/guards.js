@@ -2,7 +2,7 @@ import { useAuthStore } from '../features/auth/stores/authStore.js';
 
 export function installRouteGuards(router) {
     router.beforeEach(async (to) => {
-        if (!to.meta.requiresAuth && !to.meta.guestOnly) return true;
+        if (!to.meta.requiresAuth && !to.meta.guestOnly && !to.meta.initializeAuth) return true;
 
         const auth = useAuthStore();
         let user = auth.user;

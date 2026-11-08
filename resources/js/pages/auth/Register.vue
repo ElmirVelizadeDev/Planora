@@ -1,6 +1,7 @@
 <template>
     <main class="auth-page page-register">
         <section class="auth-card" aria-labelledby="register-title">
+            <RouterLink class="auth-back-home" :to="{ name: 'home' }"><span aria-hidden="true">←</span>Back to Home</RouterLink>
             <p class="auth-eyebrow">Get started</p>
             <h1 id="register-title">Create your account</h1>
             <p class="auth-description">A few details to create your personal Planora workspace.</p>

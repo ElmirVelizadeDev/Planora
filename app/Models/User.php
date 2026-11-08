@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
@@ -85,5 +87,15 @@ class User extends Authenticatable
     public function getInitialsAttribute(): string
     {
         return collect(preg_split('/\s+/', trim($this->name)))->filter()->take(2)->map(fn ($part) => mb_strtoupper(mb_substr($part, 0, 1)))->implode('') ?: 'U';
+    }
+
+    public function getAvatarUrlAttribute(): ?string
+    {
+        $photo = $this->profile_photo;
+        if (! $photo) return null;
+
+        return Str::startsWith($photo, ['http://', 'https://', '/'])
+            ? $photo
+            : Storage::disk('public')->url($photo);
     }
 }

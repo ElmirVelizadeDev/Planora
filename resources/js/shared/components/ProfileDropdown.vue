@@ -8,7 +8,7 @@
             aria-label="Open profile menu"
             @click="open = !open"
         >
-            <UserAvatar :name="displayName" />
+            <UserAvatar :name="displayName" :image-src="auth.user?.avatar || ''" />
             <span class="header-profile-copy">
                 <strong>{{ displayName }}</strong>
                 <small>{{ roleLabel }}</small>
@@ -23,8 +23,8 @@
                 <span>{{ roleLabel }}</span>
             </div>
             <RouterLink v-if="variant === 'user'" :to="{ name: 'profile.show' }" role="menuitem" @click="open = false">My Profile</RouterLink>
-            <span v-else class="header-menu-unavailable" role="menuitem" aria-disabled="true">My Profile · unavailable</span>
-            <RouterLink :to="settingsRoute" role="menuitem" @click="open = false">Account Settings</RouterLink>
+            <span v-else-if="variant === 'admin'" class="header-menu-unavailable" role="menuitem" aria-disabled="true">My Profile · unavailable</span>
+            <RouterLink v-if="variant !== 'limited'" :to="settingsRoute" role="menuitem" @click="open = false">Account Settings</RouterLink>
             <span class="header-menu-unavailable" role="menuitem" aria-disabled="true">Appearance · not available</span>
             <div class="header-menu-divider" role="separator" />
             <button class="header-logout-button" type="button" aria-haspopup="dialog" role="menuitem" @click="requestLogout">
@@ -41,7 +41,7 @@ import { useAuthStore } from '../../features/auth/stores/authStore.js';
 import { useLogoutConfirmation } from '../../features/auth/composables/useLogoutConfirmation.js';
 import UserAvatar from './UserAvatar.vue';
 
-const props = defineProps({ variant: { type: String, required: true } });
+const props = defineProps({ variant: { type: String, required: true, validator: (value) => ['user', 'admin', 'limited'].includes(value) } });
 const auth = useAuthStore();
 const open = ref(false);
 const menu = ref(null);

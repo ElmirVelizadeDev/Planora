@@ -15,7 +15,8 @@ export function useSignOut() {
         error.value = '';
         try {
             await auth.logout();
-            await router.replace({ name: 'login' });
+            const destination = router.currentRoute.value.name === 'home' ? 'home' : 'login';
+            await router.replace({ name: destination });
             return true;
         } catch {
             error.value = 'Could not sign out. Please try again.';

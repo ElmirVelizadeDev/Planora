@@ -59,6 +59,9 @@
 .auth-content { display: grid; min-width: 0; place-items: center; }
 .auth-page { display: grid; width: 100%; min-height: 0; place-items: center; padding: 24px 0; }
 .auth-card { width: min(100%, 472px); padding: clamp(30px, 4vw, 46px); border: 1px solid rgb(230 234 242 / 90%); border-radius: 22px; background: var(--color-surface); box-shadow: 0 20px 60px rgb(32 40 58 / 8%), 0 2px 8px rgb(32 40 58 / 3%); }
+.auth-back-home { display: inline-flex; min-height: 30px; align-items: center; gap: 7px; margin: 0 0 15px; color: var(--color-text-secondary); font-size: 11px; font-weight: 600; text-decoration: none; transition: color 150ms ease, transform 150ms ease; }
+.auth-back-home span { font-size: 16px; line-height: 1; }
+.auth-back-home:hover { color: var(--color-primary); transform: translateX(-1px); }
 .auth-eyebrow { margin: 0 0 10px; color: var(--color-primary); font-size: 10px; font-weight: 750; letter-spacing: .14em; text-transform: uppercase; }
 .auth-card h1 { margin: 0; color: var(--color-text); font-size: clamp(26px, 3vw, 34px); font-weight: 720; letter-spacing: -.05em; line-height: 1.16; }
 .auth-description { margin: 12px 0 28px; color: var(--color-text-secondary); font-size: 13px; line-height: 1.7; }
@@ -83,7 +86,7 @@
 .auth-submit { display: inline-flex; min-height: 49px; align-items: center; justify-content: center; gap: 9px; margin-top: 3px; padding: 0 20px; border: 1px solid var(--color-primary); border-radius: 11px; color: #fff; background: var(--color-primary); box-shadow: 0 7px 15px rgb(91 108 250 / 20%); cursor: pointer; font: inherit; font-size: 12px; font-weight: 700; transition: transform 150ms ease, box-shadow 150ms ease, background-color 150ms ease; }
 .auth-submit:hover:not(:disabled) { background: #4d5ee8; box-shadow: 0 9px 19px rgb(91 108 250 / 25%); transform: translateY(-1px); }
 .auth-submit:active:not(:disabled) { transform: translateY(0); }
-.auth-submit:focus-visible, .auth-inline-link:focus-visible, .auth-switch a:focus-visible, .auth-secondary-link:focus-visible { outline: 3px solid rgb(91 108 250 / 27%); outline-offset: 3px; }
+.auth-submit:focus-visible, .auth-inline-link:focus-visible, .auth-switch a:focus-visible, .auth-secondary-link:focus-visible, .auth-back-home:focus-visible { outline: 3px solid rgb(91 108 250 / 27%); outline-offset: 3px; }
 .auth-submit:disabled { cursor: wait; opacity: .68; box-shadow: none; }
 .auth-spinner { width: 14px; height: 14px; flex: 0 0 14px; border: 2px solid rgb(255 255 255 / 43%); border-top-color: #fff; border-radius: 50%; animation: auth-spin .7s linear infinite; }
 @keyframes auth-spin { to { transform: rotate(360deg); } }

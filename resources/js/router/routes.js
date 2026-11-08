@@ -4,7 +4,7 @@ const adminPage = (folder, page) => () => import(`../pages/admin/${folder ? `${f
 const errorPage = (page) => () => import(`../pages/errors/${page}.vue`);
 
 export const routes = [
-    { path: '/', redirect: '/dashboard' },
+    { path: '/', name: 'home', component: () => import('../pages/public/Home.vue'), meta: { initializeAuth: true } },
     {
         path: '/',
         component: () => import('../layouts/AuthLayout.vue'),
@@ -68,7 +68,7 @@ export const routes = [
             { path: 'roles/:roleId', name: 'admin.roles.show', component: adminPage('roles', 'RolesShow') },
             { path: 'roles/:roleId/edit', name: 'admin.roles.edit', component: adminPage('roles', 'RolesEdit') },
             { path: 'permissions', name: 'admin.permissions.index', component: adminPage('roles', 'PermissionsIndex') },
-            { path: 'tasks', name: 'admin.tasks.index', component: adminPage('tasks', 'AdminTasksIndex') },
+            { path: 'tasks', name: 'admin.tasks.index', component: () => import('../pages/admin/tasks/AdminTasksIndex.vue') },
             { path: 'tasks/:taskId', name: 'admin.tasks.show', component: adminPage('tasks', 'AdminTasksShow') },
             { path: 'projects', name: 'admin.projects.index', component: adminPage('projects', 'AdminProjectsIndex') },
             { path: 'projects/:projectId', name: 'admin.projects.show', component: adminPage('projects', 'AdminProjectsShow') },
@@ -84,7 +84,7 @@ export const routes = [
             { path: 'notifications/create', name: 'admin.notifications.create', component: adminPage('notifications', 'AdminNotificationsCreate') },
             { path: 'activity-logs', name: 'admin.activity-logs.index', component: adminPage('activity-logs', 'ActivityLogsIndex') },
             { path: 'activity-logs/:logId', name: 'admin.activity-logs.show', component: adminPage('activity-logs', 'ActivityLogsShow') },
-            { path: 'settings', name: 'admin.settings.index', component: adminPage('settings', 'AdminSettingsIndex') },
+            { path: 'settings', name: 'admin.settings.index', component: () => import('../pages/admin/settings/AdminSettingsIndex.vue') },
             { path: 'settings/general', name: 'admin.settings.general', component: adminPage('settings', 'AdminSettingsGeneral') },
             { path: 'settings/security', name: 'admin.settings.security', component: adminPage('settings', 'AdminSettingsSecurity') },
             { path: 'settings/email', name: 'admin.settings.email', component: adminPage('settings', 'AdminSettingsEmail') },

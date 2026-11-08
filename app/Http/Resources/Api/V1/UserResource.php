@@ -12,6 +12,7 @@ class UserResource extends JsonResource
             'id' => $this->id,
             'name' => $this->name,
             'email' => $this->email,
+            'avatar' => $this->avatar_url,
             'role' => $this->role,
             'status' => $this->status,
             'moderator_permissions' => $this->role === 'moderator' ? ($this->moderator_permissions ?? []) : [],

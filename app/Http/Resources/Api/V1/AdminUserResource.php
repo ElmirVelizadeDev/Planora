@@ -3,8 +3,6 @@
 namespace App\Http\Resources\Api\V1;
 
 use Illuminate\Http\Resources\Json\JsonResource;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
 
 class AdminUserResource extends JsonResource
 {
@@ -16,7 +14,7 @@ class AdminUserResource extends JsonResource
             'first_name' => $this->when($request->user()?->role === 'admin', $this->first_name),
             'last_name' => $this->when($request->user()?->role === 'admin', $this->last_name),
             'email' => $this->email,
-            'avatar' => $this->avatarUrl(),
+            'avatar' => $this->avatar_url,
             'username' => $this->when($request->user()?->role === 'admin', $this->username),
             'phone' => $this->when($request->user()?->role === 'admin', $this->phone),
             'role' => $this->role,
@@ -34,15 +32,5 @@ class AdminUserResource extends JsonResource
             ] : null),
             'deleted_at' => $this->deleted_at,
         ];
-    }
-
-    private function avatarUrl(): ?string
-    {
-        $photo = $this->profile_photo;
-        if (! $photo) return null;
-
-        return Str::startsWith($photo, ['http://', 'https://', '/'])
-            ? $photo
-            : Storage::disk('public')->url($photo);
     }
 }

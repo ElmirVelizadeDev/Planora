@@ -1,6 +1,7 @@
 <template>
     <main class="auth-page page-login">
         <section class="auth-card" aria-labelledby="login-title">
+            <RouterLink class="auth-back-home" :to="{ name: 'home' }"><span aria-hidden="true">←</span>Back to Home</RouterLink>
             <p class="auth-eyebrow">Welcome back</p>
             <h1 id="login-title">Sign in to Planora</h1>
             <p class="auth-description">Enter your details to continue to your workspace.</p>
