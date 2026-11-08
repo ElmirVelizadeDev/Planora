@@ -19,7 +19,12 @@ class StoreManagedUserRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:255'],
+            'first_name' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'last_name' => ['sometimes', 'nullable', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
+            'username' => ['nullable', 'string', 'max:255', 'unique:users,username'],
+            'phone' => ['nullable', 'string', 'max:32', 'regex:/^\+?[0-9().\s-]{7,32}$/'],
+            'avatar' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'dimensions:max_width=4096,max_height=4096', 'max:2048'],
             'password' => ['required', 'confirmed', Password::min(12)->mixedCase()->numbers()],
             'role' => ['required', Rule::in(User::ROLES)],
             'status' => ['required', Rule::in(['active', 'inactive'])],

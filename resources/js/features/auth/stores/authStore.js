@@ -1,6 +1,6 @@
 import { computed, ref } from 'vue';
 import { defineStore } from 'pinia';
-import { getCurrentUser, login as loginRequest, logout as logoutRequest, register as registerRequest } from '../services/authApi.js';
+import { getCurrentUser, login as loginRequest, logout as logoutRequest, register as registerRequest, resendRegistrationCode as resendRegistrationCodeRequest, verifyRegistration as verifyRegistrationRequest } from '../services/authApi.js';
 
 export const useAuthStore = defineStore('auth', () => {
     const user = ref(null);
@@ -50,9 +50,20 @@ export const useAuthStore = defineStore('auth', () => {
     async function register(attributes) {
         const response = await registerRequest(attributes);
         const payload = response.data.data ?? response.data;
-        user.value = payload.user ?? payload;
+        return { email: payload.email, deliveryMode: payload.delivery_mode || 'email' };
+    }
+
+    async function verifyRegistration(attributes) {
+        const response = await verifyRegistrationRequest(attributes);
+        const payload = response.data.data ?? response.data;
+        user.value = payload.user;
         initialized.value = true;
         return { user: user.value, redirectTo: payload.redirect_to || '/dashboard' };
+    }
+
+    async function resendRegistrationCode(attributes) {
+        const response = await resendRegistrationCodeRequest(attributes);
+        return response.data.data ?? response.data;
     }
 
     async function logout() {
@@ -65,5 +76,5 @@ export const useAuthStore = defineStore('auth', () => {
         initialized.value = true;
     }
 
-    return { user, initialized, loading, isAuthenticated, roles, fetchCurrentUser, login, register, logout, hasRole, clearUser };
+    return { user, initialized, loading, isAuthenticated, roles, fetchCurrentUser, login, register, verifyRegistration, resendRegistrationCode, logout, hasRole, clearUser };
 });

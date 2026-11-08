@@ -13,7 +13,7 @@ export const routes = [
             { path: 'register', name: 'register', component: authPage('Register'), meta: { guestOnly: true } },
             { path: 'forgot-password', name: 'forgot-password', component: authPage('ForgotPassword') },
             { path: 'reset-password', name: 'reset-password', component: authPage('ResetPassword') },
-            { path: 'verify-email', name: 'verify-email', component: authPage('VerifyEmail'), meta: { requiresAuth: true } },
+            { path: 'verify-email', name: 'verify-email', component: authPage('VerifyEmail'), meta: { guestOnly: true } },
         ],
     },
     {
@@ -61,10 +61,8 @@ export const routes = [
         children: [
             { path: '', redirect: '/admin/dashboard' },
             { path: 'dashboard', name: 'admin.dashboard', component: adminPage('', 'AdminDashboard') },
-            { path: 'users', name: 'admin.users.index', component: adminPage('users', 'UsersIndex') },
-            { path: 'users/create', name: 'admin.users.create', component: adminPage('users', 'UsersCreate') },
-            { path: 'users/:userId', name: 'admin.users.show', component: adminPage('users', 'UsersShow') },
-            { path: 'users/:userId/edit', name: 'admin.users.edit', component: adminPage('users', 'UsersEdit') },
+            { path: 'users', name: 'admin.users.index', component: () => import('../pages/admin/users/UsersIndex.vue') },
+            { path: 'users/create', name: 'admin.users.create', component: () => import('../pages/admin/users/UsersCreate.vue') },
             { path: 'roles', name: 'admin.roles.index', component: adminPage('roles', 'RolesIndex') },
             { path: 'roles/create', name: 'admin.roles.create', component: adminPage('roles', 'RolesCreate') },
             { path: 'roles/:roleId', name: 'admin.roles.show', component: adminPage('roles', 'RolesShow') },

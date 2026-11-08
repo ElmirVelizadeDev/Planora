@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Admin\IndexUsersRequest;
+use App\Http\Requests\Api\V1\Admin\ChangeManagedUserPasswordRequest;
 use App\Http\Requests\Api\V1\Admin\StoreManagedUserRequest;
 use App\Http\Requests\Api\V1\Admin\UpdateManagedUserRequest;
 use App\Http\Resources\Api\V1\AdminUserResource;
@@ -29,6 +30,9 @@ class UserManagementController extends Controller
                 'last_page' => $users->lastPage(),
                 'per_page' => $users->perPage(),
                 'total' => $users->total(),
+                'active_admins' => $request->user()->role === 'admin'
+                    ? User::query()->where('role', 'admin')->where('status', 'active')->count()
+                    : null,
                 'statistics' => $queries->statistics($filters['role'] ?? null, $moderatorView),
             ],
         ]);
@@ -58,6 +62,13 @@ class UserManagementController extends Controller
     public function update(UpdateManagedUserRequest $request, User $user, UserManagementService $users): JsonResponse
     {
         return response()->json(['user' => AdminUserResource::make($users->update($request->user(), $user, $request->validated()))->resolve()]);
+    }
+
+    public function changePassword(ChangeManagedUserPasswordRequest $request, User $user, UserManagementService $users): JsonResponse
+    {
+        $users->changePassword($request->user(), $user, $request->validated('password'));
+
+        return response()->json(['message' => 'Password changed successfully.']);
     }
 
     public function destroy(Request $request, User $user, UserManagementService $users): JsonResponse

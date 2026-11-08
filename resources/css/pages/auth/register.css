@@ -1,1 +1,17 @@
-@import './login.css';
+.auth-password-strength { display: flex; align-items: center; gap: 9px; color: var(--color-text-secondary); font-size: 11px; font-weight: 600; }
+.auth-password-strength-bars { display: grid; flex: 1; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px; }
+.auth-password-strength-bars span { height: 4px; border-radius: 99px; background: var(--color-border); transition: background-color .18s ease; }
+.auth-password-strength.is-level-0 .auth-password-strength-bars span.is-active,
+.auth-password-strength.is-level-1 .auth-password-strength-bars span.is-active { background: var(--auth-error); }
+.auth-password-strength.is-level-2 .auth-password-strength-bars span.is-active { background: var(--auth-warning); }
+.auth-password-strength.is-level-3 .auth-password-strength-bars span.is-active,
+.auth-password-strength.is-level-4 .auth-password-strength-bars span.is-active { background: var(--auth-success); }
+.auth-password-guidance { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; color: var(--color-text-secondary); font-size: 11px; font-weight: 400; line-height: 1.45; }
+.auth-password-guidance li { position: relative; padding-left: 16px; }
+.auth-password-guidance li::before { position: absolute; left: 0; content: '○'; color: var(--color-text-secondary); }
+.auth-password-guidance li.is-met::before { content: '✓'; color: var(--auth-success); font-weight: 700; }
+.auth-password-match { color: var(--auth-success); font-size: 11px; font-weight: 500; }
+@media (max-width: 480px) {
+    .auth-password-strength { gap: 7px; }
+    .auth-password-strength-bars { gap: 3px; }
+}

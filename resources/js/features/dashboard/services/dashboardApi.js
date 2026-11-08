@@ -9,15 +9,27 @@ export async function getAdminDashboard() {
 
     const users = usersResponse.data;
     const admins = adminsResponse.data;
+    const statistics = users.meta?.statistics;
+    const adminStatistics = admins.meta?.statistics;
+
+    if (!statistics || !adminStatistics || !Array.isArray(users.data) || !Array.isArray(activityResponse.data.data)) {
+        throw new Error('The dashboard API returned an incomplete response.');
+    }
+
+    const requiredStatistics = ['total_users', 'active_users', 'inactive_users', 'suspended_users', 'banned_users'];
+    if (requiredStatistics.some((key) => !Number.isFinite(Number(statistics[key])))
+        || !Number.isFinite(Number(adminStatistics.total_users))) {
+        throw new Error('The dashboard API returned invalid user statistics.');
+    }
 
     return {
         statistics: {
-            totalUsers: Number(users.meta?.statistics?.total_users ?? 0),
-            activeUsers: Number(users.meta?.statistics?.active_users ?? 0),
-            inactiveUsers: Number(users.meta?.statistics?.inactive_users ?? 0),
-            suspendedUsers: Number(users.meta?.statistics?.suspended_users ?? 0),
-            bannedUsers: Number(users.meta?.statistics?.banned_users ?? 0),
-            totalAdmins: Number(admins.meta?.statistics?.total_users ?? 0),
+            totalUsers: Number(statistics.total_users),
+            activeUsers: Number(statistics.active_users),
+            inactiveUsers: Number(statistics.inactive_users),
+            suspendedUsers: Number(statistics.suspended_users),
+            bannedUsers: Number(statistics.banned_users),
+            totalAdmins: Number(adminStatistics.total_users),
         },
         recentUsers: users.data ?? [],
         recentActivity: activityResponse.data.data ?? [],

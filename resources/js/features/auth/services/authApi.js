@@ -12,6 +12,16 @@ export async function register(attributes) {
     return api.post('/auth/register', attributes);
 }
 
+export async function verifyRegistration(payload) {
+    await initializeCsrfProtection();
+    return api.post('/auth/register/verify', payload);
+}
+
+export async function resendRegistrationCode(payload) {
+    await initializeCsrfProtection();
+    return api.post('/auth/register/resend', payload);
+}
+
 export const logout = () => api.post('/auth/logout');
 
 export const initializeCsrfProtection = () => api.get(

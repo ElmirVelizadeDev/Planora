@@ -24,7 +24,7 @@ class IndexUsersRequest extends FormRequest
             'registered_from' => ['nullable', 'date'],
             'registered_to' => ['nullable', 'date', 'after_or_equal:registered_from'],
             'sort' => ['nullable', Rule::in(['newest', 'oldest', 'name_asc', 'name_desc'])],
-            'per_page' => ['nullable', 'integer', 'min:10', 'max:100'],
+            'per_page' => ['nullable', 'integer', 'min:1', 'max:10'],
             'page' => ['nullable', 'integer', 'min:1'],
         ];
     }

@@ -18,15 +18,18 @@ class UserManagementQueryService
             $query->where('role', $role);
         }
 
+        $now = now();
+        $newUsersStart = $now->copy()->subDays(30)->startOfDay();
+
         $row = (clone $query)->selectRaw(
             "COUNT(*) AS total_users,
             COALESCE(SUM(status = 'active'), 0) AS active_users,
             COALESCE(SUM(status = 'inactive'), 0) AS inactive_users,
             COALESCE(SUM(status = 'suspended'), 0) AS suspended_users,
             COALESCE(SUM(status = 'banned'), 0) AS banned_users,
-            COALESCE(SUM(created_at >= ?), 0) AS new_users_this_month",
-            [now()->startOfMonth()]
-        )->first();
+            COALESCE(SUM(role = 'user' AND created_at >= ? AND created_at <= ?), 0) AS new_users_last_30_days",
+            [$newUsersStart, $now]
+        )->toBase()->first();
 
         return collect((array) $row)->map(fn ($value) => (int) $value)->all();
     }
@@ -72,6 +75,6 @@ class UserManagementQueryService
             default => $query->latest('created_at')->orderByDesc('id'),
         };
 
-        return $query->paginate((int) ($filters['per_page'] ?? 20))->withQueryString();
+        return $query->paginate((int) ($filters['per_page'] ?? 10))->withQueryString();
     }
 }

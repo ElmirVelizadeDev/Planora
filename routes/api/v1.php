@@ -8,9 +8,11 @@ use App\Http\Controllers\Api\V1\Admin\UserRolePermissionsController;
 use App\Http\Controllers\Api\V1\CurrentUserController;
 use Illuminate\Support\Facades\Route;
 
-Route::prefix('auth')->name('auth.')->middleware('throttle:10,1')->group(function () {
-    Route::post('/login', [AuthController::class, 'login'])->name('login');
-    Route::post('/register', [AuthController::class, 'register'])->name('register');
+Route::prefix('auth')->name('auth.')->group(function () {
+    Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:10,1')->name('login');
+    Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:5,1')->name('register');
+    Route::post('/register/verify', [AuthController::class, 'verifyRegistration'])->middleware('throttle:10,1')->name('register.verify');
+    Route::post('/register/resend', [AuthController::class, 'resendRegistrationCode'])->middleware('throttle:3,1')->name('register.resend');
 });
 
 Route::middleware('auth:sanctum')->group(function () {
@@ -26,6 +28,7 @@ Route::prefix('admin/users')->name('admin.users.')->middleware(['auth:sanctum', 
     Route::get('/activity', [UserActivityController::class, 'index'])->middleware('can:viewActivity,App\\Models\\User')->name('activity.index');
     Route::get('/roles-permissions', [UserRolePermissionsController::class, 'index'])->middleware('can:viewAny,App\\Models\\User')->name('roles.permissions');
     Route::post('/', [UserManagementController::class, 'store'])->middleware('role:admin')->name('store');
+    Route::post('/{user}/password', [UserManagementController::class, 'changePassword'])->middleware('role:admin')->name('password.change');
     Route::get('/{user}', [UserManagementController::class, 'show'])->middleware('can:view,user')->name('show');
     Route::patch('/{user}', [UserManagementController::class, 'update'])->middleware('role:admin')->name('update');
     Route::delete('/{user}', [UserManagementController::class, 'destroy'])->middleware('role:admin')->name('destroy');

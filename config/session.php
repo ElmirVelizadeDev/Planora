@@ -33,6 +33,9 @@ return [
 
     'lifetime' => env('SESSION_LIFETIME', 120),
 
+    // Laravel's persistent authentication cookie lives for 30 days by default.
+    'remember_lifetime' => env('SESSION_REMEMBER_LIFETIME', 43200),
+
     'expire_on_close' => false,
 
     /*
