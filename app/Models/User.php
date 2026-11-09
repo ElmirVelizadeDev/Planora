@@ -73,6 +73,21 @@ class User extends Authenticatable
         return $this->hasMany(UserActivityLog::class, 'actor_id');
     }
 
+    public function ownedTasks(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(Task::class, 'owner_id');
+    }
+
+    public function assignedTasks(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(Task::class, 'assigned_user_id');
+    }
+
+    public function createdTasks(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(Task::class, 'created_by');
+    }
+
     public function hasManagementPermission(string $permission): bool
     {
         if ($this->role === 'admin') {

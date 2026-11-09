@@ -84,3 +84,12 @@ Existing page styles remain in the established lowercase feature structure under
 
 - When implementation begins, connect pages to routes and intended layouts, with explicit role and privacy checks.
 - Establish documented token and shared component usage conventions before visual implementation.
+
+## User Tasks Management Implementation (2026-11-09)
+
+- The existing User Tasks routes now use a database-backed `/api/v1/tasks` API scoped to tasks owned by or assigned to the authenticated user. Task details, create/edit, status updates, and soft deletion use the existing Task model and table.
+- The Tasks Index provides database-backed task statistics, search, status/priority/due-date filters, sorting, and pagination. Completed and upcoming tasks are views of the same task list via filters; separate routes do not exist.
+- `resources/js/features/tasks/user/components/UserTaskForm.vue` is shared by the existing Create and Edit routes. Task detail remains at the existing Show route.
+- Category selection is omitted because the tasks schema has no category relationship/table. The task table is defined by `database/migrations/2026_11_09_000002_create_tasks_table.php` and includes ownership, assignment, creator, and soft-delete fields.
+- The User Dashboard task overview now reads counts and recent tasks from the same authenticated task API, keeping it consistent with the Tasks pages.
+- Local demo task records can be generated with `php artisan db:seed --class="Database\Seeders\UserTasksDemoSeeder"`; the standalone seeder is documented in `database/seeders/README.md` and is not included in `DatabaseSeeder`.

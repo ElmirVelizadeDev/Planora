@@ -1,0 +1,30 @@
+.admin-task-form-page { width: 100%; max-width: 940px; margin: 0 auto; }
+.admin-task-form-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; margin-bottom: 18px; }
+.admin-task-form-eyebrow { margin: 0 0 7px; color: var(--color-text-secondary); font-size: 11px; font-weight: 600; }
+.admin-task-form-header h1 { margin: 0; color: var(--color-text); font-size: clamp(23px, 2.4vw, 30px); font-weight: 700; letter-spacing: -.04em; line-height: 1.2; }
+.admin-task-form-header p:last-child { margin: 8px 0 0; color: var(--color-text-secondary); font-size: 13px; }
+.admin-task-form-back { color: var(--color-primary); font-size: 11px; font-weight: 650; text-decoration: none; white-space: nowrap; }
+.admin-task-form-back:hover { text-decoration: underline; text-underline-offset: 3px; }
+.admin-task-form-card { padding: 21px; border: 1px solid var(--color-border); border-radius: 14px; background: var(--color-surface); box-shadow: 0 3px 12px rgb(32 40 58 / 3%); }
+.admin-task-form-section-heading h2 { margin: 0; color: var(--color-text); font-size: 15px; font-weight: 680; }
+.admin-task-form-section-heading p { margin: 5px 0 0; color: var(--color-text-secondary); font-size: 11px; }
+.admin-task-form-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 15px; margin-top: 18px; }
+.admin-task-form-fields label { display: grid; min-width: 0; gap: 6px; color: var(--color-text); font-size: 11px; font-weight: 620; }
+.admin-task-form-fields label > span { color: #a9535a; display: inline; }
+.admin-task-form-fields label.is-wide { grid-column: 1 / -1; }
+.admin-task-form-fields input, .admin-task-form-fields select, .admin-task-form-fields textarea { width: 100%; min-width: 0; min-height: 38px; padding: 9px 10px; border: 1px solid var(--color-border); border-radius: 9px; outline: 0; color: var(--color-text); background: var(--color-surface); font: inherit; font-size: 11px; font-weight: 400; }
+.admin-task-form-fields textarea { min-height: 125px; resize: vertical; line-height: 1.6; }
+.admin-task-form-fields input:focus, .admin-task-form-fields select:focus, .admin-task-form-fields textarea:focus { border-color: var(--color-primary); box-shadow: 0 0 0 3px rgb(91 108 250 / 10%); }
+.admin-task-form-fields [aria-invalid="true"] { border-color: #c76b72; }
+.admin-task-form-fields small { color: #ad5059; font-size: 10px; font-weight: 500; }
+.admin-task-form-actions { display: flex; justify-content: flex-end; align-items: center; gap: 9px; margin-top: 19px; padding-top: 15px; border-top: 1px solid var(--color-border); }
+.admin-task-form-cancel, .admin-task-form-submit { display: inline-flex; min-height: 38px; align-items: center; justify-content: center; padding: 0 14px; border: 1px solid var(--color-border); border-radius: 9px; color: var(--color-text); background: var(--color-surface); font: inherit; font-size: 11px; font-weight: 650; text-decoration: none; cursor: pointer; }
+.admin-task-form-submit { border-color: transparent; color: #fff; background: var(--color-primary); box-shadow: 0 2px 6px rgb(91 108 250 / 18%); }
+.admin-task-form-submit:disabled { cursor: not-allowed; opacity: .55; }
+.admin-task-form-error, .admin-task-form-alert { padding: 10px 12px; border: 1px solid rgb(190 87 94 / 25%); border-radius: 9px; color: #a9535a; background: #fbefef; font-size: 11px; }
+.admin-task-form-alert { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.admin-task-form-alert button { border: 0; color: #a9535a; background: transparent; font: inherit; font-weight: 650; cursor: pointer; }
+.admin-task-form-loading { display: flex; align-items: center; gap: 9px; padding: 18px; border: 1px solid var(--color-border); border-radius: 11px; color: var(--color-text-secondary); background: var(--color-surface); font-size: 12px; }
+.admin-task-form-spinner { width: 15px; height: 15px; border: 2px solid var(--color-border); border-top-color: var(--color-primary); border-radius: 50%; animation: admin-task-form-spin 700ms linear infinite; }
+@keyframes admin-task-form-spin { to { transform: rotate(360deg); } }
+@media (max-width: 600px) { .admin-task-form-header { flex-direction: column; gap: 12px; } .admin-task-form-card { padding: 16px 14px; } .admin-task-form-fields { grid-template-columns: minmax(0, 1fr); gap: 12px; } .admin-task-form-fields label.is-wide { grid-column: auto; } .admin-task-form-actions > * { flex: 1; } }

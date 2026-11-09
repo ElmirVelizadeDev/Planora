@@ -1,0 +1,136 @@
+.admin-tasks { width: 100%; max-width: 1320px; margin: 0 auto; }
+.admin-tasks-header { display: flex; align-items: center; justify-content: space-between; gap: 24px; margin: 0 0 25px; }
+.admin-tasks-eyebrow { margin: 0 0 7px; color: var(--color-text-secondary); font-size: 11px; font-weight: 600; }
+.admin-tasks-header h1 { margin: 0; color: var(--color-text); font-size: clamp(23px, 2.4vw, 30px); font-weight: 700; letter-spacing: -.04em; line-height: 1.2; }
+.admin-tasks-description { margin: 8px 0 0; color: var(--color-text-secondary); font-size: 13px; }
+.admin-tasks-header-actions { display: flex; align-items: center; gap: 9px; }
+.admin-tasks-primary-button, .admin-tasks-secondary-button { display: inline-flex; min-height: 38px; align-items: center; justify-content: center; gap: 7px; padding: 0 14px; border: 1px solid var(--color-border); border-radius: 9px; color: var(--color-text); background: var(--color-surface); font: inherit; font-size: 11px; font-weight: 650; text-decoration: none; cursor: pointer; transition: background 140ms ease, border-color 140ms ease, transform 140ms ease; }
+.admin-tasks-primary-button { border-color: transparent; color: #fff; background: var(--color-primary); box-shadow: 0 2px 6px rgb(91 108 250 / 18%); }
+.admin-tasks-primary-button span { font-size: 18px; font-weight: 400; line-height: 1; }
+.admin-tasks-primary-button:hover { background: #4d5ee8; transform: translateY(-1px); }
+.admin-tasks-primary-button:disabled { cursor: not-allowed; opacity: .68; }
+.admin-tasks-header-actions > a { text-decoration: none; }
+.admin-tasks-secondary-button:hover:not(:disabled) { border-color: var(--color-primary); color: var(--color-primary); }
+.admin-tasks-secondary-button:disabled { cursor: wait; opacity: .68; }
+.admin-tasks-header-actions svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.7; }
+.admin-tasks-header-actions svg.is-loading { animation: admin-task-spin 800ms linear infinite; }
+@keyframes admin-task-spin { to { transform: rotate(360deg); } }
+.admin-tasks-stat-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px; }
+.admin-tasks-stat-card, .admin-tasks-panel { min-width: 0; border: 1px solid var(--color-border); border-radius: 14px; background: var(--color-surface); box-shadow: 0 3px 12px rgb(32 40 58 / 3%); }
+.admin-tasks-stat-card { display: grid; min-height: 112px; grid-template-columns: 38px minmax(0, 1fr); grid-template-rows: auto auto; align-content: center; align-items: center; column-gap: 13px; padding: 17px 19px; }
+.admin-tasks-stat-icon { display: grid; width: 36px; height: 36px; grid-row: 1 / span 2; place-items: center; border-radius: 11px; color: var(--color-primary); background: #f0f2ff; }
+.admin-tasks-stat-icon svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.7; }
+.admin-tasks-stat-icon.is-success { color: #328366; background: #eaf7f1; }
+.admin-tasks-stat-icon.is-violet { color: #8370ca; background: #f3f0fb; }
+.admin-tasks-stat-icon.is-neutral { color: #748096; background: #f1f3f7; }
+.admin-tasks-stat-icon.is-danger { color: #a9535a; background: #fbefef; }
+.admin-tasks-stat-card strong { color: var(--color-text); font-size: 24px; font-weight: 700; letter-spacing: -.04em; line-height: 1.1; }
+.admin-tasks-stat-card > span:last-child { margin-top: 5px; color: var(--color-text-secondary); font-size: 11px; }
+.admin-tasks-panel { margin-top: 18px; overflow: hidden; }
+.admin-tasks-toolbar { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; padding: 20px 20px 16px; }
+.admin-tasks-panel-heading { flex: 0 0 auto; padding-top: 2px; }
+.admin-tasks-panel-heading h2 { margin: 0; color: var(--color-text); font-size: 15px; font-weight: 680; letter-spacing: -.015em; }
+.admin-tasks-panel-heading p { margin: 5px 0 0; color: var(--color-text-secondary); font-size: 11px; }
+.admin-tasks-filters { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px; }
+.admin-tasks-filters > label:not(.admin-tasks-search) { display: block; flex: 0 1 150px; min-width: 0; }
+.admin-tasks-search { position: relative; display: flex; flex: 0 0 230px; width: min(230px, 100%); min-height: 36px; align-items: center; border: 1px solid var(--color-border); border-radius: 9px; background: var(--color-surface); transition: border-color 140ms ease, box-shadow 140ms ease; }
+.admin-tasks-search:focus-within { border-color: var(--color-primary); box-shadow: 0 0 0 3px rgb(91 108 250 / 10%); }
+.admin-tasks-search-icon { padding-left: 10px; color: var(--color-text-secondary); font-size: 19px; line-height: 1; }
+.admin-tasks-search input { width: 100%; min-width: 0; height: 34px; padding: 0 10px 0 7px; border: 0; outline: 0; color: var(--color-text); background: transparent; font: inherit; font-size: 11px; }
+.admin-tasks-search input::placeholder { color: var(--color-text-secondary); opacity: 1; }
+.admin-tasks-filters select, .admin-tasks-date-filter input { width: 100%; height: 36px; max-width: 150px; padding: 0 9px; border: 1px solid var(--color-border); border-radius: 9px; outline: 0; color: var(--color-text); background: var(--color-surface); font: inherit; font-size: 11px; }
+.admin-tasks-filters select:focus, .admin-tasks-date-filter input:focus { border-color: var(--color-primary); box-shadow: 0 0 0 3px rgb(91 108 250 / 10%); }
+.admin-tasks-date-filter input { width: 142px; color: var(--color-text-secondary); }
+.admin-users-secondary-button { display: inline-flex; min-height: 38px; align-items: center; justify-content: center; gap: 7px; padding: 0 14px; border: 1px solid var(--color-border); border-radius: 9px; color: var(--color-text); background: var(--color-surface); font: inherit; font-size: 11px; font-weight: 650; text-decoration: none; cursor: pointer; transition: background 140ms ease, border-color 140ms ease, transform 140ms ease; }
+.admin-users-refresh-button { min-height: 36px; gap: 6px; padding: 0 10px; white-space: nowrap; }
+.admin-users-refresh-button:disabled { cursor: wait; opacity: .68; }
+.admin-users-secondary-button:hover:not(:disabled) { border-color: var(--color-primary); color: var(--color-primary); }
+.admin-users-refresh-icon { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.7; }
+.admin-users-refresh-icon.is-loading { animation: admin-task-spin 800ms linear infinite; }
+.admin-tasks-clear-button { padding: 7px 5px; border: 0; color: var(--color-primary); background: transparent; font: inherit; font-size: 10px; font-weight: 650; cursor: pointer; white-space: nowrap; }
+.admin-tasks-table-wrap { width: 100%; overflow-x: auto; transition: opacity 120ms ease; }
+.admin-tasks-table-wrap.is-loading { opacity: .58; }
+.admin-tasks-table { width: 100%; border-collapse: collapse; text-align: left; }
+.admin-tasks-table th { height: 39px; padding: 0 12px; border-top: 1px solid var(--color-border); border-bottom: 1px solid var(--color-border); color: var(--color-text-secondary); background: color-mix(in srgb, var(--color-background) 56%, var(--color-surface)); font-size: 10px; font-weight: 620; white-space: nowrap; }
+.admin-tasks-table th:first-child, .admin-tasks-table td:first-child { padding-left: 20px; }
+.admin-tasks-table th:last-child, .admin-tasks-table td:last-child { padding-right: 18px; }
+.admin-tasks-table td { height: 66px; padding: 8px 12px; border-bottom: 1px solid var(--color-border); color: var(--color-text-secondary); font-size: 10px; white-space: nowrap; }
+.admin-tasks-table tbody tr:last-child td { border-bottom: 0; }
+.admin-tasks-table tbody tr { transition: background 120ms ease; }
+.admin-tasks-table tbody tr:hover { background: color-mix(in srgb, var(--color-background) 56%, var(--color-surface)); }
+.admin-tasks-task-copy { display: grid; width: min(240px, 22vw); min-width: 135px; gap: 4px; color: inherit; text-decoration: none; }
+.admin-tasks-task-copy strong { overflow: hidden; color: var(--color-text); font-size: 11px; font-weight: 620; text-overflow: ellipsis; }
+.admin-tasks-task-copy span { overflow: hidden; color: var(--color-text-secondary); font-size: 9px; text-overflow: ellipsis; }
+.admin-tasks-task-copy:hover strong { color: var(--color-primary); }
+.admin-tasks-identity { display: flex; min-width: 190px; align-items: center; gap: 10px; }
+.admin-tasks-avatar { display: grid; width: 34px; height: 34px; flex: 0 0 34px; place-items: center; overflow: hidden; border-radius: 50%; color: #5262d8; background: #f0f2ff; font-size: 10px; font-weight: 700; object-fit: cover; }
+.admin-tasks-user-copy { display: grid; min-width: 0; gap: 3px; }
+.admin-tasks-user-copy strong, .admin-tasks-user-copy span { max-width: 220px; overflow: hidden; text-overflow: ellipsis; }
+.admin-tasks-user-copy strong { color: var(--color-text); font-size: 11px; font-weight: 620; }
+.admin-tasks-user-copy span { color: var(--color-text-secondary); font-size: 10px; }
+.admin-tasks-badge { display: inline-flex; min-height: 22px; align-items: center; padding: 0 8px; border-radius: 20px; color: #748096; background: #f1f3f7; font-size: 9px; font-weight: 620; white-space: nowrap; }
+.admin-tasks-badge.is-pending, .admin-tasks-badge.is-low { color: #748096; background: #f1f3f7; }
+.admin-tasks-badge.is-in_progress, .admin-tasks-badge.is-medium { color: #5262c7; background: #f0f2ff; }
+.admin-tasks-badge.is-completed, .admin-tasks-badge.is-high { color: #328366; background: #eaf7f1; }
+.admin-tasks-badge.is-urgent { color: #a9535a; background: #fbefef; }
+.admin-tasks-table time.is-overdue { color: #ad5059; font-weight: 650; }
+.admin-tasks-muted { color: #a0a8b6; }
+.admin-tasks-actions { display: flex; align-items: center; justify-content: flex-end; gap: 2px; }
+.admin-tasks-actions a, .admin-tasks-actions button { padding: 5px 6px; border: 0; border-radius: 6px; color: var(--color-text-secondary); background: transparent; font: inherit; font-size: 9px; font-weight: 600; text-decoration: none; cursor: pointer; transition: color 120ms ease, background 120ms ease; }
+.admin-tasks-actions a:hover, .admin-tasks-actions button:hover { color: var(--color-primary); background: #f1f3ff; }
+.admin-tasks-actions .is-danger:hover { color: #a9535a; background: #fbefef; }
+.admin-tasks-actions button:disabled { cursor: not-allowed; opacity: .48; }
+.admin-tasks-actions .is-danger { color: #a9535a; }
+.admin-tasks-pagination { display: flex; min-height: 55px; align-items: center; justify-content: space-between; gap: 12px; padding: 0 20px; border-top: 1px solid var(--color-border); }
+.admin-tasks-pagination p { margin: 0; color: var(--color-text-secondary); font-size: 10px; }
+.admin-tasks-pagination p strong { color: var(--color-text); font-weight: 620; }
+.admin-tasks-page-controls { display: flex; align-items: center; gap: 9px; color: var(--color-text-secondary); font-size: 10px; }
+.admin-tasks-page-controls label { display: flex; align-items: center; gap: 5px; }
+.admin-tasks-page-controls select { height: 28px; border: 1px solid var(--color-border); border-radius: 7px; color: var(--color-text); background: var(--color-surface); font: inherit; }
+.admin-tasks-page-controls button { display: grid; width: 28px; height: 28px; place-items: center; border: 1px solid var(--color-border); border-radius: 8px; color: var(--color-text); background: var(--color-surface); font: inherit; font-size: 17px; cursor: pointer; }
+.admin-tasks-page-controls button:hover:not(:disabled) { border-color: var(--color-primary); color: var(--color-primary); }
+.admin-tasks-page-controls button:disabled { cursor: not-allowed; opacity: .42; }
+.admin-tasks-feedback, .admin-tasks-loading, .admin-tasks-empty { margin: 0 20px 18px; padding: 18px; border: 1px solid var(--color-border); border-radius: 11px; color: var(--color-text-secondary); background: var(--color-surface); font-size: 12px; }
+.admin-tasks-feedback { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.admin-tasks-feedback.is-error { border-color: rgb(190 87 94 / 25%); color: #a9535a; }
+.admin-tasks-feedback button { padding: 7px 10px; border: 1px solid var(--color-border); border-radius: 8px; color: var(--color-primary); background: var(--color-surface); font: inherit; font-size: 11px; font-weight: 650; cursor: pointer; }
+.admin-tasks-loading { display: flex; align-items: center; gap: 10px; }
+.admin-tasks-spinner { width: 15px; height: 15px; border: 2px solid var(--color-border); border-top-color: var(--color-primary); border-radius: 50%; animation: admin-task-spin 700ms linear infinite; }
+.admin-tasks-empty { display: grid; justify-items: center; padding: 34px 18px; text-align: center; }
+.admin-tasks-empty-icon { display: grid; width: 42px; height: 42px; place-items: center; border-radius: 13px; color: var(--color-primary); background: #f0f2ff; font-size: 20px; }
+.admin-tasks-empty h3 { margin: 12px 0 0; color: var(--color-text); font-size: 13px; font-weight: 650; }
+.admin-tasks-empty p { margin: 5px 0 14px; color: var(--color-text-secondary); font-size: 11px; }
+@media (max-width: 1120px) { .admin-tasks-toolbar { flex-direction: column; } .admin-tasks-filters { justify-content: flex-start; } }
+@media (max-width: 1000px) { .admin-tasks-stat-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } .admin-tasks-table { min-width: 930px; } }
+@media (max-width: 700px) { .admin-tasks-stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; } .admin-tasks-toolbar { padding: 16px 14px 13px; } .admin-tasks-pagination { align-items: flex-start; flex-direction: column; padding: 12px 14px; } .admin-tasks-page-controls { width: 100%; justify-content: flex-end; } .admin-tasks-feedback, .admin-tasks-loading, .admin-tasks-empty { margin-right: 14px; margin-left: 14px; } }
+@media (max-width: 600px) {
+    .admin-tasks-header { align-items: flex-start; flex-direction: column; gap: 14px; margin-bottom: 19px; }
+    .admin-tasks-header > .admin-tasks-primary-button { min-height: 35px; padding: 0 10px; white-space: nowrap; }
+    .admin-tasks-stat-grid { gap: 10px; }
+    .admin-tasks-stat-card { min-height: 98px; padding: 14px; }
+    .admin-tasks-panel { margin-top: 14px; }
+    .admin-tasks-toolbar { gap: 14px; padding: 16px 14px; }
+    .admin-tasks-filters { display: grid; width: 100%; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .admin-tasks-search { width: 100%; grid-column: 1 / -1; }
+    .admin-tasks-filters > label:not(.admin-tasks-search), .admin-tasks-filters select, .admin-tasks-date-filter input { width: 100%; max-width: none; }
+    .admin-users-refresh-button, .admin-tasks-clear-button { justify-self: start; }
+    .admin-tasks-table-wrap { overflow: visible; padding: 0 12px; }
+    .admin-tasks-table { display: block; min-width: 0; }
+    .admin-tasks-table thead { display: none; }
+    .admin-tasks-table tbody { display: grid; gap: 9px; }
+    .admin-tasks-table tbody tr { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 10px 12px; border: 1px solid var(--color-border); border-radius: 11px; background: var(--color-surface); }
+    .admin-tasks-table tbody tr:hover { background: var(--color-surface); }
+    .admin-tasks-table td, .admin-tasks-table td:first-child, .admin-tasks-table td:last-child { display: grid; height: auto; min-width: 0; gap: 4px; padding: 7px 0; border: 0; white-space: normal; }
+    .admin-tasks-table td::before { content: attr(data-label); color: var(--color-text-secondary); font-size: 9px; }
+    .admin-tasks-table td:first-child { grid-column: 1 / -1; }
+    .admin-tasks-task-copy { width: 100%; min-width: 0; }
+    .admin-tasks-task-copy strong, .admin-tasks-task-copy span { max-width: 100%; white-space: normal; overflow-wrap: anywhere; }
+    .admin-tasks-identity { min-width: 0; }
+    .admin-tasks-user-copy strong, .admin-tasks-user-copy span { max-width: 100%; overflow-wrap: anywhere; }
+    .admin-tasks-table td:last-child { grid-column: 1 / -1; border-top: 1px solid var(--color-border); }
+    .admin-tasks-actions { justify-content: flex-start; }
+    .admin-tasks-actions a, .admin-tasks-actions button { padding: 6px 8px; font-size: 10px; }
+    .admin-tasks-pagination { align-items: flex-start; flex-direction: column; justify-content: center; padding: 12px 14px; }
+    .admin-tasks-feedback, .admin-tasks-loading, .admin-tasks-empty { margin-right: 14px; margin-left: 14px; }
+}
+@media (max-width: 380px) { .admin-tasks-stat-card { grid-template-columns: 32px minmax(0, 1fr); gap: 9px; padding: 12px 10px; } .admin-tasks-stat-icon { width: 31px; height: 31px; } .admin-tasks-stat-card strong { font-size: 21px; } }
