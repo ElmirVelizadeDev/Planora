@@ -9,13 +9,13 @@
             <form class="auth-form" @submit.prevent="submit">
                 <label class="auth-field">
                     <span>Full name</span>
-                    <input v-model.trim="name" type="text" name="name" autocomplete="name" required maxlength="255" :aria-invalid="Boolean(fieldErrors.name)" :aria-describedby="fieldErrors.name ? 'register-name-error' : undefined" @input="clearFieldError('name')">
-                    <small v-if="fieldErrors.name" id="register-name-error" class="auth-field-error">{{ fieldErrors.name[0] }}</small>
+                    <input v-model="name" type="text" name="name" autocomplete="name" required minlength="2" maxlength="50" :aria-invalid="Boolean(fieldErrors.name || nameClientError)" :aria-describedby="fieldErrors.name || nameClientError ? 'register-name-error' : undefined" @input="onNameInput">
+                    <small v-if="fieldErrors.name || nameClientError" id="register-name-error" class="auth-field-error">{{ fieldErrors.name?.[0] || nameClientError }}</small>
                 </label>
                 <label class="auth-field">
                     <span>Email address</span>
-                    <input v-model.trim="email" type="email" name="email" autocomplete="email" required :aria-invalid="Boolean(fieldErrors.email)" :aria-describedby="fieldErrors.email ? 'register-email-error' : undefined" @input="clearFieldError('email')">
-                    <small v-if="fieldErrors.email" id="register-email-error" class="auth-field-error">{{ fieldErrors.email[0] }}</small>
+                    <input v-model="email" type="email" name="email" autocomplete="email" required maxlength="255" :aria-invalid="Boolean(fieldErrors.email || emailClientError)" :aria-describedby="fieldErrors.email || emailClientError ? 'register-email-error' : undefined" @input="clearFieldError('email')" @blur="email = email.trim().toLowerCase()">
+                    <small v-if="fieldErrors.email || emailClientError" id="register-email-error" class="auth-field-error">{{ fieldErrors.email?.[0] || emailClientError }}</small>
                 </label>
                 <div class="auth-field">
                     <label for="register-password">Password</label>
@@ -53,6 +53,14 @@
                     <small v-else-if="passwordConfirmation && password === passwordConfirmation" id="password-confirmation-feedback" class="auth-password-match">Passwords match.</small>
                     <small v-else id="password-confirmation-feedback" class="auth-field-hint">Enter the same password again.</small>
                 </div>
+                <div class="auth-terms-field">
+                    <input id="register-terms-accepted" v-model="termsAccepted" type="checkbox" name="terms_accepted" aria-label="I agree to the Terms & Conditions and acknowledge that I have read the Privacy Policy" :aria-invalid="Boolean(fieldErrors.terms_accepted)" :aria-describedby="fieldErrors.terms_accepted ? 'register-terms-error' : undefined" @change="clearFieldError('terms_accepted')">
+                    <div class="auth-terms-copy">
+                        <span>I agree to the <RouterLink :to="{ name: 'terms-and-conditions' }">Terms &amp; Conditions</RouterLink>.</span>
+                        <span>I acknowledge that I have read the <RouterLink :to="{ name: 'privacy-policy' }">Privacy Policy</RouterLink>.</span>
+                        <small v-if="fieldErrors.terms_accepted" id="register-terms-error" class="auth-field-error" role="alert">{{ fieldErrors.terms_accepted[0] }}</small>
+                    </div>
+                </div>
                 <p class="auth-info"><span class="auth-alert-icon" aria-hidden="true">i</span><span>A six-digit verification code will be prepared for the next step. Your account is created only after you verify it.</span></p>
                 <p v-if="errorMessage" class="auth-error" role="alert"><span class="auth-alert-icon" aria-hidden="true">!</span><span>{{ errorMessage }}</span></p>
                 <button class="auth-submit" type="submit" :disabled="loading" :aria-busy="loading">
@@ -70,6 +78,9 @@
 import { computed, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '../../features/auth/stores/authStore.js';
+import { normalizePersonName, validatePersonName, validateSupportedEmail } from '../../shared/validation.js';
+
+defineOptions({ name: 'Register' });
 
 const router = useRouter();
 const auth = useAuthStore();
@@ -77,6 +88,7 @@ const name = ref('');
 const email = ref('');
 const password = ref('');
 const passwordConfirmation = ref('');
+const termsAccepted = ref(false);
 const showPassword = ref(false);
 const showPasswordConfirmation = ref(false);
 const loading = ref(false);
@@ -85,6 +97,13 @@ const fieldErrors = ref({});
 
 const confirmationMismatch = computed(() => Boolean(passwordConfirmation.value) && password.value !== passwordConfirmation.value);
 const passwordAssessment = computed(() => assessPassword(password.value));
+const nameClientError = computed(() => name.value ? validatePersonName(name.value) : '');
+const emailClientError = computed(() => email.value ? validateSupportedEmail(email.value) : '');
+
+function onNameInput() {
+    name.value = normalizePersonName(name.value);
+    clearFieldError('name');
+}
 
 function clearFieldError(field) {
     if (fieldErrors.value[field]) {
@@ -128,9 +147,29 @@ function assessPassword(value) {
 }
 
 async function submit() {
+    if (loading.value) return;
     loading.value = true;
     errorMessage.value = '';
     fieldErrors.value = {};
+
+    if (!termsAccepted.value) {
+        fieldErrors.value = { terms_accepted: ['Please agree to the Terms & Conditions and acknowledge that you have read the Privacy Policy to continue.'] };
+        loading.value = false;
+        return;
+    }
+
+    name.value = normalizePersonName(name.value);
+    email.value = email.value.trim().toLowerCase();
+    const nameError = validatePersonName(name.value);
+    const emailError = validateSupportedEmail(email.value);
+    if (nameError || emailError) {
+        fieldErrors.value = {
+            ...(nameError ? { name: [nameError] } : {}),
+            ...(emailError ? { email: [emailError] } : {}),
+        };
+        loading.value = false;
+        return;
+    }
 
     if (password.value !== passwordConfirmation.value) {
         fieldErrors.value = { password_confirmation: ['The password confirmation does not match.'] };
@@ -154,9 +193,15 @@ async function submit() {
             email: email.value,
             password: password.value,
             password_confirmation: passwordConfirmation.value,
+            terms_accepted: termsAccepted.value,
         });
         sessionStorage.setItem('planora.pending-registration-email', result.email || email.value.trim().toLowerCase());
         sessionStorage.setItem('planora.pending-registration-delivery', result.deliveryMode || 'email');
+        name.value = '';
+        email.value = '';
+        password.value = '';
+        passwordConfirmation.value = '';
+        termsAccepted.value = false;
         await router.replace({ name: 'verify-email' });
     } catch (error) {
         fieldErrors.value = error.response?.data?.errors || {};

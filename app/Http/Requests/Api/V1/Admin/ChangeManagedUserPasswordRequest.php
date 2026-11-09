@@ -19,7 +19,7 @@ class ChangeManagedUserPasswordRequest extends FormRequest
     {
         return [
             'current_password' => ['required', 'string'],
-            'password' => ['required', 'string', 'confirmed', Password::min(12)->mixedCase()->numbers()],
+            'password' => ['required', 'string', 'max:128', 'confirmed', Password::min(12)->mixedCase()->numbers()],
         ];
     }
 

@@ -11,6 +11,8 @@ export const routes = [
         children: [
             { path: 'login', name: 'login', component: authPage('Login'), meta: { guestOnly: true } },
             { path: 'register', name: 'register', component: authPage('Register'), meta: { guestOnly: true } },
+            { path: 'terms-and-conditions', name: 'terms-and-conditions', component: () => import('../pages/public/TermsAndConditions.vue') },
+            { path: 'privacy-policy', name: 'privacy-policy', component: () => import('../pages/public/PrivacyPolicy.vue') },
             { path: 'forgot-password', name: 'forgot-password', component: authPage('ForgotPassword') },
             { path: 'reset-password', name: 'reset-password', component: authPage('ResetPassword') },
             { path: 'verify-email', name: 'verify-email', component: authPage('VerifyEmail'), meta: { guestOnly: true } },

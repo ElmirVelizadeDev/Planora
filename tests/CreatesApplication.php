@@ -16,6 +16,17 @@ trait CreatesApplication
 
         $app->make(Kernel::class)->bootstrap();
 
+        if ($app->environment('testing')) {
+            $driver = config('database.default');
+            $database = config("database.connections.{$driver}.database");
+
+            if ($driver !== 'mysql' || ! is_string($database) || ! preg_match('/(^|[_-])test(?:ing)?($|[_-])/i', $database)) {
+                throw new \RuntimeException(
+                    'Tests require an isolated MySQL database whose name contains "test". Configure it in .env.testing; refusing to use a development database.'
+                );
+            }
+        }
+
         return $app;
     }
 }

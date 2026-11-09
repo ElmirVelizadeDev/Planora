@@ -13,10 +13,14 @@ use App\Services\Api\V1\Admin\UserActivityLogger;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
+    private static ?string $dummyPasswordHash = null;
+
     public function login(LoginRequest $request, UserActivityLogger $activityLogger): JsonResponse
     {
         $guard = Auth::guard('web');
@@ -25,36 +29,25 @@ class AuthController extends Controller
         // Remove a prior account's session or recaller before switching identities.
         if ($guard->check() || $request->cookies->has($guard->getRecallerName())) {
             $guard->logout();
-        }
-
-        if (! $guard->attempt($request->only('email', 'password'), $request->boolean('remember'))) {
-            throw ValidationException::withMessages([
-                'email' => [trans('auth.failed')],
-            ]);
-        }
-
-        $user = $guard->user();
-
-        if (! in_array($user->role, \App\Models\User::ROLES, true) || $user->status !== 'active') {
-            $guard->logout();
             $request->session()->invalidate();
             $request->session()->regenerateToken();
-
-            return response()->json(['message' => 'This account is not authorized to sign in.'], 403);
         }
 
-        if (! $user->email_verified_at) {
-            $guard->logout();
-            $request->session()->invalidate();
-            $request->session()->regenerateToken();
-
-            return response()->json(['message' => 'Verify your email address before signing in.'], 403);
+        $user = \App\Models\User::query()->where('email', $request->validated('email'))->first();
+        $passwordHash = $user?->getAuthPassword() ?? (self::$dummyPasswordHash ??= Hash::make(Str::random(48)));
+        if (! $user || ! Hash::check($request->validated('password'), $passwordHash)
+            || ! in_array($user->role, \App\Models\User::ROLES, true)
+            || $user->status !== 'active'
+            || ! $user->email_verified_at) {
+            throw ValidationException::withMessages(['email' => [trans('auth.failed')]]);
         }
 
+        $guard->login($user, $request->boolean('remember'));
         $user->last_login_at = now();
         $user->save();
         $activityLogger->record('auth.login', 'User signed in.', $user, $user);
         $request->session()->regenerate();
+        $request->session()->put('password_hash_web', $user->getAuthPassword());
 
         return response()->json([
             'user' => UserResource::make($user)->resolve(),
@@ -68,8 +61,8 @@ class AuthController extends Controller
 
         return response()->json([
             'message' => $databaseOtp
-                ? 'A verification code is ready in the development database.'
-                : 'A verification code has been sent to your email address.',
+                ? 'If this email can be registered, a local verification code is available.'
+                : 'If this email can be registered, a verification code will be sent.',
             'email' => $request->validated('email'),
             'expires_in' => 300,
             'resend_in' => 60,
@@ -82,6 +75,7 @@ class AuthController extends Controller
         $user = $registration->verify($request->validated('email'), $request->validated('code'));
         Auth::guard('web')->login($user);
         $request->session()->regenerate();
+        $request->session()->put('password_hash_web', $user->getAuthPassword());
 
         return response()->json([
             'user' => UserResource::make($user)->resolve(),
@@ -95,8 +89,8 @@ class AuthController extends Controller
 
         return response()->json([
             'message' => $databaseOtp
-                ? 'A new verification code is ready in the development database.'
-                : 'A new verification code has been sent.',
+                ? 'If a pending registration exists, a new local verification code is available.'
+                : 'If a pending registration exists, a new verification code will be sent.',
             'expires_in' => 300,
             'resend_in' => 60,
             'delivery_mode' => $databaseOtp ? 'database' : 'email',

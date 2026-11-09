@@ -103,6 +103,7 @@ class UserManagementService
             abort_unless($actor->is($user) && $actor->role === 'admin', 403, 'You can only change your own administrator password.');
             $user = User::query()->lockForUpdate()->findOrFail($user->id);
             $user->password = Hash::make($password);
+            $user->setRememberToken(\Illuminate\Support\Str::random(60));
             $user->save();
             $this->activityLogger->record('user.password_changed', 'Administrator changed their account password.', $user, $actor);
         });

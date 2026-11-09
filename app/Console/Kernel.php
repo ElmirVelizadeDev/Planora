@@ -14,6 +14,7 @@ class Kernel extends ConsoleKernel
     {
         // $schedule->command('inspire')->hourly();
         $schedule->command('auth:purge-expired-registrations')->everyFiveMinutes();
+        $schedule->command('auth:purge-expired-password-recovery-otps')->everyFiveMinutes();
     }
 
     /**

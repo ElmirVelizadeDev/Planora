@@ -22,6 +22,15 @@ export async function resendRegistrationCode(payload) {
     return api.post('/auth/register/resend', payload);
 }
 
+export async function requestPasswordRecovery(payload) {
+    await initializeCsrfProtection();
+    return api.post('/auth/password/forgot', payload);
+}
+
+export const resendPasswordRecovery = (payload) => api.post('/auth/password/resend', payload);
+export const verifyPasswordRecovery = (payload) => api.post('/auth/password/verify', payload);
+export const resetPassword = (payload) => api.post('/auth/password/reset', payload);
+
 export const logout = () => api.post('/auth/logout');
 
 export const initializeCsrfProtection = () => api.get(

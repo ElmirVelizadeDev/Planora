@@ -25,18 +25,18 @@
                 <div class="admin-user-create-fields">
                     <div class="admin-user-create-field">
                         <label for="first-name">First name <span aria-hidden="true">*</span></label>
-                        <input id="first-name" v-model.trim="form.first_name" type="text" autocomplete="given-name" maxlength="127" placeholder="e.g. Alex" :aria-invalid="Boolean(errors.first_name)" :aria-describedby="errors.first_name ? 'first-name-error' : undefined" @input="clearError('first_name')">
+                        <input id="first-name" v-model="form.first_name" type="text" autocomplete="given-name" minlength="2" maxlength="50" placeholder="e.g. Alex" :aria-invalid="Boolean(errors.first_name)" :aria-describedby="errors.first_name ? 'first-name-error' : undefined" @input="form.first_name = normalizePersonName(form.first_name); clearError('first_name')">
                         <small v-if="errors.first_name" id="first-name-error" class="admin-user-create-field-error">{{ errors.first_name }}</small>
                     </div>
                     <div class="admin-user-create-field">
                         <label for="last-name">Last name <span aria-hidden="true">*</span></label>
-                        <input id="last-name" v-model.trim="form.last_name" type="text" autocomplete="family-name" maxlength="127" placeholder="e.g. Morgan" :aria-invalid="Boolean(errors.last_name || errors.name)" :aria-describedby="errors.last_name ? 'last-name-error' : errors.name ? 'name-error' : undefined" @input="clearError('last_name'); clearError('name')">
+                        <input id="last-name" v-model="form.last_name" type="text" autocomplete="family-name" minlength="2" maxlength="50" placeholder="e.g. Morgan" :aria-invalid="Boolean(errors.last_name || errors.name)" :aria-describedby="errors.last_name ? 'last-name-error' : errors.name ? 'name-error' : undefined" @input="form.last_name = normalizePersonName(form.last_name); clearError('last_name'); clearError('name')">
                         <small v-if="errors.last_name" id="last-name-error" class="admin-user-create-field-error">{{ errors.last_name }}</small>
                         <small v-else-if="errors.name" id="name-error" class="admin-user-create-field-error">{{ errors.name }}</small>
                     </div>
                     <div class="admin-user-create-field admin-user-create-field-wide">
                         <label for="email-address">Email address <span aria-hidden="true">*</span></label>
-                        <input id="email-address" v-model.trim="form.email" type="email" autocomplete="email" maxlength="255" placeholder="name@example.com" :aria-invalid="Boolean(errors.email)" :aria-describedby="errors.email ? 'email-error' : undefined" @input="clearError('email')">
+                        <input id="email-address" v-model="form.email" type="email" autocomplete="email" maxlength="255" placeholder="name@example.com" :aria-invalid="Boolean(errors.email)" :aria-describedby="errors.email ? 'email-error' : undefined" @input="clearError('email')" @blur="form.email = form.email.trim().toLowerCase()">
                         <small v-if="errors.email" id="email-error" class="admin-user-create-field-error">{{ errors.email }}</small>
                     </div>
                     <div class="admin-user-create-field">
@@ -84,7 +84,7 @@
                     <div class="admin-user-create-field">
                         <label for="password">Password <span aria-hidden="true">*</span></label>
                         <div class="admin-user-create-password-wrap">
-                            <input id="password" v-model="form.password" :type="showPassword ? 'text' : 'password'" autocomplete="new-password" minlength="12" placeholder="Create a strong password" :aria-invalid="Boolean(errors.password)" :aria-describedby="errors.password ? 'password-error password-hint' : 'password-hint'" @input="clearError('password')">
+                            <input id="password" v-model="form.password" :type="showPassword ? 'text' : 'password'" autocomplete="new-password" minlength="12" maxlength="128" placeholder="Create a strong password" :aria-invalid="Boolean(errors.password)" :aria-describedby="errors.password ? 'password-error password-hint' : 'password-hint'" @input="clearError('password')">
                             <button class="admin-user-create-password-toggle" type="button" :aria-label="showPassword ? 'Hide password' : 'Show password'" :aria-pressed="showPassword" @click="showPassword = !showPassword">{{ showPassword ? 'Hide' : 'Show' }}</button>
                         </div>
                         <small id="password-hint" class="admin-user-create-hint">At least 12 characters, with uppercase, lowercase and a number.</small>
@@ -93,7 +93,7 @@
                     <div class="admin-user-create-field">
                         <label for="confirm-password">Confirm password <span aria-hidden="true">*</span></label>
                         <div class="admin-user-create-password-wrap">
-                            <input id="confirm-password" v-model="form.password_confirmation" :type="showConfirmation ? 'text' : 'password'" autocomplete="new-password" minlength="12" placeholder="Enter the password again" :aria-invalid="Boolean(errors.password_confirmation)" :aria-describedby="errors.password_confirmation ? 'confirm-password-error' : undefined" @input="clearError('password_confirmation')">
+                            <input id="confirm-password" v-model="form.password_confirmation" :type="showConfirmation ? 'text' : 'password'" autocomplete="new-password" minlength="12" maxlength="128" placeholder="Enter the password again" :aria-invalid="Boolean(errors.password_confirmation)" :aria-describedby="errors.password_confirmation ? 'confirm-password-error' : undefined" @input="clearError('password_confirmation')">
                             <button class="admin-user-create-password-toggle" type="button" :aria-label="showConfirmation ? 'Hide confirmation password' : 'Show confirmation password'" :aria-pressed="showConfirmation" @click="showConfirmation = !showConfirmation">{{ showConfirmation ? 'Hide' : 'Show' }}</button>
                         </div>
                         <small v-if="errors.password_confirmation" id="confirm-password-error" class="admin-user-create-field-error">{{ errors.password_confirmation }}</small>
@@ -145,6 +145,7 @@
 import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import api from '../../../shared/services/api.js';
+import { normalizePersonName, validatePersonName, validateSupportedEmail } from '../../../shared/validation.js';
 
 const router = useRouter();
 const form = reactive({
@@ -183,23 +184,28 @@ function validateForm() {
     Object.keys(errors).forEach((field) => delete errors[field]);
     formError.value = '';
 
+    form.first_name = normalizePersonName(form.first_name);
+    form.last_name = normalizePersonName(form.last_name);
+    form.email = form.email.trim().toLowerCase();
     if (!form.first_name) errors.first_name = 'First name is required.';
+    else if (validatePersonName(form.first_name)) errors.first_name = validatePersonName(form.first_name);
     if (!form.last_name) errors.last_name = 'Last name is required.';
+    else if (validatePersonName(form.last_name)) errors.last_name = validatePersonName(form.last_name);
     if (!form.email) errors.email = 'Email address is required.';
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) errors.email = 'Enter a valid email address.';
+    else if (validateSupportedEmail(form.email)) errors.email = validateSupportedEmail(form.email);
     if (form.phone && !/^\+?[0-9().\s-]{7,32}$/.test(form.phone)) errors.phone = 'Enter a valid phone number using digits and standard phone punctuation.';
     if (form.role === 'moderator' && form.moderator_permissions.includes('users.status.manage') && !form.moderator_permissions.includes('users.view')) {
         errors.moderator_permissions = 'User visibility is required for status management.';
     }
     if (!form.password) errors.password = 'Password is required.';
-    else if (form.password.length < 12 || !/[A-Z]/.test(form.password) || !/[a-z]/.test(form.password) || !/\d/.test(form.password)) {
+    else if (form.password.length < 12 || form.password.length > 128 || !/[A-Z]/.test(form.password) || !/[a-z]/.test(form.password) || !/\d/.test(form.password)) {
         errors.password = 'Use at least 12 characters, including uppercase, lowercase and a number.';
     }
     if (!form.password_confirmation) errors.password_confirmation = 'Please confirm the password.';
     else if (form.password !== form.password_confirmation) errors.password_confirmation = 'Passwords do not match.';
 
-    if (`${form.first_name} ${form.last_name}`.trim().length > 255) {
-        errors.last_name = 'The combined name must be 255 characters or fewer.';
+    if (Array.from(`${form.first_name} ${form.last_name}`.trim()).length > 50) {
+        errors.last_name = 'The full name must be 50 characters or fewer.';
     }
 
     return Object.keys(errors).length === 0;

@@ -5,17 +5,18 @@
             <p class="auth-eyebrow">Welcome back</p>
             <h1 id="login-title">Sign in to Planora</h1>
             <p class="auth-description">Enter your details to continue to your workspace.</p>
+            <p v-if="$route.query.reset === 'success'" class="auth-success" role="status">Your password has been updated. Sign in with your new password.</p>
 
             <form class="auth-form" @submit.prevent="submit">
                 <label class="auth-field">
                     <span>Email address</span>
-                    <input v-model.trim="email" type="email" name="email" autocomplete="username" required :aria-invalid="Boolean(fieldErrors.email)" :aria-describedby="fieldErrors.email ? 'login-email-error' : undefined" @input="clearFieldError('email')">
+                    <input v-model.trim="email" type="email" name="email" autocomplete="username" required maxlength="255" :aria-invalid="Boolean(fieldErrors.email)" :aria-describedby="fieldErrors.email ? 'login-email-error' : undefined" @input="clearFieldError('email')">
                     <small v-if="fieldErrors.email" id="login-email-error" class="auth-field-error">{{ fieldErrors.email[0] }}</small>
                 </label>
                 <div class="auth-field">
                     <label for="login-password">Password</label>
                     <div class="auth-password-control">
-                        <input id="login-password" v-model="password" :type="showPassword ? 'text' : 'password'" name="password" autocomplete="current-password" required :aria-invalid="Boolean(fieldErrors.password)" :aria-describedby="fieldErrors.password ? 'login-password-error' : undefined" @input="clearFieldError('password')">
+                        <input id="login-password" v-model="password" :type="showPassword ? 'text' : 'password'" name="password" autocomplete="current-password" required maxlength="128" :aria-invalid="Boolean(fieldErrors.password)" :aria-describedby="fieldErrors.password ? 'login-password-error' : undefined" @input="clearFieldError('password')">
                         <button class="auth-password-toggle" type="button" :aria-label="showPassword ? 'Hide password' : 'Show password'" :aria-pressed="showPassword" @click="showPassword = !showPassword">
                             <svg v-if="!showPassword" viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12s3.4-6 9.5-6 9.5 6 9.5 6-3.4 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.6"/></svg>
                             <svg v-else viewBox="0 0 24 24" aria-hidden="true"><path d="m3 3 18 18M10.6 6.2A10.8 10.8 0 0 1 12 6c6.1 0 9.5 6 9.5 6a15 15 0 0 1-3.1 3.6M6.2 6.2C3.8 7.7 2.5 12 2.5 12s3.4 6 9.5 6c1.2 0 2.3-.2 3.3-.6"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>

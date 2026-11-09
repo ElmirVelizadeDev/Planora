@@ -7,7 +7,7 @@
             </div>
             <h1 id="verify-title">{{ isDatabaseDelivery ? 'Verify your email' : 'Check your inbox' }}</h1>
             <p class="auth-description">
-                <template v-if="isDatabaseDelivery">A six-digit code is ready in the local development database for <strong>{{ maskedEmail }}</strong>. Read it from <code>email_verification_otps.otp_code</code>, then enter it below.</template>
+                <template v-if="isDatabaseDelivery">Run <code>php artisan auth:local-otp registration {{ email }}</code> in the project terminal to generate a local six-digit code for <strong>{{ maskedEmail }}</strong>.</template>
                 <template v-else>We sent a six-digit verification code to <strong>{{ maskedEmail }}</strong>. Enter it below to activate your account.</template>
             </p>
 
@@ -154,8 +154,8 @@ async function resendCode() {
         await auth.resendRegistrationCode({ email: email.value });
         digits.value = Array(6).fill('');
         successMessage.value = isDatabaseDelivery.value
-            ? 'A new verification code is ready in the development database.'
-            : 'A new verification code has been sent.';
+            ? 'If a pending registration exists, a new local code can be generated from the project terminal.'
+            : 'If a pending registration exists, a new verification code will be sent.';
         startCountdown(60);
         inputRefs.value[0]?.focus();
     } catch (error) {

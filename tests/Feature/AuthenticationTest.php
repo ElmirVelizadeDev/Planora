@@ -31,10 +31,29 @@ class AuthenticationTest extends TestCase
     {
         return array_merge([
             'name' => 'Authentication Test User',
-            'email' => 'auth-'.Str::uuid().'@example.test',
+            'email' => 'auth-'.Str::uuid().'@gmail.com',
             'password' => 'Test-password-123',
             'password_confirmation' => 'Test-password-123',
+            'terms_accepted' => true,
         ], $overrides);
+    }
+
+    public function test_registration_requires_terms_acceptance_before_creating_pending_registration_or_otp(): void
+    {
+        Mail::fake();
+        foreach ([[], ['terms_accepted' => false]] as $acceptance) {
+            $attributes = $this->attributes();
+            if (! array_key_exists('terms_accepted', $acceptance)) unset($attributes['terms_accepted']);
+            $attributes = array_merge($attributes, $acceptance);
+            $this->withHeaders($this->statefulHeaders())
+                ->postJson('/api/v1/auth/register', $attributes)
+                ->assertUnprocessable()
+                ->assertJsonValidationErrors('terms_accepted');
+
+            $this->assertDatabaseMissing('pending_registrations', ['email' => $attributes['email']]);
+            $this->assertDatabaseMissing('email_verification_otps', ['email' => $attributes['email']]);
+        }
+        Mail::assertNothingSent();
     }
 
     private function sentOtp(string $email): string
@@ -79,17 +98,18 @@ class AuthenticationTest extends TestCase
     {
         $this->assertTrue(Schema::hasTable('email_verification_otps'));
         $this->assertTrue(Schema::hasColumn('email_verification_otps', 'otp_hash'));
-        $this->assertTrue(Schema::hasColumn('email_verification_otps', 'otp_code'));
+        $this->assertFalse(Schema::hasColumn('email_verification_otps', 'otp_code'));
         $this->assertTrue(Schema::hasColumn('email_verification_otps', 'expires_at'));
         $this->assertFalse(Schema::hasColumn('pending_registrations', 'otp_hash'));
         $this->assertFalse(Schema::hasColumn('users', 'otp_hash'));
         $this->assertFalse(Schema::hasColumn('users', 'otp'));
     }
 
-    public function test_local_registration_stores_readable_otp_without_sending_email_and_verifies_it(): void
+    public function test_local_registration_keeps_otp_hashed_and_exposes_it_only_through_local_artisan_command(): void
     {
         Mail::fake();
         $this->app['env'] = 'local';
+        config(['app.debug' => true]);
         $this->withoutMiddleware(\App\Http\Middleware\VerifyCsrfToken::class);
         $attributes = $this->attributes();
 
@@ -97,21 +117,25 @@ class AuthenticationTest extends TestCase
             ->postJson('/api/v1/auth/register', $attributes)
             ->assertAccepted()
             ->assertJsonPath('delivery_mode', 'database')
-            ->assertJsonPath('message', 'A verification code is ready in the development database.')
+            ->assertJsonPath('message', 'If this email can be registered, a local verification code is available.')
             ->assertJsonMissingPath('otp_code');
 
         $this->assertDatabaseMissing('users', ['email' => $attributes['email']]);
         $pending = PendingRegistration::where('email', $attributes['email'])->firstOrFail();
         $this->assertTrue(Hash::check($attributes['password'], $pending->password_hash));
         $otp = EmailVerificationOtp::where('email', $attributes['email'])->firstOrFail();
-        $this->assertMatchesRegularExpression('/^\d{6}$/', $otp->otp_code);
-        $this->assertTrue(Hash::check($otp->otp_code, $otp->otp_hash));
+        $this->assertNull($otp->otp_code);
+        $this->assertSame(0, \Illuminate\Support\Facades\Artisan::call('auth:local-otp', ['flow' => 'registration', 'email' => $attributes['email']]));
+        $output = \Illuminate\Support\Facades\Artisan::output();
+        preg_match('/\): (\d{6})/', $output, $matches);
+        $this->assertNotEmpty($matches[1] ?? null, $output);
+        $this->assertTrue(Hash::check($matches[1], $otp->fresh()->otp_hash));
         Mail::assertNothingSent();
 
         $this->withHeaders($this->statefulHeaders())
             ->postJson('/api/v1/auth/register/verify', [
                 'email' => $attributes['email'],
-                'code' => $otp->otp_code,
+                'code' => $matches[1],
             ])
             ->assertOk()
             ->assertJsonPath('user.email', $attributes['email'])
@@ -127,6 +151,7 @@ class AuthenticationTest extends TestCase
     {
         Mail::fake();
         $this->app['env'] = 'local';
+        config(['app.debug' => true]);
         $this->withoutMiddleware(\App\Http\Middleware\VerifyCsrfToken::class);
         $baseTime = Carbon::now('UTC');
         Carbon::setTestNow($baseTime);
@@ -136,16 +161,23 @@ class AuthenticationTest extends TestCase
             $this->withHeaders($this->statefulHeaders())
                 ->postJson('/api/v1/auth/register', $attributes)
                 ->assertAccepted()->assertJsonPath('delivery_mode', 'database');
-            $oldCode = EmailVerificationOtp::where('email', $attributes['email'])->firstOrFail()->otp_code;
+            $otp = EmailVerificationOtp::where('email', $attributes['email'])->firstOrFail();
+            $oldHash = $otp->otp_hash;
+            $this->assertSame(0, \Illuminate\Support\Facades\Artisan::call('auth:local-otp', ['flow' => 'registration', 'email' => $attributes['email']]));
+            preg_match('/\): (\d{6})/', \Illuminate\Support\Facades\Artisan::output(), $first);
+            $oldCode = $first[1];
 
             Carbon::setTestNow($baseTime->copy()->addSeconds(61));
             $this->withHeaders($this->statefulHeaders())
                 ->postJson('/api/v1/auth/register/resend', ['email' => $attributes['email']])
                 ->assertOk()
                 ->assertJsonPath('delivery_mode', 'database')
-                ->assertJsonPath('message', 'A new verification code is ready in the development database.');
+                ->assertJsonPath('message', 'If a pending registration exists, a new local verification code is available.');
 
-            $newCode = EmailVerificationOtp::where('email', $attributes['email'])->firstOrFail()->otp_code;
+            $this->assertNotSame($oldHash, EmailVerificationOtp::where('email', $attributes['email'])->value('otp_hash'));
+            $this->assertSame(0, \Illuminate\Support\Facades\Artisan::call('auth:local-otp', ['flow' => 'registration', 'email' => $attributes['email']]));
+            preg_match('/\): (\d{6})/', \Illuminate\Support\Facades\Artisan::output(), $second);
+            $newCode = $second[1];
             $this->assertNotSame($oldCode, $newCode);
             Mail::assertNothingSent();
 
@@ -186,8 +218,46 @@ class AuthenticationTest extends TestCase
 
         Auth::guard('web')->logout();
         $this->withHeaders($this->statefulHeaders())
+            ->postJson('/api/v1/auth/login', [
+                'email' => $attributes['email'],
+                'password' => $attributes['password'],
+            ])->assertOk()->assertJsonPath('user.email', $attributes['email']);
+        Auth::guard('web')->logout();
+        $this->withHeaders($this->statefulHeaders())
             ->postJson('/api/v1/auth/register/verify', ['email' => $attributes['email'], 'code' => $code])
             ->assertUnprocessable()->assertJsonValidationErrors('code');
+    }
+
+    public function test_login_authenticated_refresh_logout_and_protected_route_rejection_journey(): void
+    {
+        $user = User::factory()->create([
+            'email' => 'journey-'.Str::uuid().'@gmail.com',
+            'password' => Hash::make('Test-password-123'),
+        ]);
+
+        $login = $this->withHeaders($this->statefulHeaders())->postJson('/api/v1/auth/login', [
+            'email' => $user->email,
+            'password' => 'Test-password-123',
+        ])->assertOk();
+        $sessionCookie = $login->getCookie(config('session.cookie'), false);
+        $this->assertNotNull($sessionCookie);
+
+        Auth::forgetGuards();
+        $this->withCredentials()->withUnencryptedCookie(config('session.cookie'), $sessionCookie->getValue())
+            ->withHeaders($this->statefulHeaders())
+            ->getJson('/api/v1/user')->assertOk()->assertJsonPath('email', $user->email);
+
+        Auth::forgetGuards();
+        $logout = $this->withCredentials()->withUnencryptedCookie(config('session.cookie'), $sessionCookie->getValue())
+            ->withHeaders($this->statefulHeaders())
+            ->postJson('/api/v1/auth/logout')->assertOk()->assertJsonPath('message', 'Logged out.');
+        $logoutCookie = $logout->getCookie(config('session.cookie'), false);
+        $this->assertNotNull($logoutCookie);
+
+        Auth::forgetGuards();
+        $this->withCredentials()->withUnencryptedCookie(config('session.cookie'), $logoutCookie->getValue())
+            ->withHeaders($this->statefulHeaders())
+            ->getJson('/api/v1/user')->assertUnauthorized();
     }
 
     public function test_registration_rejects_client_supplied_roles(): void
@@ -202,17 +272,67 @@ class AuthenticationTest extends TestCase
         $this->assertDatabaseMissing('users', ['email' => $attributes['email']]);
     }
 
-    public function test_registration_rejects_duplicate_email_addresses(): void
+    public function test_registration_does_not_disclose_duplicate_email_addresses_or_create_an_otp(): void
     {
-        $existing = User::factory()->create();
+        $existing = User::factory()->create(['email' => 'duplicate-'.Str::uuid().'@gmail.com']);
         $attributes = $this->attributes(['email' => $existing->email]);
 
         $this->withHeaders($this->statefulHeaders())
             ->postJson('/api/v1/auth/register', $attributes)
-            ->assertUnprocessable()
-            ->assertJsonValidationErrors('email');
+            ->assertAccepted()
+            ->assertJsonPath('message', 'If this email can be registered, a verification code will be sent.');
 
         $this->assertSame(1, User::where('email', $existing->email)->count());
+        $this->assertDatabaseMissing('pending_registrations', ['email' => $existing->email]);
+        $this->assertDatabaseMissing('email_verification_otps', ['email' => $existing->email]);
+    }
+
+    public function test_login_uses_a_generic_failure_and_is_rate_limited_by_ip(): void
+    {
+        $email = 'login-limit-'.Str::uuid().'@gmail.com';
+
+        for ($attempt = 0; $attempt < 10; $attempt++) {
+            $this->withHeaders($this->statefulHeaders())
+                ->postJson('/api/v1/auth/login', ['email' => $email, 'password' => 'Wrong-password-123'])
+                ->assertUnprocessable()->assertJsonPath('message', trans('auth.failed'));
+        }
+
+        $this->withHeaders($this->statefulHeaders())
+            ->postJson('/api/v1/auth/login', ['email' => $email, 'password' => 'Wrong-password-123'])
+            ->assertTooManyRequests();
+    }
+
+    public function test_stateful_api_requests_reject_missing_csrf_tokens_outside_testing_runtime(): void
+    {
+        $this->app['env'] = 'local';
+
+        $this->withHeaders($this->statefulHeaders())
+            ->postJson('/api/v1/auth/password/forgot', ['email' => 'csrf-check-'.Str::uuid().'@gmail.com'])
+            ->assertStatus(419);
+    }
+
+    public function test_password_change_invalidates_a_previously_authenticated_stateful_session(): void
+    {
+        $user = User::factory()->create([
+            'email' => 'session-revoke-'.Str::uuid().'@gmail.com',
+            'password' => Hash::make('Test-password-123'),
+        ]);
+
+        $login = $this->withHeaders($this->statefulHeaders())->postJson('/api/v1/auth/login', [
+            'email' => $user->email,
+            'password' => 'Test-password-123',
+        ])->assertOk();
+
+        $sessionCookie = $login->getCookie(config('session.cookie'), false);
+        $this->assertNotNull($sessionCookie);
+        $user->password = 'Changed-password-456';
+        $user->save();
+        Auth::forgetGuards();
+
+        $this->withCredentials()->withUnencryptedCookie(config('session.cookie'), $sessionCookie->getValue())
+            ->withHeaders($this->statefulHeaders())
+            ->getJson('/api/v1/user')
+            ->assertUnauthorized();
     }
 
     public function test_registration_enforces_minimum_length_and_never_accepts_a_role(): void
@@ -236,7 +356,7 @@ class AuthenticationTest extends TestCase
         Mail::fake();
         foreach (['sunbeamx', 'blue orchard beside river'] as $password) {
             $attributes = $this->attributes([
-                'email' => 'password-'.Str::uuid().'@example.test',
+                'email' => 'password-'.Str::uuid().'@gmail.com',
                 'password' => $password,
                 'password_confirmation' => $password,
             ]);
@@ -251,7 +371,7 @@ class AuthenticationTest extends TestCase
 
         $password128 = substr(str_repeat('long phrase ', 12), 0, 128);
         $attributes = $this->attributes([
-            'email' => 'password-'.Str::uuid().'@example.test',
+            'email' => 'password-'.Str::uuid().'@gmail.com',
             'password' => $password128,
             'password_confirmation' => $password128,
         ]);
@@ -275,7 +395,7 @@ class AuthenticationTest extends TestCase
 
         foreach ($cases as $case) {
             $attributes = $this->attributes([
-                'email' => 'password-'.Str::uuid().'@example.test',
+                'email' => 'password-'.Str::uuid().'@gmail.com',
                 'password' => $case['password'],
                 'password_confirmation' => $case['confirmation'],
             ]);
@@ -302,17 +422,17 @@ class AuthenticationTest extends TestCase
         }
         $this->withHeaders($this->statefulHeaders())
             ->postJson('/api/v1/auth/register/verify', ['email' => $attributes['email'], 'code' => $wrongCode])
-            ->assertTooManyRequests();
+            ->assertUnprocessable()->assertJsonValidationErrors('code');
         $this->withHeaders($this->statefulHeaders())
             ->postJson('/api/v1/auth/register/verify', ['email' => $attributes['email'], 'code' => $code])
-            ->assertTooManyRequests();
+            ->assertUnprocessable()->assertJsonValidationErrors('code');
         $this->assertDatabaseMissing('users', ['email' => $attributes['email']]);
     }
 
     public function test_expired_pending_registrations_are_purged_without_touching_users(): void
     {
         $existingUser = User::factory()->create();
-        $email = 'expired-'.Str::uuid().'@example.test';
+        $email = 'expired-'.Str::uuid().'@gmail.com';
         $old = now()->subDays(2);
 
         PendingRegistration::create([
@@ -347,7 +467,7 @@ class AuthenticationTest extends TestCase
             $this->withHeaders($this->statefulHeaders())->postJson('/api/v1/auth/register', $attributes)->assertAccepted();
             $this->withHeaders($this->statefulHeaders())
                 ->postJson('/api/v1/auth/register/resend', ['email' => $attributes['email']])
-                ->assertTooManyRequests();
+                ->assertOk();
             $codes = Mail::sent(RegistrationOtpMail::class)
                 ->filter(fn (RegistrationOtpMail $mail) => $mail->hasTo($attributes['email']))
                 ->map(fn (RegistrationOtpMail $mail) => $mail->code)->values()->all();
@@ -380,14 +500,14 @@ class AuthenticationTest extends TestCase
         }
     }
 
-    public function test_login_is_blocked_for_an_existing_unverified_account(): void
+    public function test_login_does_not_disclose_an_existing_unverified_account(): void
     {
         $user = User::factory()->unverified()->create(['password' => Hash::make('Test-password-123')]);
 
         $this->withHeaders($this->statefulHeaders())
             ->postJson('/api/v1/auth/login', ['email' => $user->email, 'password' => 'Test-password-123'])
-            ->assertForbidden()
-            ->assertJsonPath('message', 'Verify your email address before signing in.');
+            ->assertUnprocessable()
+            ->assertJsonPath('message', trans('auth.failed'));
 
         $this->assertGuest('web');
     }

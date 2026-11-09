@@ -28,6 +28,16 @@ class RouteServiceProvider extends ServiceProvider
             return Limit::perMinute(60)->by($request->user()?->id ?: $request->ip());
         });
 
+        RateLimiter::for('auth-login', function (Request $request) {
+            $email = is_string($request->input('email')) ? mb_strtolower(trim($request->input('email'))) : '';
+            $emailKey = hash_hmac('sha256', $email, (string) config('app.key'));
+
+            return [
+                Limit::perMinute(10)->by('auth-login-ip:'.$request->ip()),
+                Limit::perHour(30)->by('auth-login-account:'.$emailKey),
+            ];
+        });
+
         $this->routes(function () {
             Route::middleware('api')
                 ->prefix('api')

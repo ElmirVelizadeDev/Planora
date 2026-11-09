@@ -26,7 +26,13 @@
                 <div class="auth-story-orb auth-story-orb-one"></div>
                 <div class="auth-story-orb auth-story-orb-two"></div>
             </aside>
-            <div class="auth-content"><RouterView /></div>
+            <div class="auth-content">
+                <RouterView v-slot="{ Component }">
+                    <KeepAlive include="Register">
+                        <component :is="Component" />
+                    </KeepAlive>
+                </RouterView>
+            </div>
         </div>
 
         <footer class="auth-footer"><span>© Planora</span><span>Thoughtful tools for focused work</span></footer>

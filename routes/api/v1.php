@@ -6,16 +6,21 @@ use App\Http\Controllers\Api\V1\Admin\UserManagementController;
 use App\Http\Controllers\Api\V1\Admin\UserRoleController;
 use App\Http\Controllers\Api\V1\Admin\UserRolePermissionsController;
 use App\Http\Controllers\Api\V1\CurrentUserController;
+use App\Http\Controllers\Api\V1\PasswordController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('auth')->name('auth.')->group(function () {
-    Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:10,1')->name('login');
+    Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:auth-login')->name('login');
     Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:5,1')->name('register');
     Route::post('/register/verify', [AuthController::class, 'verifyRegistration'])->middleware('throttle:10,1')->name('register.verify');
     Route::post('/register/resend', [AuthController::class, 'resendRegistrationCode'])->middleware('throttle:3,1')->name('register.resend');
+    Route::post('/password/forgot', [PasswordController::class, 'requestCode'])->middleware('throttle:5,1')->name('password.forgot');
+    Route::post('/password/resend', [PasswordController::class, 'resendCode'])->middleware('throttle:3,1')->name('password.resend');
+    Route::post('/password/verify', [PasswordController::class, 'verifyCode'])->middleware('throttle:10,1')->name('password.verify');
+    Route::post('/password/reset', [PasswordController::class, 'reset'])->middleware('throttle:5,1')->name('password.reset');
 });
 
-Route::middleware('auth:sanctum')->group(function () {
+Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/auth/logout', [AuthController::class, 'logout'])->name('auth.logout');
 });
 

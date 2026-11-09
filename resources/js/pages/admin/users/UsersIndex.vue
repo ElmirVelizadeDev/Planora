@@ -153,9 +153,9 @@
                     <p class="admin-users-dialog-copy">Update profile details, access role and account status.</p>
                     <div v-if="dialog.error" class="admin-users-dialog-state is-error" role="alert">{{ dialog.error }}</div>
                     <div class="admin-users-dialog-fields">
-                        <label class="admin-users-dialog-field">First name<input v-model.trim="dialog.first_name" type="text" maxlength="255" autocomplete="given-name" :aria-invalid="Boolean(dialog.fieldErrors.first_name)" @input="clearDialogError('first_name')"><small v-if="dialog.fieldErrors.first_name" class="admin-users-field-error">{{ dialog.fieldErrors.first_name }}</small></label>
-                        <label class="admin-users-dialog-field">Last name<input v-model.trim="dialog.last_name" type="text" maxlength="255" autocomplete="family-name" :aria-invalid="Boolean(dialog.fieldErrors.last_name || dialog.fieldErrors.name)" @input="clearDialogError('last_name'); clearDialogError('name')"><small v-if="dialog.fieldErrors.last_name || dialog.fieldErrors.name" class="admin-users-field-error">{{ dialog.fieldErrors.last_name || dialog.fieldErrors.name }}</small></label>
-                        <label class="admin-users-dialog-field">Email address<input v-model.trim="dialog.email" type="email" maxlength="255" autocomplete="email" :aria-invalid="Boolean(dialog.fieldErrors.email)" @input="clearDialogError('email')"><small v-if="dialog.fieldErrors.email" class="admin-users-field-error">{{ dialog.fieldErrors.email }}</small></label>
+                        <label class="admin-users-dialog-field">First name<input v-model.trim="dialog.first_name" type="text" maxlength="50" autocomplete="given-name" :aria-invalid="Boolean(dialog.fieldErrors.first_name)" @input="clearDialogError('first_name')"><small v-if="dialog.fieldErrors.first_name" class="admin-users-field-error">{{ dialog.fieldErrors.first_name }}</small></label>
+                        <label class="admin-users-dialog-field">Last name<input v-model.trim="dialog.last_name" type="text" maxlength="50" autocomplete="family-name" :aria-invalid="Boolean(dialog.fieldErrors.last_name || dialog.fieldErrors.name)" @input="clearDialogError('last_name'); clearDialogError('name')"><small v-if="dialog.fieldErrors.last_name || dialog.fieldErrors.name" class="admin-users-field-error">{{ dialog.fieldErrors.last_name || dialog.fieldErrors.name }}</small></label>
+                        <label class="admin-users-dialog-field">Email address<input v-model.trim="dialog.email" type="email" maxlength="255" autocomplete="email" :aria-invalid="Boolean(dialog.fieldErrors.email)" @input="clearDialogError('email')" @blur="dialog.email = dialog.email.trim().toLowerCase()"><small v-if="dialog.fieldErrors.email" class="admin-users-field-error">{{ dialog.fieldErrors.email }}</small></label>
                         <label class="admin-users-dialog-field">Phone number<input v-model.trim="dialog.phone" type="tel" maxlength="32" autocomplete="tel" :aria-invalid="Boolean(dialog.fieldErrors.phone)" @input="clearDialogError('phone')"><small v-if="dialog.fieldErrors.phone" class="admin-users-field-error">{{ dialog.fieldErrors.phone }}</small></label>
                         <label class="admin-users-dialog-field">Username<input v-model.trim="dialog.username" type="text" maxlength="255" autocomplete="username" :aria-invalid="Boolean(dialog.fieldErrors.username)" @input="clearDialogError('username')"><small v-if="dialog.fieldErrors.username" class="admin-users-field-error">{{ dialog.fieldErrors.username }}</small></label>
                         <div class="admin-users-dialog-field admin-users-dialog-field-wide">
@@ -195,7 +195,7 @@
                         <label class="admin-users-dialog-field">Account status<select v-model="dialog.status" :disabled="Boolean(statusActionDisabledReason(dialog.user))" :title="statusActionDisabledReason(dialog.user) || ''" :aria-invalid="Boolean(dialog.fieldErrors.status)" @change="dialog.confirmed = false; clearDialogError('status')"><option v-for="status in statuses" :key="status" :value="status">{{ statusLabel(status) }}</option></select><small>Current: {{ statusLabel(dialog.originalStatus) }}</small><small v-if="statusActionDisabledReason(dialog.user)">{{ statusActionDisabledReason(dialog.user) }}</small><small v-if="dialog.fieldErrors.status" class="admin-users-field-error">{{ dialog.fieldErrors.status }}</small></label>
                         <label v-if="['suspended', 'banned'].includes(dialog.status)" class="admin-users-dialog-field admin-users-dialog-field-wide">Reason (required, at least 5 characters)<textarea v-model.trim="dialog.reason" minlength="5" maxlength="2000" rows="3" :aria-invalid="Boolean(dialog.fieldErrors.reason)" @input="clearDialogError('reason')"></textarea><small v-if="dialog.fieldErrors.reason" class="admin-users-field-error">{{ dialog.fieldErrors.reason }}</small></label>
                         <label v-if="isCurrentAccount(dialog.user)" class="admin-users-dialog-field admin-users-dialog-field-wide">Current password<input v-model="dialog.currentPassword" type="password" autocomplete="current-password" :aria-invalid="Boolean(dialog.fieldErrors.current_password)" @input="clearDialogError('current_password')"><small v-if="dialog.fieldErrors.current_password" class="admin-users-field-error">{{ dialog.fieldErrors.current_password }}</small></label>
-                        <label v-if="isCurrentAccount(dialog.user)" class="admin-users-dialog-field">New password<input v-model="dialog.newPassword" type="password" autocomplete="new-password" :aria-invalid="Boolean(dialog.fieldErrors.password)" @input="clearDialogError('password')"><small>At least 12 characters, with uppercase, lowercase and a number.</small><small v-if="dialog.fieldErrors.password" class="admin-users-field-error">{{ dialog.fieldErrors.password }}</small></label>
+                        <label v-if="isCurrentAccount(dialog.user)" class="admin-users-dialog-field">New password<input v-model="dialog.newPassword" type="password" autocomplete="new-password" minlength="12" maxlength="128" :aria-invalid="Boolean(dialog.fieldErrors.password)" @input="clearDialogError('password')"><small>At least 12 characters, with uppercase, lowercase and a number.</small><small v-if="dialog.fieldErrors.password" class="admin-users-field-error">{{ dialog.fieldErrors.password }}</small></label>
                         <label v-if="isCurrentAccount(dialog.user)" class="admin-users-dialog-field">Confirm new password<input v-model="dialog.passwordConfirmation" type="password" autocomplete="new-password" :aria-invalid="Boolean(dialog.fieldErrors.password_confirmation)" @input="clearDialogError('password_confirmation')"><small v-if="dialog.fieldErrors.password_confirmation" class="admin-users-field-error">{{ dialog.fieldErrors.password_confirmation }}</small></label>
                     </div>
                     <p v-if="isCurrentAccount(dialog.user)" class="admin-users-dialog-note">Password changes require your current password and are recorded securely.</p>
@@ -249,6 +249,7 @@
 import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue';
 import { useAuthStore } from '../../../features/auth/stores/authStore.js';
 import api from '../../../shared/services/api.js';
+import { validatePersonName, validateSupportedEmail } from '../../../shared/validation.js';
 
 const auth = useAuthStore();
 const users = ref([]);
@@ -572,19 +573,26 @@ async function confirmStatus() {
 function validateEditDialog() {
     dialog.fieldErrors = {};
     dialog.error = '';
+    dialog.first_name = dialog.first_name.trim().replace(/\s+/gu, ' ');
+    dialog.last_name = dialog.last_name.trim().replace(/\s+/gu, ' ');
+    dialog.email = dialog.email.trim().toLowerCase();
+    const fullName = `${dialog.first_name} ${dialog.last_name}`.trim();
+    const nameUnchanged = fullName === String(dialog.user.name || '');
     if (!dialog.first_name.trim() && !dialog.last_name.trim()) dialog.fieldErrors.first_name = 'Enter a first name or last name.';
+    if (!nameUnchanged && dialog.first_name && validatePersonName(dialog.first_name)) dialog.fieldErrors.first_name = validatePersonName(dialog.first_name);
+    if (!nameUnchanged && dialog.last_name && validatePersonName(dialog.last_name)) dialog.fieldErrors.last_name = validatePersonName(dialog.last_name);
     if (!dialog.email.trim()) dialog.fieldErrors.email = 'Email address is required.';
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(dialog.email.trim())) dialog.fieldErrors.email = 'Enter a valid email address.';
+    else if (dialog.email.toLowerCase() !== String(dialog.user.email || '').toLowerCase() && validateSupportedEmail(dialog.email)) dialog.fieldErrors.email = validateSupportedEmail(dialog.email);
     if (dialog.phone && !/^\+?[0-9().\s-]{7,32}$/.test(dialog.phone)) dialog.fieldErrors.phone = 'Enter a valid phone number using digits and standard phone punctuation.';
     if (dialog.role === 'moderator' && dialog.moderator_permissions.includes('users.status.manage') && !dialog.moderator_permissions.includes('users.view')) {
         dialog.fieldErrors.moderator_permissions = 'User visibility is required for status management.';
     }
-    if (`${dialog.first_name} ${dialog.last_name}`.trim().length > 255) dialog.fieldErrors.name = 'The combined name must be 255 characters or fewer.';
+    if (!nameUnchanged && Array.from(fullName).length > 50) dialog.fieldErrors.name = 'The full name must be 50 characters or fewer.';
     const passwordRequested = Boolean(dialog.currentPassword || dialog.newPassword || dialog.passwordConfirmation);
     if (passwordRequested) {
         if (!isCurrentAccount(dialog.user)) dialog.fieldErrors.password = 'You can only change your own password.';
         if (!dialog.currentPassword) dialog.fieldErrors.current_password = 'Enter your current password.';
-        if (dialog.newPassword.length < 12 || !/[a-z]/.test(dialog.newPassword) || !/[A-Z]/.test(dialog.newPassword) || !/\d/.test(dialog.newPassword)) {
+        if (dialog.newPassword.length < 12 || dialog.newPassword.length > 128 || !/[a-z]/.test(dialog.newPassword) || !/[A-Z]/.test(dialog.newPassword) || !/\d/.test(dialog.newPassword)) {
             dialog.fieldErrors.password = 'Use at least 12 characters with uppercase, lowercase and a number.';
         }
         if (dialog.newPassword !== dialog.passwordConfirmation) dialog.fieldErrors.password_confirmation = 'The password confirmation does not match.';

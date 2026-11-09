@@ -9,9 +9,9 @@ use App\Models\User;
 use App\Services\Api\V1\Admin\UserActivityLogger;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\ValidationException;
-use Symfony\Component\HttpKernel\Exception\HttpException;
 use Throwable;
 
 class RegistrationService
@@ -31,13 +31,17 @@ class RegistrationService
         $otpHash = Hash::make($code);
         $developmentMode = app()->environment('local');
 
-        DB::transaction(function () use ($attributes, $email, $otpHash, $code, $developmentMode) {
+        $issueStatus = DB::transaction(function () use ($attributes, $email, $otpHash, $code) {
+            if (User::withTrashed()->where('email', $email)->lockForUpdate()->exists()) {
+                return 'registered';
+            }
+
             $otp = EmailVerificationOtp::query()->where('email', $email)->lockForUpdate()->first();
             $pending = PendingRegistration::query()->where('email', $email)->lockForUpdate()->first();
 
             if ($otp?->last_sent_at && $otp->last_sent_at->addSeconds(self::OTP_RESEND_SECONDS)->isFuture()
                 && $pending?->expires_at?->isFuture()) {
-                throw new HttpException(429, 'Please wait before requesting another verification code.');
+                return 'cooldown';
             }
 
             $pending ??= new PendingRegistration();
@@ -50,14 +54,15 @@ class RegistrationService
             $otp ??= new EmailVerificationOtp();
             $otp->email = $email;
             $otp->otp_hash = $otpHash;
-            $otp->otp_code = $developmentMode ? $code : null;
             $otp->expires_at = now()->addMinutes(self::OTP_TTL_MINUTES);
             $otp->last_sent_at = now();
             $otp->attempts = 0;
             $otp->save();
+
+            return 'issued';
         });
 
-        if (! $developmentMode) {
+        if (! $developmentMode && $issueStatus === 'issued') {
             $this->sendCode($email, $code, $otpHash);
         }
 
@@ -71,26 +76,26 @@ class RegistrationService
         $otpHash = Hash::make($code);
         $developmentMode = app()->environment('local');
 
-        DB::transaction(function () use ($email, $otpHash, $code, $developmentMode) {
+        $shouldSend = DB::transaction(function () use ($email, $otpHash, $code) {
             $otp = EmailVerificationOtp::query()->where('email', $email)->lockForUpdate()->first();
             $pending = PendingRegistration::query()->where('email', $email)->lockForUpdate()->first();
             if (! $pending || ! $pending->password_hash || ! $pending->expires_at?->isFuture() || ! $otp) {
-                throw ValidationException::withMessages(['email' => ['No pending registration was found for this email address.']]);
+                return false;
             }
-            if ($otp->last_sent_at && $otp->last_sent_at->addSeconds(self::OTP_RESEND_SECONDS)->isFuture()) {
-                $remaining = max(1, self::OTP_RESEND_SECONDS - $otp->last_sent_at->diffInSeconds(now()));
-                throw new HttpException(429, "Please wait {$remaining} seconds before requesting another code.");
+            if (! $otp->last_sent_at || $otp->last_sent_at->addSeconds(self::OTP_RESEND_SECONDS)->isFuture()) {
+                return false;
             }
 
             $otp->otp_hash = $otpHash;
-            $otp->otp_code = $developmentMode ? $code : null;
             $otp->expires_at = now()->addMinutes(self::OTP_TTL_MINUTES);
             $otp->last_sent_at = now();
             $otp->attempts = 0;
             $otp->save();
+
+            return true;
         });
 
-        if (! $developmentMode) {
+        if (! $developmentMode && $shouldSend) {
             $this->sendCode($email, $code, $otpHash);
         }
 
@@ -112,10 +117,6 @@ class RegistrationService
             }
             if (! $otp->expires_at || $otp->expires_at->isPast()) {
                 return ['error' => 'expired'];
-            }
-            if (! app()->environment('local') && $otp->otp_code !== null) {
-                $otp->otp_code = null;
-                $otp->save();
             }
             if ($otp->attempts >= self::MAX_OTP_ATTEMPTS) {
                 return ['error' => 'locked'];
@@ -149,17 +150,8 @@ class RegistrationService
         });
 
         if (isset($result['error'])) {
-            if ($result['error'] === 'locked') {
-                throw new HttpException(429, 'Too many incorrect codes. Request a new verification code.');
-            }
-            if ($result['error'] === 'email_taken') {
-                throw ValidationException::withMessages(['email' => ['This email address is already registered.']]);
-            }
-
             throw ValidationException::withMessages([
-                'code' => [$result['error'] === 'expired'
-                    ? 'This verification code has expired. Request a new one.'
-                    : 'The verification code is incorrect or no longer valid.'],
+                'code' => ['The verification code is incorrect, expired, or no longer valid. Request a new code if needed.'],
             ]);
         }
 
@@ -177,8 +169,9 @@ class RegistrationService
                 'updated_at' => now(),
             ]);
 
-            report($exception);
-            throw new HttpException(503, 'The verification email could not be sent. Check your mail configuration and try again.');
+            Log::warning('Registration verification email delivery failed.', [
+                'exception_type' => get_class($exception),
+            ]);
         }
     }
 

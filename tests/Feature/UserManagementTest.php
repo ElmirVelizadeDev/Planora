@@ -139,7 +139,7 @@ class UserManagementTest extends TestCase
     public function test_admin_can_create_users_with_hashed_password_and_role_and_status_separated(): void
     {
         $admin = $this->admin();
-        $email = 'managed-'.Str::uuid().'@example.test';
+        $email = 'managed-'.Str::uuid().'@gmail.com';
 
         $this->actingAs($admin, 'sanctum')->withHeaders($this->headers())
             ->postJson('/api/v1/admin/users', [
@@ -162,7 +162,7 @@ class UserManagementTest extends TestCase
 
         $this->actingAs($admin, 'sanctum')->withHeaders($this->headers())
             ->postJson('/api/v1/admin/users', [
-                'name' => 'Unsafe Account', 'email' => 'unsafe-'.Str::uuid().'@example.test',
+                'name' => 'Unsafe Account', 'email' => 'unsafe-'.Str::uuid().'@gmail.com',
                 'password' => 'Initial-Password-123', 'password_confirmation' => 'Initial-Password-123',
                 'role' => 'seller', 'status' => 'active',
             ])->assertUnprocessable();
@@ -173,7 +173,7 @@ class UserManagementTest extends TestCase
         $admin = $this->admin();
 
         foreach (['user', 'moderator', 'admin'] as $role) {
-            $email = 'managed-'.$role.'-'.Str::uuid().'@example.test';
+            $email = 'managed-'.$role.'-'.Str::uuid().'@gmail.com';
             $this->actingAs($admin, 'sanctum')->withHeaders($this->headers())
                 ->postJson('/api/v1/admin/users', [
                     'name' => 'Created '.ucfirst($role),
@@ -204,7 +204,7 @@ class UserManagementTest extends TestCase
         User::factory()->create(['username' => $username]);
         $this->actingAs($admin, 'sanctum')->withHeaders($this->headers())
             ->postJson('/api/v1/admin/users', [
-                'name' => 'Duplicate Username', 'email' => 'unique-'.Str::uuid().'@example.test', 'username' => $username,
+                'name' => 'Duplicate Username', 'email' => 'unique-'.Str::uuid().'@gmail.com', 'username' => $username,
                 'password' => 'Initial-Password-123', 'password_confirmation' => 'Initial-Password-123',
                 'role' => 'user', 'status' => 'active',
             ])->assertUnprocessable()->assertJsonValidationErrors('username');
@@ -214,7 +214,7 @@ class UserManagementTest extends TestCase
     {
         Storage::fake('public');
         $admin = $this->admin();
-        $email = 'avatar-'.Str::uuid().'@example.test';
+        $email = 'avatar-'.Str::uuid().'@gmail.com';
         $headers = $this->headers() + ['Accept' => 'application/json'];
         $createPayload = [
             'name' => 'Avatar Example', 'first_name' => 'Avatar', 'last_name' => 'Example',
@@ -268,7 +268,7 @@ class UserManagementTest extends TestCase
         Storage::fake('public');
         $admin = $this->admin();
         $payload = [
-            'name' => 'Invalid Avatar', 'email' => 'invalid-avatar-'.Str::uuid().'@example.test',
+            'name' => 'Invalid Avatar', 'email' => 'invalid-avatar-'.Str::uuid().'@gmail.com',
             'password' => 'Initial-Password-123', 'password_confirmation' => 'Initial-Password-123',
             'role' => 'user', 'status' => 'active',
         ];
@@ -309,7 +309,7 @@ class UserManagementTest extends TestCase
                 'name' => 'Updated Example',
                 'first_name' => 'Updated',
                 'last_name' => 'Example',
-                'email' => 'updated-'.Str::uuid().'@example.test',
+                'email' => 'updated-'.Str::uuid().'@gmail.com',
                 'phone' => '5550199',
                 'username' => $username,
             ])
@@ -487,7 +487,7 @@ class UserManagementTest extends TestCase
 
         $this->withHeaders($this->headers())->postJson('/api/v1/auth/login', [
             'email' => $user->email, 'password' => 'Member-Password-123',
-        ])->assertForbidden();
+        ])->assertUnprocessable()->assertJsonValidationErrors('email');
 
         $this->actingAs($admin, 'sanctum')->withHeaders($this->headers())
             ->patchJson('/api/v1/admin/users/'.$user->id.'/status', ['status' => 'active'])
@@ -511,7 +511,7 @@ class UserManagementTest extends TestCase
     {
         $admin = $this->admin();
         $base = '/api/v1/admin/users/'.$admin->id;
-        $newEmail = 'admin-updated-'.Str::uuid().'@example.test';
+        $newEmail = 'admin-updated-'.Str::uuid().'@gmail.com';
 
         $this->actingAs($admin, 'sanctum')->withHeaders($this->headers())
             ->patchJson($base, ['name' => 'Updated Admin', 'email' => $newEmail, 'phone' => '5550101'])
