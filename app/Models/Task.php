@@ -13,7 +13,7 @@ class Task extends Model
 
     protected $fillable = [
         'title', 'description', 'status', 'priority', 'due_date',
-        'owner_id', 'assigned_user_id', 'created_by',
+        'owner_id', 'assigned_user_id', 'created_by', 'project_id',
     ];
 
     protected $casts = [
@@ -35,5 +35,10 @@ class Task extends Model
     public function creator(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by')->withTrashed();
+    }
+
+    public function project(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(Project::class);
     }
 }

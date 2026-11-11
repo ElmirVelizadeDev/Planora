@@ -4,7 +4,7 @@ import { deleteAdminTask, getAdminTasks, getTaskAssignees } from '../services/ad
 export function useAdminTasks() {
     const tasks = ref([]), assignees = ref([]), loading = ref(false), error = ref('');
     const searchInput = ref(''), search = ref(''), page = ref(1), perPage = ref(10), total = ref(0), lastPage = ref(1), timer = ref(null);
-    const filters = reactive({ status: '', priority: '', assigned_user_id: '', due_after: '' });
+    const filters = reactive({ status: '', priority: '', assigned_user_id: '', start_date: '', end_date: '' });
     const statistics = ref({ total: 0, in_progress: 0, completed: 0, pending: 0, overdue: 0 });
     const hasFilters = computed(() => Boolean(search.value || Object.values(filters).some(Boolean)));
     const rangeStart = computed(() => total.value ? (page.value - 1) * perPage.value + 1 : 0);

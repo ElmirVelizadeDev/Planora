@@ -52,6 +52,25 @@ class AdminTaskManagementTest extends TestCase
             ->assertOk()->assertJsonPath('meta.total', 3)->assertJsonPath('meta.current_page', 2)->assertJsonCount(1, 'data');
     }
 
+    public function test_admin_task_date_range_filters_due_date_inclusively_and_validates_order(): void
+    {
+        $admin = $this->admin();
+        $owner = User::factory()->create();
+        foreach (['2026-04-10', '2026-04-11', '2026-04-12', '2026-04-13'] as $index => $date) {
+            Task::create(['title' => 'Date task '.$index, 'due_date' => $date, 'owner_id' => $owner->id, 'created_by' => $admin->id]);
+        }
+        $this->actingAs($admin, 'sanctum');
+
+        $this->getJson('/api/v1/admin/tasks')->assertOk()->assertJsonPath('meta.total', 4);
+        $this->getJson('/api/v1/admin/tasks?start_date=2026-04-11&end_date=2026-04-12')
+            ->assertOk()->assertJsonPath('meta.total', 2);
+        $this->getJson('/api/v1/admin/tasks?start_date=2026-04-12')->assertOk()->assertJsonPath('meta.total', 2);
+        $this->getJson('/api/v1/admin/tasks?end_date=2026-04-11')->assertOk()->assertJsonPath('meta.total', 2);
+        $this->getJson('/api/v1/admin/tasks?start_date=2026-04-12&end_date=2026-04-12')->assertOk()->assertJsonPath('meta.total', 1);
+        $this->getJson('/api/v1/admin/tasks?start_date=2026-04-13&end_date=2026-04-12')->assertUnprocessable()->assertJsonValidationErrors(['start_date']);
+        $this->getJson('/api/v1/admin/tasks?start_date=04/12/2026')->assertUnprocessable()->assertJsonValidationErrors(['start_date']);
+    }
+
     public function test_admin_can_create_update_show_and_soft_delete_tasks(): void
     {
         $admin = $this->admin();

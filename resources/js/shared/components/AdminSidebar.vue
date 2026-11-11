@@ -24,8 +24,8 @@ defineEmits(['toggle-collapse', 'close']);
 const links = [
     { label: 'Dashboard', icon: '◫', to: { name: 'admin.dashboard' } },
     { label: 'Users', icon: '♙', to: { name: 'admin.users.index' } },
+    { label: 'Projects', icon: '▧', to: { name: 'admin.projects.index' }, activeOn: ['admin.projects.index', 'admin.projects.show'] },
     { label: 'Tasks', icon: '✓', to: { name: 'admin.tasks.index' } },
-    { label: 'Projects', icon: '▧', to: { name: 'admin.projects.index' } },
     { label: 'Categories', icon: '◉', to: { name: 'admin.categories.index' } },
     { label: 'Reports & Analytics', icon: '▥', to: { name: 'admin.reports' } },
     { label: 'Activity Logs', icon: '◷', to: { name: 'admin.activity-logs.index' } },

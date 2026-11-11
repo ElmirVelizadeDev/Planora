@@ -33,8 +33,10 @@ class UserTaskService
             'overdue' => $query->where('status', '!=', 'completed')->whereNotNull('due_date')->whereDate('due_date', '<', $today),
             default => null,
         };
-        if (! empty($filters['due_after'])) $query->whereDate('due_date', '>=', $filters['due_after']);
-        if (! empty($filters['due_before'])) $query->whereDate('due_date', '<=', $filters['due_before']);
+        $startDate = $filters['start_date'] ?? $filters['due_after'] ?? null;
+        $endDate = $filters['end_date'] ?? $filters['due_before'] ?? null;
+        if (! empty($startDate)) $query->whereDate('due_date', '>=', $startDate);
+        if (! empty($endDate)) $query->whereDate('due_date', '<=', $endDate);
 
         match ($filters['sort'] ?? (($filters['due'] ?? null) === 'upcoming' ? 'due_asc' : 'newest')) {
             'oldest' => $query->orderBy('created_at')->orderBy('id'),
@@ -46,6 +48,18 @@ class UserTaskService
         };
 
         return $query->paginate($filters['per_page'] ?? 10)->withQueryString();
+    }
+
+    public function paginateForProject(int $userId, int $projectId, array $filters): LengthAwarePaginator
+    {
+        $query = $this->queryFor($userId)->where('project_id', $projectId)->with(['owner', 'assignedUser']);
+        if (! empty($filters['search'])) {
+            $term = trim($filters['search']);
+            $query->where(fn ($q) => $q->where('title', 'like', "%{$term}%")->orWhere('description', 'like', "%{$term}%"));
+        }
+        if (! empty($filters['status'])) $query->where('status', $filters['status']);
+        if (! empty($filters['priority'])) $query->where('priority', $filters['priority']);
+        return $query->latest('created_at')->latest('id')->paginate($filters['per_page'] ?? 10)->withQueryString();
     }
 
     public function statistics(int $userId): array

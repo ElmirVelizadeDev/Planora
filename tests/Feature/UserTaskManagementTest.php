@@ -107,4 +107,23 @@ class UserTaskManagementTest extends TestCase
         $this->getJson('/api/v1/tasks?status=not-a-status')->assertUnprocessable()->assertJsonValidationErrors(['status']);
         $this->postJson('/api/v1/tasks', ['title' => '', 'owner_id' => 999999])->assertUnprocessable()->assertJsonValidationErrors(['title', 'owner_id']);
     }
+
+    public function test_user_task_date_range_filters_due_date_inclusively_and_stays_user_scoped(): void
+    {
+        $user = $this->user();
+        $other = $this->user();
+        foreach (['2026-04-10', '2026-04-11', '2026-04-12', '2026-04-13'] as $index => $date) {
+            Task::create(['title' => 'Date task '.$index, 'due_date' => $date, 'owner_id' => $user->id, 'created_by' => $user->id]);
+        }
+        Task::create(['title' => 'Other user date task', 'due_date' => '2026-04-11', 'owner_id' => $other->id, 'created_by' => $other->id]);
+        $this->actingAs($user, 'sanctum');
+
+        $this->getJson('/api/v1/tasks')->assertOk()->assertJsonPath('meta.total', 4);
+        $this->getJson('/api/v1/tasks?start_date=2026-04-11&end_date=2026-04-12')->assertOk()->assertJsonPath('meta.total', 2);
+        $this->getJson('/api/v1/tasks?start_date=2026-04-12')->assertOk()->assertJsonPath('meta.total', 2);
+        $this->getJson('/api/v1/tasks?end_date=2026-04-11')->assertOk()->assertJsonPath('meta.total', 2);
+        $this->getJson('/api/v1/tasks?start_date=2026-04-12&end_date=2026-04-12')->assertOk()->assertJsonPath('meta.total', 1);
+        $this->getJson('/api/v1/tasks?start_date=2026-04-13&end_date=2026-04-12')->assertUnprocessable()->assertJsonValidationErrors(['start_date']);
+        $this->getJson('/api/v1/tasks?end_date=not-a-date')->assertUnprocessable()->assertJsonValidationErrors(['end_date']);
+    }
 }

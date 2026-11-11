@@ -23,6 +23,7 @@ class StoreUserTaskRequest extends FormRequest
             'owner_id' => ['prohibited'],
             'created_by' => ['prohibited'],
             'assigned_user_id' => ['prohibited'],
+            'project_id' => ['prohibited'],
         ];
     }
 }

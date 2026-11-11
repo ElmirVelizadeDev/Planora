@@ -22,8 +22,10 @@ class TaskService
 
         $assigneeId = $filters['assigned_user_id'] ?? $filters['user_id'] ?? null;
         if ($assigneeId) $query->where('assigned_user_id', $assigneeId);
-        if (! empty($filters['due_before'])) $query->whereDate('due_date', '<=', $filters['due_before']);
-        if (! empty($filters['due_after'])) $query->whereDate('due_date', '>=', $filters['due_after']);
+        $endDate = $filters['end_date'] ?? $filters['due_before'] ?? null;
+        $startDate = $filters['start_date'] ?? $filters['due_after'] ?? null;
+        if (! empty($endDate)) $query->whereDate('due_date', '<=', $endDate);
+        if (! empty($startDate)) $query->whereDate('due_date', '>=', $startDate);
 
         match ($filters['sort'] ?? 'newest') {
             'oldest' => $query->orderBy('created_at')->orderBy('id'),
@@ -35,6 +37,19 @@ class TaskService
         };
 
         return $query->paginate($filters['per_page'] ?? 10)->withQueryString();
+    }
+
+    public function paginateForProject(int $projectId, array $filters): LengthAwarePaginator
+    {
+        $filters['project_id'] = $projectId;
+        $query = Task::query()->with(['owner', 'assignedUser', 'creator'])->where('project_id', $projectId);
+        if (! empty($filters['search'])) {
+            $term = trim($filters['search']);
+            $query->where(fn ($q) => $q->where('title', 'like', "%{$term}%")->orWhere('description', 'like', "%{$term}%"));
+        }
+        if (! empty($filters['status'])) $query->where('status', $filters['status']);
+        if (! empty($filters['priority'])) $query->where('priority', $filters['priority']);
+        return $query->latest('created_at')->latest('id')->paginate($filters['per_page'] ?? 10)->withQueryString();
     }
 
     public function statistics(): array

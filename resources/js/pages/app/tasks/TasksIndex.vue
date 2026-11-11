@@ -17,6 +17,8 @@
                     v-model:status="filters.status"
                     v-model:priority="filters.priority"
                     v-model:due="filters.due"
+                    v-model:start-date="filters.start_date"
+                    v-model:end-date="filters.end_date"
                     v-model:sort="sort"
                     :loading="loading"
                     :has-toolbar-changes="hasToolbarChanges"

@@ -14,7 +14,7 @@ class UpdateTaskRequest extends FormRequest
 
     public function rules(): array
     {
-        $availableUser = fn () => Rule::exists('users', 'id')->whereNull('deleted_at');
+        $availableUser = fn () => Rule::exists('users', 'id')->where(fn ($query) => $query->whereNull('deleted_at')->where('role', 'user')->where('status', 'active'));
 
         return [
             'title' => ['sometimes', 'required', 'string', 'max:180'],
@@ -24,6 +24,7 @@ class UpdateTaskRequest extends FormRequest
             'due_date' => ['sometimes', 'nullable', 'date_format:Y-m-d'],
             'owner_id' => ['sometimes', 'required', 'integer', $availableUser()],
             'assigned_user_id' => ['sometimes', 'nullable', 'integer', $availableUser()],
+            'project_id' => ['sometimes', 'nullable', 'integer', Rule::exists('projects', 'id')],
         ];
     }
 }

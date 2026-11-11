@@ -32,7 +32,7 @@ class TaskController extends Controller
 
     public function assignees(): JsonResponse
     {
-        $users = User::query()->orderBy('name')->get(['id', 'name', 'email', 'profile_photo']);
+        $users = User::query()->where('role', 'user')->where('status', 'active')->orderBy('name')->get(['id', 'name', 'email', 'profile_photo']);
 
         return response()->json(['data' => $users->map(fn (User $user) => [
             'id' => $user->id,

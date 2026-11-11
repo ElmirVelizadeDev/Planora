@@ -5,7 +5,7 @@ export function useUserTasks() {
     const tasks = ref([]), loading = ref(false), error = ref(''), notice = ref('');
     const page = ref(1), perPage = ref(10), total = ref(0), lastPage = ref(1);
     const statistics = ref({ total: 0, in_progress: 0, completed: 0, pending: 0, overdue: 0 });
-    const searchInput = ref(''), search = ref(''), sort = ref(''), filters = reactive({ status: '', priority: '', due: '' });
+    const searchInput = ref(''), search = ref(''), sort = ref(''), filters = reactive({ status: '', priority: '', due: '', start_date: '', end_date: '' });
     const pendingStatuses = reactive({});
     const hasFilters = computed(() => Boolean(search.value || Object.values(filters).some(Boolean)));
     const hasToolbarChanges = computed(() => hasFilters.value || Boolean(sort.value));

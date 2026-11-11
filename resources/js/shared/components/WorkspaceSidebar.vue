@@ -40,10 +40,11 @@
                 v-for="item in links"
                 :key="item.label"
                 class="workspace-nav-link"
-                :class="{ 'is-disabled': item.disabled }"
+                :class="[{ 'is-disabled': item.disabled }, { 'is-active': isExplicitlyActive(item) }]"
                 :to="item.disabled ? undefined : item.to"
                 :disabled="item.disabled || undefined"
                 :active-class="item.disabled ? undefined : 'is-active'"
+                :aria-current="isExplicitlyActive(item) ? 'page' : undefined"
                 :title="collapsed ? item.label : undefined"
                 :aria-label="item.label"
                 @click="closeOnMobile"
@@ -96,7 +97,7 @@
 
 <script setup>
 import { computed } from 'vue';
-import { RouterLink } from 'vue-router';
+import { RouterLink, useRoute } from 'vue-router';
 import { useAuthStore } from '../../features/auth/stores/authStore.js';
 import { useLogoutConfirmation } from '../../features/auth/composables/useLogoutConfirmation.js';
 
@@ -111,12 +112,17 @@ const props = defineProps({
 
 const emit = defineEmits(['toggle-collapse', 'close']);
 const auth = useAuthStore();
+const route = useRoute();
 const { requestLogout } = useLogoutConfirmation();
 const accountName = computed(() => auth.user?.name || (props.variant === 'admin' ? 'Administrator' : 'Your account'));
 const accountInitials = computed(() => accountName.value.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join('').toUpperCase());
 
 function closeOnMobile() {
     if (props.mobileOpen) emit('close');
+}
+
+function isExplicitlyActive(item) {
+    return !item.disabled && Array.isArray(item.activeOn) && item.activeOn.includes(route.name);
 }
 
 </script>

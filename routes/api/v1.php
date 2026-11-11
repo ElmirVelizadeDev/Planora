@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\Admin\UserActivityController;
+use App\Http\Controllers\Api\V1\Admin\ProjectManagementController;
 use App\Http\Controllers\Api\V1\Admin\UserManagementController;
 use App\Http\Controllers\Api\V1\Admin\UserRoleController;
 use App\Http\Controllers\Api\V1\Admin\UserRolePermissionsController;
@@ -9,6 +10,8 @@ use App\Http\Controllers\Api\V1\CurrentUserController;
 use App\Http\Controllers\Api\V1\PasswordController;
 use App\Http\Controllers\Api\V1\TaskController;
 use App\Http\Controllers\Api\V1\UserTaskController;
+use App\Http\Controllers\Api\V1\UserProjectController;
+use App\Http\Controllers\Api\V1\Admin\ProjectTaskManagementController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('auth')->name('auth.')->group(function () {
@@ -52,6 +55,23 @@ Route::prefix('admin/tasks')->name('admin.tasks.')->middleware(['auth:sanctum', 
     Route::get('/{task}', [TaskController::class, 'show'])->name('show');
     Route::patch('/{task}', [TaskController::class, 'update'])->name('update');
     Route::delete('/{task}', [TaskController::class, 'destroy'])->name('destroy');
+});
+
+Route::prefix('admin/projects')->name('admin.projects.')->middleware(['auth:sanctum', 'active', 'role:admin'])->group(function () {
+    Route::get('/', [ProjectManagementController::class, 'index'])->name('index');
+    Route::get('/owners', [ProjectManagementController::class, 'owners'])->name('owners');
+    Route::get('/{project}/tasks', [ProjectTaskManagementController::class, 'index'])->whereNumber('project')->name('tasks.index');
+    Route::post('/{project}/tasks', [ProjectTaskManagementController::class, 'store'])->whereNumber('project')->name('tasks.store');
+    Route::get('/{project}', [ProjectManagementController::class, 'show'])->whereNumber('project')->name('show');
+    Route::post('/', [ProjectManagementController::class, 'store'])->name('store');
+    Route::patch('/{project}', [ProjectManagementController::class, 'update'])->name('update');
+    Route::delete('/{project}', [ProjectManagementController::class, 'destroy'])->name('destroy');
+});
+
+Route::prefix('projects')->name('projects.')->middleware(['auth:sanctum', 'active', 'role:user'])->group(function () {
+    Route::get('/', [UserProjectController::class, 'index'])->name('index');
+    Route::get('/{project}/tasks', [UserProjectController::class, 'tasks'])->whereNumber('project')->name('tasks.index');
+    Route::get('/{project}', [UserProjectController::class, 'show'])->whereNumber('project')->name('show');
 });
 
 Route::prefix('tasks')->name('tasks.')->middleware(['auth:sanctum', 'active', 'role:user'])->group(function () {

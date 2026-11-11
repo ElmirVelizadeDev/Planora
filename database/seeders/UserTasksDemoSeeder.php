@@ -49,6 +49,7 @@ class UserTasksDemoSeeder extends Seeder
                         'priority' => $template['priority'],
                         'due_date' => now()->addDays($template['due_days'])->toDateString(),
                         'owner_id' => $user->id,
+                        'project_id' => null,
                         'assigned_user_id' => null,
                         'created_by' => $user->id,
                     ]);
