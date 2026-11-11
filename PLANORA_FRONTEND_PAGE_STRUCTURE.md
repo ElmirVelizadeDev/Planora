@@ -1,95 +1,35 @@
 # Planora Frontend Page Structure
 
-Structural inventory as of 2026-11-05. Page and component files are scaffolds only; behavior and visual design have not been implemented.
+This is a current map of the Vue application, its route groups, and implementation boundaries. Routes are declared in `resources/js/router/routes.js`; only the backend and connected UI determine whether a workflow is implemented.
 
-## User Panel
+## Application entry and layouts
 
-Required inventory: 30 pages.
+- `resources/views/welcome.blade.php` provides the single SPA mount point and Vite assets.
+- `resources/js/app.js` creates Vue, Pinia, and Vue Router. Route components are lazy-loaded.
+- `resources/js/layouts/AuthLayout.vue`, `UserLayout.vue`, and `AdminLayout.vue` provide the public authentication, User workspace, and Admin shell.
+- `resources/js/router/guards.js` loads the current session User when needed and applies route role checks. Laravel remains the authorization boundary.
 
-- Dashboard: DashboardIndex — existing resources/js/pages/app/dashboard/Index.vue.
-- Tasks: TasksIndex, TasksCreate, TasksEdit, TasksShow — existing Index.vue, Create.vue, Edit.vue, Show.vue under resources/js/pages/app/tasks/.
-- Projects: ProjectsIndex, ProjectsCreate, ProjectsEdit, ProjectsShow — newly created under resources/js/pages/app/projects/.
-- Calendar: CalendarIndex — existing resources/js/pages/app/calendar/Index.vue.
-- Categories: CategoriesIndex, CategoriesCreate, CategoriesEdit — existing under resources/js/pages/app/categories/; CategoriesShow newly created.
-- Tags: TagsIndex, TagsCreate, TagsEdit — newly created under resources/js/pages/app/tags/.
-- Subtasks: SubtasksCreate, SubtasksEdit — newly created under resources/js/pages/app/subtasks/; no standalone list page.
-- Notifications: NotificationsIndex, NotificationsShow — newly created under resources/js/pages/app/notifications/.
-- Profile: ProfileIndex maps to existing Show.vue; ProfileEdit maps to existing Edit.vue under resources/js/pages/app/profile/.
-- Settings: SettingsIndex — existing resources/js/pages/app/settings/Index.vue; SettingsAccount, SettingsAppearance, SettingsNotifications, SettingsSecurity newly created there.
-- Productivity & Reports: ProductivityIndex, ProductivityReports newly created under resources/js/pages/app/productivity/. Existing Statistics Index.vue and chart components are retained without duplication.
+## Route groups and implementation status
 
-Each new page has a corresponding CSS file in resources/css/pages/<area>/styles/. Existing pages retain individual CSS files under resources/css/pages/app/<area>/.
+| Area | Route examples | Current implementation |
+|---|---|---|
+| Public and Auth | `/`, `/login`, `/register`, `/verify-email`, `/forgot-password`, `/reset-password`, `/terms-and-conditions`, `/privacy-policy` | Public pages and authentication flows are implemented; OTP and session details are in [Registration OTP](docs/REGISTRATION_OTP.md) and [Authentication Security](docs/AUTHENTICATION_SECURITY.md). |
+| User workspace | `/dashboard`, `/tasks`, `/tasks/:taskId`, `/projects`, `/projects/:projectId` | Dashboard task summary, User Task workflows, and assigned User Projects are connected to APIs. Project Task access is scoped by Project ownership and Task ownership/assignment. |
+| Other User pages | `/calendar`, `/categories`, `/tags`, `/notifications`, `/profile`, `/settings`, `/statistics`, `/productivity` | Route records and page components exist, but these domains are partial or scaffolded; do not infer persistent workflows from their presence. |
+| Admin workspace | `/admin/dashboard`, `/admin/users`, `/admin/tasks`, `/admin/projects` | Dashboard/account management, task management, and Project management have database-backed workflows. User management detail/edit interactions use the existing interface flows. |
+| Other Admin pages | `/admin/roles`, `/admin/categories`, `/admin/tags`, `/admin/reports`, `/admin/analytics`, `/admin/notifications`, `/admin/activity-logs`, `/admin/settings` | Routes and some UI are present; complete backend workflows are not implemented for every destination. |
+| Errors | `/403`, `/419`, `/429`, `/500`, `/503`, unknown-path fallback | Dedicated error pages are registered. |
 
-## Admin Panel
+## Feature and shared code
 
-All 30 required pages are newly scaffolded under resources/js/pages/admin/, with individual CSS files under matching resources/css/pages/admin/<area>/styles/:
+- Authentication: `resources/js/features/auth/` contains the auth store, services, and related UI.
+- Tasks: `resources/js/features/tasks/user/` and `resources/js/features/tasks/admin/` contain task-specific components, composables, and API helpers.
+- Projects: `resources/js/features/projects/admin/` contains Admin Project components, composables, and API helpers; User Project API helpers are under `resources/js/features/projects/user/`.
+- Shared UI and API: `resources/js/shared/` contains the Axios client, reusable components, and workspace navigation.
+- Styles: `resources/css/` contains global tokens/base styles, layout styles, shared component styles, and feature/page styles.
 
-- Dashboard: AdminDashboard
-- Users: UsersIndex, UsersShow, UsersEdit, UsersCreate
-- Roles & Permissions: RolesIndex, RolesCreate, RolesEdit, RolesShow, PermissionsIndex
-- Tasks: AdminTasksIndex, AdminTasksShow
-- Projects: AdminProjectsIndex, AdminProjectsShow
-- Categories: AdminCategoriesIndex, AdminCategoriesCreate, AdminCategoriesEdit
-- Tags: AdminTagsIndex, AdminTagsCreate, AdminTagsEdit
-- Reports & Analytics: AdminReportsIndex, AdminAnalyticsIndex
-- Notifications: AdminNotificationsIndex, AdminNotificationsCreate
-- Activity Logs: ActivityLogsIndex, ActivityLogsShow
-- System Settings: AdminSettingsIndex, AdminSettingsGeneral, AdminSettingsSecurity, AdminSettingsEmail
+## Navigation and access
 
-Task oversight, account restrictions, and authorization policy remain implementation decisions; the scaffolds encode no access behavior.
+The User and Admin route groups use separate layouts and role metadata. The current route guard grants the Admin layout only to admins; moderator permissions for limited user-management APIs do not grant moderator access to the Admin SPA. Protected API endpoints must enforce access independently of the route guard.
 
-## Authentication and Errors
-
-Five authentication components already exist and are preserved: Login.vue, Register.vue, ForgotPassword.vue, ResetPassword.vue, VerifyEmail.vue under resources/js/pages/auth/, each with an existing individual stylesheet under resources/css/pages/auth/.
-
-New error components and dedicated styles were added for Error403, Error404, Error419, Error429, Error500, Error503 under resources/js/pages/errors/ and resources/css/pages/errors/styles/.
-
-## Shared Components
-
-Existing under resources/js/shared/components/: AppButton (button), AppInput (input), AppModal, AppDropdown, AppPagination, AppConfirmDialog, and AppLoader; AppAlert is also present.
-
-New minimal shared component locations: BaseSelect, BaseTextarea, BaseCheckbox, BaseBadge, BaseCard, BaseTable, BaseTooltip, BaseEmptyState, BaseSkeleton, Sidebar, Topbar, Breadcrumbs, PageHeader, SearchBar, FilterPanel, NotificationDropdown, UserAvatar. App-prefixed components serve as equivalents of BaseButton, BaseInput, BaseModal, BaseDropdown, BasePagination, BaseConfirmDialog, and BaseLoader; they were not duplicated.
-
-## Layouts
-
-- User: existing resources/js/layouts/DashboardLayout.vue serves as the User Panel layout equivalent and was retained under the established project name.
-- Admin: new resources/js/layouts/AdminLayout.vue.
-- Authentication: existing resources/js/layouts/AuthLayout.vue.
-
-User and Admin layouts remain separate. Shared visual tokens exist in resources/css/variables.css. Vue Router now owns page navigation; the page components remain scaffolds without UI design.
-
-## CSS Organization
-
-Existing page styles remain in the established lowercase feature structure under resources/css/pages/app/ and resources/css/pages/auth/. Every new page component has one matching stylesheet in its area's styles/ folder, named after the page component. No page stylesheet is shared. Existing global styles remain in resources/css/.
-
-## Existing and Newly Created Files
-
-- Existing project files inspected: 212 before changes, including 13 existing User Panel page components, 5 authentication components, their page styles, shared components, layouts, and feature components.
-- New files created: 128 (54 page components + 54 matching page styles, one Admin layout + its stylesheet, 17 shared component placeholders, and this document).
-- Existing files preserved: all 212 pre-change files; no existing file was overwritten, renamed, or deleted.
-- Existing User Panel page equivalents: 13 of 30. New User Panel pages: 17.
-- New Admin Panel pages: 30.
-- Authentication pages: 5 existing. Error pages: 6 new.
-- New page styles: 54, plus one Admin layout stylesheet. Existing page styles are retained.
-
-## Architectural Decisions Still Needed
-
-- Whether to rename DashboardLayout.vue to UserLayout.vue; current project naming is DashboardLayout and it already fills the User layout role, so it was preserved.
-- Route naming, registration, and authorization boundaries for Admin and User areas.
-- Which task/project fields or account data administrators may inspect, especially where user privacy applies.
-- Whether ProductivityIndex should ultimately replace or coexist with the existing Statistics page and route.
-- Whether every Admin entity needs detail or edit screens beyond the requested inventory.
-
-## Recommended Additions
-
-- When implementation begins, connect pages to routes and intended layouts, with explicit role and privacy checks.
-- Establish documented token and shared component usage conventions before visual implementation.
-
-## User Tasks Management Implementation (2026-11-09)
-
-- The existing User Tasks routes now use a database-backed `/api/v1/tasks` API scoped to tasks owned by or assigned to the authenticated user. Task details, create/edit, status updates, and soft deletion use the existing Task model and table.
-- The Tasks Index provides database-backed task statistics, search, status/priority/due-date filters, sorting, and pagination. Completed and upcoming tasks are views of the same task list via filters; separate routes do not exist.
-- `resources/js/features/tasks/user/components/UserTaskForm.vue` is shared by the existing Create and Edit routes. Task detail remains at the existing Show route.
-- Category selection is omitted because the tasks schema has no category relationship/table. The task table is defined by `database/migrations/2026_11_09_000002_create_tasks_table.php` and includes ownership, assignment, creator, and soft-delete fields.
-- The User Dashboard task overview now reads counts and recent tasks from the same authenticated task API, keeping it consistent with the Tasks pages.
-- Local demo task records can be generated with `php artisan db:seed --class="Database\Seeders\UserTasksDemoSeeder"`; the standalone seeder is documented in `database/seeders/README.md` and is not included in `DatabaseSeeder`.
+For the backend API and its authorization behavior, see [API Documentation](docs/API_DOCUMENTATION.md). For the current work boundary, see [Development Roadmap](docs/DEVELOPMENT_ROADMAP.md).
