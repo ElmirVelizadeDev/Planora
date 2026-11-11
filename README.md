@@ -2,21 +2,21 @@
 
 **Plan your day. Shape your future.**
 
-Planora is a Laravel and Vue single-page application for personal productivity, with an administration area for managing accounts and monitoring platform tasks. Authentication, user administration, and database-backed User and Admin task workflows are implemented. Project, category, calendar, and related productivity screens remain partial or scaffolded.
+Planora is a Laravel and Vue single-page application for personal productivity and project coordination. It provides session-based authentication, user and task management, Admin Project management, and assigned Projects in the User workspace.
 
-This README describes the implementation in this repository. Features listed as planned or scaffolded below should not be treated as available product functionality.
+This README describes the implementation in this repository. Features listed as partial or scaffolded below should not be treated as available product functionality.
 
 ## Project Overview
 
-Planora brings sign-in, a personal workspace, account administration, and task management together in one web application. Users can create and manage their own tasks, view tasks assigned to them, and update task status. Administrators can manage platform tasks and user accounts through the Admin Panel. Project and other productivity-data workflows remain incomplete.
+Planora brings sign-in, a personal workspace, account administration, task management, and project coordination together in one web application. Users can manage owned or assigned tasks and view Projects assigned to them. Administrators can manage accounts, tasks, and Projects through the Admin Panel.
 
 ### User types
 
 | Role | Current capabilities |
 |---|---|
-| User | Sign in to an active, verified account; manage owned tasks and view assigned tasks in the personal workspace. |
+| User | Sign in to an active, verified account; manage owned tasks, view assigned tasks, and view Projects assigned by an administrator. |
 | Moderator | Has explicitly assigned user-management permissions in the backend. Seeded moderators can view users. The current Vue Admin route guard requires the admin role, so the moderator management UI is not currently accessible end-to-end. |
-| Admin | Access the Admin Panel, manage user accounts and tasks across the platform, subject to authorization protections. |
+| Admin | Access the Admin Panel and manage user accounts, tasks, and Projects, subject to authorization protections. |
 
 ## Features and Implementation Status
 
@@ -28,6 +28,9 @@ Planora brings sign-in, a personal workspace, account administration, and task m
 - Admin Dashboard account statistics, recent registrations, status distribution, and recorded account activity loaded through the Admin users API.
 - Admin Users Management: server-side search, role/status/verification/date filters, sorting, pagination (up to 10 records per page), refresh, and account statistics.
 - User Tasks and Admin Tasks: database-backed create, view, update, status changes, and soft deletion; task search, filters, sorting, pagination, assignment, and calculated statistics.
+- Admin Projects: create, view, update, and delete Projects; assign an active normal user as owner; manage lifecycle status, dates, search, filtering, pagination, and status statistics.
+- User Projects: list and view Projects assigned to the signed-in user, search and filter by lifecycle status, and view project dates and authorized related Tasks.
+- Project–Task integration: Tasks can be linked to a Project or remain standalone. Admins can manage Tasks on a Project; Users see only project Tasks they own or are assigned to. Deleting a Project detaches its Tasks rather than deleting them.
 - User Dashboard task statistics and recent tasks loaded from the authenticated User Tasks API.
 - User create, view, and edit flows; profile avatar upload/removal; role and moderator-permission management; account status changes; activity records; soft deletion and restore.
 - Backend validation, role middleware, policies, moderator permission checks, self-account restrictions, and protection against removing the last active administrator.
@@ -36,7 +39,7 @@ Planora brings sign-in, a personal workspace, account administration, and task m
 
 ### Partial or scaffolded
 
-- Projects, categories, calendar, reports, tags, notifications, settings, and several Admin pages are partial or scaffolded; their full persistent workflows are not implemented.
+- Categories, calendar, reports, tags, notifications, settings, and several Admin pages are partial or scaffolded; their full persistent workflows are not implemented.
 - Email delivery is not used by the local registration flow. Outside the local environment, the registration service attempts to use Laravel Mail; an operational SMTP/provider configuration has not been verified by this project documentation.
 - Moderators can be authorized by the backend for limited user management, but the Vue Admin layout is guarded for admins only. This currently prevents moderator access through the SPA.
 
@@ -89,9 +92,10 @@ flowchart LR
 - Authentication, user-management, and task operations are organized into API controllers, Form Requests, JSON Resources, Eloquent models, policies/middleware, and services under `app/`.
 - Admin user listing and statistics use `UserManagementQueryService`; mutation and audit behavior is in `UserManagementService` and `UserActivityLogger`.
 - Admin and User task listing, filtering, sorting, pagination, and statistics use `TaskService` and `UserTaskService`; User task queries are scoped to owned or assigned records.
+- Project operations use `ProjectService` and `UserProjectService`. Admin endpoints require an active Admin session; User Project endpoints require an active User session and scope Projects to the current user's owner assignment. Project Task queries also enforce the existing Task owner/assignee scope.
 - There are no separate Role or Permission database models. Roles are values on `users.role`; moderator permissions are stored as JSON on the user and constrained by `config/user_management.php`.
 
-The registered API surface includes authentication, account administration, and task management:
+The registered API surface includes authentication, account and task administration, Project management, and User Project access:
 
 | Method | Endpoint | Purpose / access |
 |---|---|---|
@@ -123,6 +127,17 @@ The registered API surface includes authentication, account administration, and 
 | `GET` | `/api/v1/admin/tasks/{task}` | Admin task details |
 | `PATCH` | `/api/v1/admin/tasks/{task}` | Admin task and assignment update |
 | `DELETE` | `/api/v1/admin/tasks/{task}` | Admin soft deletion |
+| `GET` | `/api/v1/admin/projects` | Admin Project listing, search/status filters, pagination, and status statistics |
+| `GET` | `/api/v1/admin/projects/owners` | Active normal-user choices for Project ownership |
+| `POST` | `/api/v1/admin/projects` | Create a Project with an active normal-user owner |
+| `GET` | `/api/v1/admin/projects/{project}` | Admin Project details |
+| `PATCH` | `/api/v1/admin/projects/{project}` | Update Project details, owner, status, or dates |
+| `DELETE` | `/api/v1/admin/projects/{project}` | Delete a Project; linked Tasks are detached by the nullable foreign key |
+| `GET` | `/api/v1/admin/projects/{project}/tasks` | Admin list/search/filter Project Tasks |
+| `POST` | `/api/v1/admin/projects/{project}/tasks` | Admin creates a Task linked to the Project |
+| `GET` | `/api/v1/projects` | User's assigned Projects, with search/status filters and pagination |
+| `GET` | `/api/v1/projects/{project}` | Details for a Project assigned to the current User |
+| `GET` | `/api/v1/projects/{project}/tasks` | Tasks on an assigned Project that the current User owns or is assigned to |
 | `GET` | `/api/v1/tasks` | Authenticated user's owned/assigned tasks, filters, sorting, pagination, and statistics |
 | `POST` | `/api/v1/tasks` | Create a task owned by the authenticated user |
 | `GET` | `/api/v1/tasks/{task}` | View an owned or assigned task |
@@ -138,7 +153,7 @@ Other controller and request files in the repository do not imply that their dom
 - `resources/js/app.js` mounts Vue, Pinia, and Vue Router. Route pages are lazy-loaded from `resources/js/router/routes.js`; `guards.js` checks session identity and roles for routes marked protected.
 - Authentication state and requests live in `resources/js/features/auth/`. The shared Axios client is `resources/js/shared/services/api.js`.
 - Feature-specific UI and API helpers are organized under `resources/js/features/`; shared controls and layout components are under `resources/js/shared/`.
-- Task features are separated into `resources/js/features/tasks/user/` and `resources/js/features/tasks/admin/`, each with components and API services; User task state and Admin list state live in their respective composables.
+- Task features are separated into `resources/js/features/tasks/user/` and `resources/js/features/tasks/admin/`, each with components and API services; User task state and Admin list state live in their respective composables. Admin Project components and API services live in `resources/js/features/projects/admin/`, with User Project API helpers in `resources/js/features/projects/user/`.
 - Styles are split into CSS variables/base styles, shared components/layouts, and feature/page styles under `resources/css/`.
 
 ### Important project directories
@@ -148,9 +163,9 @@ Other controller and request files in the repository do not imply that their dom
 | `app/Http/Controllers` | Web/API request handlers |
 | `app/Http/Requests` | Server-side request validation and authorization |
 | `app/Http/Resources` | API response serialization |
-| `app/Models` | Eloquent models for users, tasks, registrations, activity, and other domains |
+| `app/Models` | Eloquent models for users, Projects, Tasks, registrations, activity, and other domains |
 | `app/Policies`, `app/Http/Middleware` | Authorization and request access controls |
-| `app/Services` | Registration, dashboard, user-management, and task operations |
+| `app/Services` | Registration, dashboard, user-management, Project, and Task operations |
 | `database/migrations` | Database schema history |
 | `database/seeders` | Local development fixtures |
 | `resources/js/pages` | Vue route pages for Admin, User, Auth, and errors |
@@ -225,6 +240,14 @@ The Users Management screen supports:
 
 The Admin Vue route includes the Users Index and Create page; View and Edit are presented in the Index page's modal flows. Moderator permissions exist in the backend, but the Vue Admin layout currently requires the admin role, so moderators cannot use the management interface through the current SPA routing.
 
+### Projects and Project Tasks
+
+The Admin Projects pages support project listing, search, lifecycle filtering, pagination, status statistics, create/edit dialogs, project details, and deletion. Project owners must be active, non-deleted normal users. Lifecycle statuses are `planned`, `active`, `on_hold`, and `completed`; optional start and due dates are validated so the due date is not earlier than the start date.
+
+The User Projects page lists only Projects owned/assigned to the signed-in User, with search and lifecycle filtering. Project details include the owner, dates, status, and related Tasks. Project Tasks are additionally scoped to Tasks the User owns or is assigned to; task links use the existing Task details route. Admin Project Task management is available from the Admin Project details page.
+
+Tasks may be standalone (`project_id` is null) or linked to a Project. Deleting a Project deletes the Project row and the database foreign key detaches related Tasks by setting `project_id` to null; Task records themselves are retained. User access is enforced by authenticated, active-role API middleware and server-side Project/Task query scoping.
+
 ## Database and Seeders
 
 Configure the database through `.env`; `.env.example` selects MySQL. The checked-in migrations define these main tables:
@@ -237,17 +260,18 @@ Configure the database through `.env`; `.env.example` selects MySQL. The checked
 | `user_activity_logs` | Account event, description, optional JSON context, affected user and actor references |
 | `password_reset_otps` | Hashed password recovery OTP, expiry, attempt count, verification state, and recovery-token data |
 | `password_reset_tokens` | Legacy Laravel password-reset token storage schema; the current recovery flow uses `password_reset_otps` and a short-lived recovery cookie |
-| `tasks` | Task title and description, status, priority, optional due date, owner, assignee, creator, timestamps, soft deletion, and filtering indexes |
+| `projects` | Project name, description, lifecycle status, optional start/due dates, nullable User owner, timestamps, and listing indexes |
+| `tasks` | Task title and description, status, priority, optional due date, nullable Project reference, owner, assignee, creator, timestamps, soft deletion, and filtering indexes |
 | `personal_access_tokens` | Sanctum token table; current SPA authentication uses stateful sessions |
 | `failed_jobs` | Laravel failed queue jobs |
 
-The task table is defined by a database migration and is used by the User and Admin task APIs. There are no migrations defining project, category, subtask, tag, calendar-event, or notification data tables; corresponding screens remain partial or scaffolded.
+The Project and Task tables are defined by migrations. A Task's `project_id` is nullable, so standalone Tasks remain supported. The foreign key sets it to null when a Project is deleted. There are no migrations defining category, subtask, tag, calendar-event, or notification data tables; corresponding screens remain partial or scaffolded.
 
 ### Seeded local accounts
 
-`DatabaseSeeder` calls `PlanoraUsersSeeder`, which defines 20 local test accounts: 1 admin, 3 moderators, and 16 regular users. Newly created fixtures have verified email and the same demo password. The seeder is idempotent by email: it creates missing fixture accounts and, for an existing matching email, only fills `email_verified_at` if it is null; it does not overwrite the existing account's password, role, or profile. Moderator fixtures are assigned `users.view`.
+`DatabaseSeeder` calls `PlanoraUsersSeeder`, which defines 20 local test accounts: 1 admin, 3 moderators, and 16 regular users. Newly created fixtures have verified email and a shared local-only demo password. The seeder is idempotent by email: it creates missing fixture accounts and, for an existing matching email, only fills `email_verified_at` if it is null; it does not overwrite the existing account's password, role, or profile. Moderator fixtures are assigned `users.view`.
 
-Task demo records are seeded separately with `php artisan db:seed --class="Database\Seeders\UserTasksDemoSeeder"`. This idempotent local-development seeder creates five identifiable demo tasks per eligible existing regular user without deleting existing records or running as part of `migrate --seed`. It does not create categories. Review `database/seeders/UserTasksDemoSeeder.php` before using it with a non-development database.
+In `local` only, `DatabaseSeeder` also calls `ProjectDemoSeeder` and `UserTasksDemoSeeder`. The Project seeder creates or refreshes four marked Projects and four linked Tasks for each active, non-deleted normal user. The User Task seeder creates or refreshes five marked standalone Tasks per eligible user. Both are idempotent, preserve unrelated records, and are guarded against use outside `local`; Project ownership makes each seeded Project visible to its User. Review the seeder implementations before running them. `php artisan migrate --seed` runs these seeders only when `APP_ENV=local`.
 
 | Name | Email | Role |
 |---|---|---|
@@ -272,7 +296,7 @@ Task demo records are seeded separately with `php artisan db:seed --class="Datab
 | User Fifteen | `user15@gmail.com` | user |
 | User Sixteen | `user16@gmail.com` | user |
 
-The password for newly created fixtures is `password`. These are public, local-only demo credentials, not secure credentials. Do not use them in a deployed environment. If an account with a fixture email already exists, the seeder preserves its existing password and role; inspect that row if the local account no longer matches the fixture credentials. The seeder does not truncate tables or remove other accounts.
+If an account with a fixture email already exists, the seeder preserves its existing password and role. The user seeder does not truncate tables or remove other accounts. The shared demo password is intentionally not published in this README; do not use seeded accounts outside local development.
 
 ## Requirements
 
@@ -312,7 +336,7 @@ php artisan migrate --seed
 php artisan storage:link
 ~~~
 
-`migrate --seed` applies outstanding migrations and runs the idempotent Planora user fixture seeder; it does not run the separate task demo seeder or reset existing tables. Do not use `migrate:fresh` on a database with data because that command drops tables. `storage:link` enables public access to uploaded user avatars on the configured public disk.
+`migrate --seed` applies outstanding migrations and runs the Planora fixture seeders; Project and Task demo data is added only when `APP_ENV=local`. The seeders are idempotent and do not reset tables or remove unrelated records. Do not use `migrate:fresh` on a database with data because that command drops tables. `storage:link` enables public access to uploaded user avatars on the configured public disk.
 
 Run the Laravel server and Vite in separate terminals:
 
@@ -347,9 +371,10 @@ Keep `.env` local. Do not commit application keys, database credentials, mail cr
 | `npm run dev` | Start Vite with hot reload |
 | `npm run build` | Build production assets into `public/build` |
 | `php artisan migrate` | Apply outstanding migrations |
-| `php artisan migrate --seed` | Apply migrations and run the idempotent Planora user fixtures |
+| `php artisan migrate --seed` | Apply migrations and run Planora fixtures; Project and Task demo seeders run only when `APP_ENV=local` |
 | `php artisan db:seed --class=PlanoraUsersSeeder` | Run only the Planora fixture seeder |
-| `php artisan db:seed --class="Database\Seeders\UserTasksDemoSeeder"` | Add the separate idempotent User task demo fixtures (development only) |
+| `php artisan db:seed --class="Database\Seeders\ProjectDemoSeeder"` | Run the idempotent Project and linked-Task demo seeder (`local` only) |
+| `php artisan db:seed --class="Database\Seeders\UserTasksDemoSeeder"` | Run the idempotent standalone User Task demo seeder (`local` only) |
 | `php artisan route:list` | Inspect registered Laravel routes |
 | `php artisan migrate:status` | Inspect migration state |
 | `php artisan optimize:clear` | Clear Laravel's cached config/routes/views/events |
@@ -359,7 +384,7 @@ Keep `.env` local. Do not commit application keys, database credentials, mail cr
 
 ## Testing and Validation
 
-Backend tests are in `tests/Feature` and `tests/Unit`; they cover authentication and password recovery, Admin user management, and User/Admin task workflows. Run them with `php artisan test`. Feature tests expect the configured test database to be available; `phpunit.xml` does not enable an in-memory SQLite database by default, so configure a safe, isolated test database before running them.
+Backend tests are in `tests/Feature` and `tests/Unit`; they cover authentication and password recovery, Admin user and Project management, User Projects, Project–Task integration, and User/Admin task workflows. Run them with `php artisan test`. Feature tests expect the separately configured test database to be available; `phpunit.xml` does not enable an in-memory SQLite database by default. Use an isolated test database and never substitute the development database.
 
 There is no JavaScript test script in `package.json`. Validate frontend compilation with `npm run build`. For a documentation-only or code change review, `git diff --check` catches whitespace errors.
 
@@ -384,18 +409,19 @@ There is no JavaScript test script in `package.json`. Validate frontend compilat
 - Session/Sanctum authentication, role/status enforcement, Remember Me, local database OTP registration, and registration cleanup scheduling are implemented.
 - Admin user listing/management endpoints, policy checks, account activity logging, dashboard account statistics, and user fixtures are implemented.
 - User/Admin task CRUD, task authorization and user scoping, dashboard task statistics, and task demo fixtures are implemented.
+- Admin Project management, assigned User Projects, Project–Task association, and local Project demo fixtures are implemented.
 - Responsive shared layouts and user/admin/auth page styling are present.
 
 ### In progress / incomplete
 
-- Project, category, calendar, and related productivity pages remain partial or scaffolded; persistent workflows are not implemented for those modules.
-- Several Admin navigation destinations (roles, projects, categories, tags, reports, notifications, settings, and activity detail) remain partial or scaffolded. User management, user activity APIs, and task management are implemented.
+- Category, calendar, and related productivity pages remain partial or scaffolded; persistent workflows are not implemented for those modules.
+- Several Admin destinations (roles, categories, tags, reports, notifications, settings, and activity detail) remain partial or scaffolded. User management, user activity APIs, Project management, and Task management are implemented.
 - Moderator management authorization exists in backend code but is mismatched with the admin-only Vue route guard.
 - Public email delivery requires a separately configured and tested provider outside the local development path.
 
 ## Roadmap
 
-The repository's current development priorities are to complete productivity data models and APIs, connect User Dashboard and feature pages to persisted operations, reconcile moderator UI access with its backend permissions, implement password recovery, and expand automated test coverage. These are incomplete areas, not features claimed as available today.
+The repository's current development priorities include completing remaining productivity workflows, reconciling moderator UI access with its backend permissions, and expanding automated test coverage. These are incomplete areas, not features claimed as available today.
 
 ## Documentation
 
