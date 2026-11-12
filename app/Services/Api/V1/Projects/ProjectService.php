@@ -10,7 +10,7 @@ class ProjectService
 {
     public function paginate(array $filters): LengthAwarePaginator
     {
-        $query = Project::query()->with('owner:id,name,email,profile_photo')->withCount('tasks');
+        $query = Project::query()->with(['owner:id,name,email,profile_photo', 'category'])->withCount('tasks');
         if (! empty($filters['search'])) {
             $term = trim($filters['search']);
             $query->where(fn ($builder) => $builder->where('name', 'like', "%{$term}%")
@@ -18,6 +18,7 @@ class ProjectService
                 ->orWhereHas('owner', fn ($owner) => $owner->where('name', 'like', "%{$term}%")->orWhere('email', 'like', "%{$term}%")));
         }
         if (! empty($filters['status'])) $query->where('status', $filters['status']);
+        if (! empty($filters['category_id'])) $query->where('category_id', $filters['category_id']);
         return $query->latest('created_at')->latest('id')->paginate($filters['per_page'] ?? 10)->withQueryString();
     }
 
@@ -27,13 +28,13 @@ class ProjectService
         return ['total' => Project::query()->count(), 'active' => (int) ($counts['active'] ?? 0), 'completed' => (int) ($counts['completed'] ?? 0), 'on_hold' => (int) ($counts['on_hold'] ?? 0)];
     }
 
-    public function create(array $data): Project { return Project::query()->create($data)->load('owner:id,name,email,profile_photo')->loadCount('tasks'); }
+    public function create(array $data): Project { return Project::query()->create($data)->load(['owner:id,name,email,profile_photo', 'category'])->loadCount('tasks'); }
 
     public function update(Project $project, array $data): Project
     {
         return DB::transaction(function () use ($project, $data) {
             $project->fill($data)->save();
-            return $project->refresh()->load('owner:id,name,email,profile_photo')->loadCount('tasks');
+            return $project->refresh()->load(['owner:id,name,email,profile_photo', 'category'])->loadCount('tasks');
         });
     }
 

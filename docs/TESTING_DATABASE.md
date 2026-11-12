@@ -1,10 +1,10 @@
-# Isolated MySQL test database
+# Isolated MySQL Test Database
 
-Feature tests require MySQL. Do not point `APP_ENV=testing` at the development database. The test bootstrap refuses to run unless the configured driver is MySQL and the database name contains `test` or `testing`.
+PHPUnit feature tests use MySQL. The test bootstrap refuses to start unless the active driver is `mysql` and the database name contains a standalone `test` or `testing` segment (at the beginning/end or separated by `_` or `-`). This prevents accidentally running the suite against the normal development database. Do not disable or bypass the check.
 
-1. Create a separate MySQL database named `planora_security_test` and a dedicated test user with privileges limited to that database.
-2. Copy `.env.testing.example` to `.env.testing`, then set its test-only credentials and generate a separate key with `php artisan key:generate --env=testing`.
-3. Keep the MySQL server and PHP test process on the same machine or an explicitly isolated test network. SQLite is intentionally not substituted because these tests exercise MySQL locking, indexes, constraints, and migrations.
-4. Run the full suite with `php artisan test`.
+1. Create a dedicated test database and a test database user whose permissions are limited to that database.
+2. Copy `.env.testing.example` to `.env.testing`, configure the dedicated connection and test-only credentials, and generate a separate application key with `php artisan key:generate --env=testing`. Choose an available MySQL port; do not copy development credentials.
+3. Keep the test database distinct from the development database even when they share a MySQL server. Do not change PHPUnit to use in-memory SQLite; the suite relies on MySQL migrations, indexes, constraints, and locking behavior.
+4. Run `php artisan test` only after confirming `.env.testing` selects the isolated database.
 
-Test migrations may create and roll back tables only in the explicitly named test database. Never run `migrate:fresh` against the development database.
+Test setup and teardown may migrate or roll back tables in that configured test database. Never point PHPUnit at the development database, and do not use `migrate:fresh` against a database containing data.

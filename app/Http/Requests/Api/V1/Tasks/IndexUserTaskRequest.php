@@ -20,6 +20,7 @@ class IndexUserTaskRequest extends FormRequest
             'search' => ['nullable', 'string', 'max:120'],
             'status' => ['nullable', Rule::enum(TaskStatus::class)],
             'priority' => ['nullable', Rule::enum(TaskPriority::class)],
+            'category_id' => ['nullable', 'integer', Rule::exists('categories', 'id')],
             'due' => ['nullable', Rule::in(['today', 'upcoming', 'overdue'])],
             'due_after' => ['nullable', 'date_format:Y-m-d'],
             'due_before' => ['nullable', 'date_format:Y-m-d'],

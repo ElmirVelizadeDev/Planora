@@ -20,12 +20,12 @@ const PER_PAGE = 10;
 export function useAdminProjects() {
     const projects = ref([]), owners = ref([]), ownersError = ref('');
     const loading = ref(false), ownersLoading = ref(false), error = ref('');
-    const searchInput = ref(''), search = ref(''), status = ref('');
+    const searchInput = ref(''), search = ref(''), status = ref(''), categoryId = ref('');
     const page = ref(1), total = ref(0), lastPage = ref(1);
     const statistics = ref({ total: 0, active: 0, completed: 0, on_hold: 0 });
     const detail = ref(null), detailLoading = ref(false), detailError = ref(''), detailNotFound = ref(false);
     const dialog = reactive({ type: '', project: null, saving: false, error: '', errors: {} });
-    const hasFilters = computed(() => Boolean(search.value || status.value));
+    const hasFilters = computed(() => Boolean(search.value || status.value || categoryId.value));
     const rangeStart = computed(() => total.value ? (page.value - 1) * PER_PAGE + 1 : 0);
     const rangeEnd = computed(() => Math.min(page.value * PER_PAGE, total.value));
     let searchTimer, requestSequence = 0, detailRequestSequence = 0;
@@ -40,6 +40,7 @@ export function useAdminProjects() {
                 per_page: PER_PAGE,
                 ...(search.value ? { search: search.value } : {}),
                 ...(status.value ? { status: status.value } : {}),
+                ...(categoryId.value ? { category_id: categoryId.value } : {}),
             });
             if (sequence !== requestSequence) return;
             projects.value = response.data || [];
@@ -122,6 +123,7 @@ export function useAdminProjects() {
         searchInput.value = '';
         search.value = '';
         status.value = '';
+        categoryId.value = '';
         page.value = 1;
         loadProjects();
     }
@@ -207,7 +209,7 @@ export function useAdminProjects() {
 
     return {
         projects, owners, ownersError, ownersLoading, loading, error,
-        searchInput, search, status, page, total, lastPage, statistics,
+        searchInput, search, status, categoryId, page, total, lastPage, statistics,
         detail, detailLoading, detailError, detailNotFound, dialog,
         hasFilters, rangeStart, rangeEnd, perPage: PER_PAGE,
         loadProjects, loadOwners, loadProject, refreshProjects,

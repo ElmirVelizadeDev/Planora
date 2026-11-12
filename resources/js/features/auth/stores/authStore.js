@@ -39,6 +39,14 @@ export const useAuthStore = defineStore('auth', () => {
         return roles.value.includes(role);
     }
 
+    function hasManagementPermission(permission) {
+        if (hasRole('admin')) return true;
+
+        return hasRole('moderator')
+            && Array.isArray(user.value?.moderator_permissions)
+            && user.value.moderator_permissions.includes(permission);
+    }
+
     async function login(credentials) {
         const response = await loginRequest(credentials);
         const payload = response.data.data ?? response.data;
@@ -76,5 +84,5 @@ export const useAuthStore = defineStore('auth', () => {
         initialized.value = true;
     }
 
-    return { user, initialized, loading, isAuthenticated, roles, fetchCurrentUser, login, register, verifyRegistration, resendRegistrationCode, logout, hasRole, clearUser };
+    return { user, initialized, loading, isAuthenticated, roles, fetchCurrentUser, login, register, verifyRegistration, resendRegistrationCode, logout, hasRole, hasManagementPermission, clearUser };
 });

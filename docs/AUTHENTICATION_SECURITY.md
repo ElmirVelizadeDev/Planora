@@ -12,7 +12,7 @@ This note describes the current authentication and authorization boundaries impl
 ## Registration and one-time codes
 
 - Public registration cannot set a privileged role. Valid registration data is held in `pending_registrations` until email verification completes.
-- OTP hashes are stored in the database. In `APP_ENV=local`, the registration OTP can also be read from the local verification table; outside local, the application uses the configured Laravel Mail transport.
+- OTP hashes are stored in the database; plaintext OTP codes are not persisted. Local development suppresses email delivery and displays instructions to issue a fresh code with the protected `php artisan auth:local-otp` command, which prints it only to the terminal. Outside local, the application uses the configured Laravel Mail transport.
 - Registration and recovery codes expire after five minutes, have attempt limits, and are subject to resend cooldowns and route throttling. See [Registration OTP lifecycle](REGISTRATION_OTP.md) and [Local mail testing](LOCAL_MAIL_TESTING.md).
 - `auth:local-otp` prints a fresh code only to the terminal and is restricted to local development or a MySQL test database whose name contains `test` or `testing`. Do not copy codes into logs or shared output.
 
@@ -22,6 +22,8 @@ This note describes the current authentication and authorization boundaries impl
 - Account roles are `user`, `moderator`, and `admin`; statuses are `active`, `inactive`, `suspended`, and `banned`. Inactive accounts are rejected by active-account middleware on protected APIs.
 - User Management authorization applies policy checks, self-account restrictions, and protection against removing the last active administrator. User deletion is soft deletion; task deletion is also soft deletion.
 - Project APIs require an active Admin for management or an active User for assigned-project access. User Project lookup is scoped by `owner_id`; Project Task listing additionally requires Task ownership or assignment.
+- Admin Category management requires an active Admin. The separate User Category catalog requires an active `user` role and returns active Categories only. Category detail usage counts and related records are scoped to Projects owned by the User and Tasks owned by or assigned to the User; they do not expose Admin global counts or other Users' private records.
+- Project and Task category IDs are validated server-side. New assignments must use an active Category. An existing archived Category association can be retained during an update, but cannot be newly assigned. See [API Documentation](API_DOCUMENTATION.md) and [Database Design](DATABASE_DESIGN.md).
 - Avatar uploads are validated by the User Management request layer for allowed image formats, dimensions, and size.
 
 ## Deployment

@@ -1,13 +1,33 @@
-# Local User Task Demo Data
+# Local Demo Seeders
 
-`UserTasksDemoSeeder` creates or refreshes five clearly marked task records for each existing, active, non-deleted user account (`role=user`). It uses only the current `tasks` columns and assigns ownership and creator to that user. The fixed per-user task keys make repeated runs idempotent; existing unmarked tasks are not changed or deleted. A matching soft-deleted demo task is restored.
+## Important environment warning
 
-`DatabaseSeeder` calls this seeder only when `APP_ENV=local`. It also calls `ProjectDemoSeeder` in that environment. This seeder itself refuses to run unless `APP_ENV=local`.
+`DatabaseSeeder` invokes `PlanoraUsersSeeder` before checking the environment. That account seeder is not environment-guarded and uses a built-in development credential for newly created fixture accounts. Do not run `php artisan db:seed` or `php artisan migrate --seed` in production or against a database containing non-disposable data. Use these instructions only after confirming `.env` targets an isolated local development database.
 
-From the project root, after checking that `.env` targets the intended local database, run only:
+## Category catalog
+
+`CategorySeeder` is local-only and adds these ten categories when no case-insensitive active or archived name already exists: Web Development, UI/UX Design, Mobile Development, Database, Marketing, Research, Bug Fixes, Documentation, DevOps, and Content Creation. Each includes a description and valid hex color. Existing Category rows are not updated, archived names prevent duplicate insertion, and repeat runs are idempotent.
+
+Run only this seeder after verifying the local database target:
 
 ```sh
+php artisan db:seed --class="Database\Seeders\CategorySeeder"
+```
+
+## Project and Task demo records
+
+`ProjectDemoSeeder` and `UserTasksDemoSeeder` are also local-only and refuse to run outside `APP_ENV=local`. `DatabaseSeeder` invokes Category, Project, and User Task seeders only in that environment.
+
+- `ProjectDemoSeeder` creates or refreshes four marked Projects per active, non-deleted normal User. Each Project has four purpose-matched Tasks, for sixteen linked Tasks per User. It refreshes only records with its Planora seed markers and restores matching soft-deleted demo Tasks.
+- `UserTasksDemoSeeder` creates or refreshes five marked standalone Tasks per active, non-deleted normal User. Matching soft-deleted demo Tasks are restored.
+- Both seeders preserve existing non-null `category_id` values, including associations to archived Categories. A matching active Category is assigned only when a demo record is new or has no Category association. They do not modify unrelated records.
+- Project and Task ownership/assignment fields are set for the local demo User so the seeded records follow normal visibility rules.
+
+Run them individually only in the verified local database:
+
+```sh
+php artisan db:seed --class="Database\Seeders\ProjectDemoSeeder"
 php artisan db:seed --class="Database\Seeders\UserTasksDemoSeeder"
 ```
 
-Seed rows are identifiable by the `[Planora Seed U{user-id} T{01-05}]` title prefix and the development seed note in their description. These records are standalone (`project_id` is null). To verify counts per user, count rows with `owner_id` set to each eligible user's ID and a title beginning with `[Planora Seed U{user-id} T`.
+The Category, Project, and User Task seeder guards do not make `DatabaseSeeder` safe outside local development because `PlanoraUsersSeeder` is currently called unconditionally. Review the implementation before using any seeder against a database with existing data.

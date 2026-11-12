@@ -16,11 +16,13 @@
                     v-model:search-input="searchInput"
                     v-model:status="filters.status"
                     v-model:priority="filters.priority"
+                    v-model:category-id="filters.category_id"
                     v-model:due="filters.due"
                     v-model:start-date="filters.start_date"
                     v-model:end-date="filters.end_date"
                     v-model:sort="sort"
                     :loading="loading"
+                    :categories="categories"
                     :has-toolbar-changes="hasToolbarChanges"
                     @search="onSearch"
                     @change="applyFilters"
@@ -53,10 +55,10 @@ import { useUserTasks } from '../../../features/tasks/user/composables/useUserTa
 
 const route = useRoute(), router = useRouter();
 const {
-    tasks, loading, error, notice, page, perPage, total, lastPage, statistics,
+    tasks, categories, loading, error, notice, page, perPage, total, lastPage, statistics,
     searchInput, sort, filters, pendingStatuses, hasFilters, hasToolbarChanges,
     rangeStart, rangeEnd, load, onSearch, applyFilters, clearFilters, goToPage,
-    setStatus, remove, showNotice,
+    setStatus, remove, showNotice, loadCategories,
 } = useUserTasks();
 const taskToDelete = ref(null), deleting = ref(false);
 const stats = computed(() => [
@@ -81,7 +83,7 @@ onMounted(async () => {
         if (messages[route.query.notice]) showNotice(messages[route.query.notice]);
         await router.replace({ name: 'tasks.index' });
     }
-    load();
+    load(); loadCategories();
 });
 </script>
 

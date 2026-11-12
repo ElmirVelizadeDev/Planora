@@ -72,7 +72,7 @@ class UserTaskController extends Controller
 
     private function accessibleTask(Request $request, int $task): Task
     {
-        return Task::query()->with(['owner', 'assignedUser'])
+        return Task::query()->with(['owner', 'assignedUser', 'category'])
             ->where(fn ($query) => $query->where('owner_id', $request->user()->id)
                 ->orWhere('assigned_user_id', $request->user()->id))
             ->findOrFail($task);

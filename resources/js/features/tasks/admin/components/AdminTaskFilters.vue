@@ -5,6 +5,7 @@
             <label><select :value="filters.status" aria-label="Status" @change="updateFilter('status', $event.target.value)"><option value="">Status</option><option value="pending">Pending</option><option value="in_progress">In progress</option><option value="completed">Completed</option></select></label>
             <label><select :value="filters.priority" aria-label="Priority" @change="updateFilter('priority', $event.target.value)"><option value="">Priority</option><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option><option value="urgent">Urgent</option></select></label>
             <label><select :value="filters.assigned_user_id" aria-label="Assigned user" @change="updateFilter('assigned_user_id', $event.target.value)"><option value="">Assigned user</option><option v-for="user in assignees" :key="user.id" :value="user.id">{{ user.name }}</option></select></label>
+            <label><select :value="filters.category_id" aria-label="Category" @change="updateFilter('category_id', $event.target.value)"><option value="">All categories</option><option v-for="category in categories" :key="category.id" :value="category.id">{{ category.name }}</option></select></label>
         </div>
         <div class="admin-tasks-date-row">
             <label class="admin-tasks-date-filter"><input :value="filters.start_date" type="date" aria-label="Start Date" @change="updateFilter('start_date', $event.target.value)"></label>
@@ -20,6 +21,7 @@ defineProps({
     searchInput: { type: String, default: '' },
     filters: { type: Object, required: true },
     assignees: { type: Array, default: () => [] },
+    categories: { type: Array, default: () => [] },
     loading: { type: Boolean, default: false },
     hasFilters: { type: Boolean, default: false },
 });

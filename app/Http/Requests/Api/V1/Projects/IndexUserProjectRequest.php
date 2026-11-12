@@ -14,6 +14,7 @@ class IndexUserProjectRequest extends FormRequest
         return [
             'search' => ['nullable', 'string', 'max:120'],
             'status' => ['nullable', Rule::in(['planned', 'active', 'on_hold', 'completed'])],
+            'category_id' => ['nullable', 'integer', Rule::exists('categories', 'id')],
             'per_page' => ['sometimes', 'integer', 'min:1', 'max:50'],
             'page' => ['sometimes', 'integer', 'min:1'],
         ];

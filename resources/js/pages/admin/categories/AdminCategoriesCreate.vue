@@ -1,5 +1,5 @@
-<template>
-    <main class="page-admincategoriescreate" />
-</template>
+<template><AdminCategoriesIndex /></template>
 
-<style src="../../../../css/pages/admin/categories/styles/AdminCategoriesCreate.css"></style>
+<script setup>
+import AdminCategoriesIndex from './AdminCategoriesIndex.vue';
+</script>

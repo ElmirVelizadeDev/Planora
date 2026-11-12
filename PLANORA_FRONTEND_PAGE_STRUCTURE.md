@@ -1,35 +1,37 @@
 # Planora Frontend Page Structure
 
-This is a current map of the Vue application, its route groups, and implementation boundaries. Routes are declared in `resources/js/router/routes.js`; only the backend and connected UI determine whether a workflow is implemented.
+This document maps active Vue route groups and their implementation boundaries. Routes are declared in `resources/js/router/routes.js`; API and server-side authorization remain authoritative.
 
 ## Application entry and layouts
 
-- `resources/views/welcome.blade.php` provides the single SPA mount point and Vite assets.
+- `resources/views/welcome.blade.php` is the SPA shell and loads the Vite entries `resources/css/app.css` and `resources/js/app.js`.
 - `resources/js/app.js` creates Vue, Pinia, and Vue Router. Route components are lazy-loaded.
-- `resources/js/layouts/AuthLayout.vue`, `UserLayout.vue`, and `AdminLayout.vue` provide the public authentication, User workspace, and Admin shell.
-- `resources/js/router/guards.js` loads the current session User when needed and applies route role checks. Laravel remains the authorization boundary.
+- `resources/js/layouts/AuthLayout.vue`, `UserLayout.vue`, and `AdminLayout.vue` provide separate authentication, User workspace, and Admin shells.
+- `resources/js/router/guards.js` loads the current session User and applies route role checks. Laravel independently protects API data and mutations.
 
 ## Route groups and implementation status
 
 | Area | Route examples | Current implementation |
 |---|---|---|
-| Public and Auth | `/`, `/login`, `/register`, `/verify-email`, `/forgot-password`, `/reset-password`, `/terms-and-conditions`, `/privacy-policy` | Public pages and authentication flows are implemented; OTP and session details are in [Registration OTP](docs/REGISTRATION_OTP.md) and [Authentication Security](docs/AUTHENTICATION_SECURITY.md). |
-| User workspace | `/dashboard`, `/tasks`, `/tasks/:taskId`, `/projects`, `/projects/:projectId` | Dashboard task summary, User Task workflows, and assigned User Projects are connected to APIs. Project Task access is scoped by Project ownership and Task ownership/assignment. |
-| Other User pages | `/calendar`, `/categories`, `/tags`, `/notifications`, `/profile`, `/settings`, `/statistics`, `/productivity` | Route records and page components exist, but these domains are partial or scaffolded; do not infer persistent workflows from their presence. |
-| Admin workspace | `/admin/dashboard`, `/admin/users`, `/admin/tasks`, `/admin/projects` | Dashboard/account management, task management, and Project management have database-backed workflows. User management detail/edit interactions use the existing interface flows. |
-| Other Admin pages | `/admin/roles`, `/admin/categories`, `/admin/tags`, `/admin/reports`, `/admin/analytics`, `/admin/notifications`, `/admin/activity-logs`, `/admin/settings` | Routes and some UI are present; complete backend workflows are not implemented for every destination. |
+| Public and Auth | `/`, `/login`, `/register`, `/verify-email`, `/forgot-password`, `/reset-password`, `/terms-and-conditions`, `/privacy-policy` | Public pages, session authentication, registration verification, and password recovery. See [Registration OTP](docs/REGISTRATION_OTP.md) and [Authentication Security](docs/AUTHENTICATION_SECURITY.md). |
+| User workspace | `/dashboard`, `/tasks`, `/tasks/:taskId`, `/projects`, `/projects/:projectId` | Dashboard task summary, owned/assigned Task workflows, and Projects owned by the current User. Project Tasks are further scoped by Task ownership/assignment. |
+| User Categories | `/categories`, `/categories/:categoryId` | Read-only active Category catalog with search, sorting, pagination, accessible usage counts, and User-scoped related Projects/Tasks. Create/edit paths redirect to the catalog. |
+| Other User pages | `/calendar`, `/tags`, `/notifications`, `/profile`, `/settings`, `/statistics`, `/productivity` | Routes and UI exist; several workflows remain partial or scaffolded. |
+| Admin workspace | `/admin/dashboard`, `/admin/users`, `/admin/tasks`, `/admin/projects` | Database-backed dashboard, account, Task, and Project management workflows. |
+| Admin Categories | `/admin/categories`, `/admin/categories/create`, `/admin/categories/:categoryId`, `/admin/categories/:categoryId/edit` | Database-backed list, detail, create, edit, archive, and restore. Category management is Admin-only. |
+| Other Admin pages | `/admin/roles`, `/admin/tags`, `/admin/reports`, `/admin/analytics`, `/admin/notifications`, `/admin/activity-logs`, `/admin/settings` | Several destinations remain partial or scaffolded. |
 | Errors | `/403`, `/419`, `/429`, `/500`, `/503`, unknown-path fallback | Dedicated error pages are registered. |
 
-## Feature and shared code
+## Feature structure
 
 - Authentication: `resources/js/features/auth/` contains the auth store, services, and related UI.
-- Tasks: `resources/js/features/tasks/user/` and `resources/js/features/tasks/admin/` contain task-specific components, composables, and API helpers.
-- Projects: `resources/js/features/projects/admin/` contains Admin Project components, composables, and API helpers; User Project API helpers are under `resources/js/features/projects/user/`.
+- Categories: `resources/js/features/categories/admin/`, `user/`, and `shared/` contain the separate Admin and User UI/API layers and shared Category components. Route pages live in `resources/js/pages/admin/categories/` and `resources/js/pages/app/categories/`.
+- Tasks: `resources/js/features/tasks/admin/` and `user/` contain task-specific components, composables, and API services.
+- Projects: `resources/js/features/projects/admin/` contains Admin Project components, composables, and API services; User Project API helpers are under `resources/js/features/projects/user/`.
 - Shared UI and API: `resources/js/shared/` contains the Axios client, reusable components, and workspace navigation.
-- Styles: `resources/css/` contains global tokens/base styles, layout styles, shared component styles, and feature/page styles.
 
-## Navigation and access
+## CSS loading and ownership
 
-The User and Admin route groups use separate layouts and role metadata. The current route guard grants the Admin layout only to admins; moderator permissions for limited user-management APIs do not grant moderator access to the Admin SPA. Protected API endpoints must enforce access independently of the route guard.
+`resources/css/app.css` is the single global entry and imports tokens, reset, then typography. Layout styles live under `resources/css/layouts/`; reusable styles live under `resources/css/components/`; Categories styles are feature-owned under `resources/css/features/categories/{admin,shared,user}/`; other page styles remain under `resources/css/pages/`. Vue SFC `style src` imports associate page/component styles with their lazy-loaded consumers. The Admin and User Category styles remain separate; the shared Category badge has one stylesheet source.
 
-For the backend API and its authorization behavior, see [API Documentation](docs/API_DOCUMENTATION.md). For the current work boundary, see [Development Roadmap](docs/DEVELOPMENT_ROADMAP.md).
+The User and Admin route groups use separate layouts and role metadata. The Admin layout currently admits only Admins; limited moderator User Management API permissions do not provide moderator access to the Admin SPA. Protected APIs enforce access independently of the route guard. For API and data scope details, see [API Documentation](docs/API_DOCUMENTATION.md) and [Database Design](docs/DATABASE_DESIGN.md).

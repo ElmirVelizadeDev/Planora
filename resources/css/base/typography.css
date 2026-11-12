@@ -1,0 +1,13 @@
+:root {
+    color-scheme: light;
+    font-family: var(--font-family-sans);
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+}
+
+body {
+    color: var(--color-text);
+    background: var(--color-background);
+    font-size: var(--font-size-body);
+    line-height: var(--line-height-body);
+}

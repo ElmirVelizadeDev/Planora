@@ -6,7 +6,7 @@
                 <h1>Users</h1>
                 <p class="admin-users-description">Manage accounts, access and activity across Planora.</p>
             </div>
-            <RouterLink class="admin-users-primary-button" :to="{ name: 'admin.users.create' }">
+            <RouterLink v-if="isAdmin" class="admin-users-primary-button" :to="{ name: 'admin.users.create' }">
                 <span aria-hidden="true">＋</span> Add new user
             </RouterLink>
         </header>
@@ -80,9 +80,9 @@
                                 <td data-label="Actions">
                                     <div class="admin-users-actions">
                                         <button type="button" :aria-label="`View ${user.name}`" title="View user" @click="openViewDialog(user)">View</button>
-                                        <button type="button" :aria-label="`Edit ${user.name}`" title="Edit user" @click="openEditDialog(user)">Edit</button>
-                                        <button type="button" :disabled="Boolean(statusActionDisabledReason(user))" :aria-label="`Change status for ${user.name}`" :title="statusActionDisabledReason(user) || 'Change status'" @click="openStatusDialog(user)">Status</button>
-                                        <button class="is-danger" type="button" :disabled="Boolean(deleteActionDisabledReason(user))" :aria-label="`Delete ${user.name}`" :title="deleteActionDisabledReason(user) || 'Delete user'" @click="openDeleteDialog(user)">Delete</button>
+                                        <button v-if="isAdmin" type="button" :aria-label="`Edit ${user.name}`" title="Edit user" @click="openEditDialog(user)">Edit</button>
+                                        <button v-if="isAdmin || (canManageStatus && user.role === 'user')" type="button" :disabled="Boolean(statusActionDisabledReason(user))" :aria-label="`Change status for ${user.name}`" :title="statusActionDisabledReason(user) || 'Change status'" @click="openStatusDialog(user)">Status</button>
+                                        <button v-if="isAdmin" class="is-danger" type="button" :disabled="Boolean(deleteActionDisabledReason(user))" :aria-label="`Delete ${user.name}`" :title="deleteActionDisabledReason(user) || 'Delete user'" @click="openDeleteDialog(user)">Delete</button>
                                     </div>
                                 </td>
                             </tr>
@@ -144,7 +144,7 @@
                                 <div v-if="dialog.user.role === 'moderator'"><dt>Moderator permissions</dt><dd>{{ dialog.user.moderator_permissions?.length ? dialog.user.moderator_permissions.join(', ') : 'None assigned' }}</dd></div>
                             </dl>
                         </section>
-                        <div class="admin-users-dialog-actions"><button class="admin-users-secondary-button" type="button" @click="closeDialog">Close</button><button class="admin-users-primary-button" type="button" @click="openEditDialog(dialog.user)">Edit user</button></div>
+                        <div class="admin-users-dialog-actions"><button class="admin-users-secondary-button" type="button" @click="closeDialog">Close</button><button v-if="isAdmin" class="admin-users-primary-button" type="button" @click="openEditDialog(dialog.user)">Edit user</button></div>
                     </template>
                 </template>
                 <template v-else-if="dialog.type === 'edit'">
@@ -288,6 +288,8 @@ const statusDescriptions = {
 };
 const dialogTitleId = 'admin-users-dialog-title';
 const isAdmin = computed(() => auth.hasRole('admin'));
+const canManageStatus = computed(() => isAdmin.value
+    || (auth.hasManagementPermission('users.view') && auth.hasManagementPermission('users.status.manage')));
 const usersPerPage = 10;
 const editAvatarPreview = computed(() => dialog.avatarPreview || (dialog.removeAvatar ? '' : dialog.user?.avatar || ''));
 

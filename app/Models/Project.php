@@ -7,13 +7,18 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Project extends Model
 {
-    protected $fillable = ['name', 'description', 'status', 'start_date', 'due_date', 'owner_id'];
+    protected $fillable = ['name', 'description', 'status', 'start_date', 'due_date', 'owner_id', 'category_id'];
 
     protected $casts = ['start_date' => 'date:Y-m-d', 'due_date' => 'date:Y-m-d'];
 
     public function owner(): BelongsTo
     {
         return $this->belongsTo(User::class, 'owner_id')->withTrashed();
+    }
+
+    public function category(): BelongsTo
+    {
+        return $this->belongsTo(Category::class)->withTrashed();
     }
 
     public function tasks(): \Illuminate\Database\Eloquent\Relations\HasMany

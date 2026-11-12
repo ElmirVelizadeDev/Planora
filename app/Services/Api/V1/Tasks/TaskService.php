@@ -10,7 +10,7 @@ class TaskService
 {
     public function paginate(array $filters): LengthAwarePaginator
     {
-        $query = Task::query()->with(['owner', 'assignedUser', 'creator']);
+        $query = Task::query()->with(['owner', 'assignedUser', 'creator', 'category']);
 
         if (! empty($filters['search'])) {
             $term = trim($filters['search']);
@@ -19,6 +19,7 @@ class TaskService
         }
         if (! empty($filters['status'])) $query->where('status', $filters['status']);
         if (! empty($filters['priority'])) $query->where('priority', $filters['priority']);
+        if (! empty($filters['category_id'])) $query->where('category_id', $filters['category_id']);
 
         $assigneeId = $filters['assigned_user_id'] ?? $filters['user_id'] ?? null;
         if ($assigneeId) $query->where('assigned_user_id', $assigneeId);
@@ -42,13 +43,14 @@ class TaskService
     public function paginateForProject(int $projectId, array $filters): LengthAwarePaginator
     {
         $filters['project_id'] = $projectId;
-        $query = Task::query()->with(['owner', 'assignedUser', 'creator'])->where('project_id', $projectId);
+        $query = Task::query()->with(['owner', 'assignedUser', 'creator', 'category'])->where('project_id', $projectId);
         if (! empty($filters['search'])) {
             $term = trim($filters['search']);
             $query->where(fn ($q) => $q->where('title', 'like', "%{$term}%")->orWhere('description', 'like', "%{$term}%"));
         }
         if (! empty($filters['status'])) $query->where('status', $filters['status']);
         if (! empty($filters['priority'])) $query->where('priority', $filters['priority']);
+        if (! empty($filters['category_id'])) $query->where('category_id', $filters['category_id']);
         return $query->latest('created_at')->latest('id')->paginate($filters['per_page'] ?? 10)->withQueryString();
     }
 
@@ -67,7 +69,7 @@ class TaskService
 
     public function create(array $data, int $adminId): Task
     {
-        return DB::transaction(fn () => Task::create($data + ['created_by' => $adminId])->load(['owner', 'assignedUser', 'creator']));
+        return DB::transaction(fn () => Task::create($data + ['created_by' => $adminId])->load(['owner', 'assignedUser', 'creator', 'category']));
     }
 
     public function update(Task $task, array $data): Task
@@ -75,7 +77,7 @@ class TaskService
         return DB::transaction(function () use ($task, $data) {
             $task->fill($data)->save();
 
-            return $task->refresh()->load(['owner', 'assignedUser', 'creator']);
+            return $task->refresh()->load(['owner', 'assignedUser', 'creator', 'category']);
         });
     }
 

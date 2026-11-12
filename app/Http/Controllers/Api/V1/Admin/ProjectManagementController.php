@@ -31,7 +31,7 @@ class ProjectManagementController extends Controller
 
     public function show(Project $project): JsonResponse
     {
-        $project->load('owner:id,name,email,profile_photo')->loadCount('tasks');
+        $project->load(['owner:id,name,email,profile_photo', 'category'])->loadCount('tasks');
 
         return response()->json(['project' => ProjectResource::make($project)->resolve(request())]);
     }

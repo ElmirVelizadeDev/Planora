@@ -14,6 +14,7 @@
                     v-model:search-input="searchInput"
                     :filters="filters"
                     :assignees="assignees"
+                    :categories="categories"
                     :loading="loading"
                     :has-filters="hasFilters"
                     @update:filter="updateFilter"
@@ -64,7 +65,7 @@ import AdminTaskTable from '../../../features/tasks/admin/components/AdminTaskTa
 import { useAdminTasks } from '../../../features/tasks/admin/composables/useAdminTasks.js';
 
 const {
-    tasks, assignees, loading, error, searchInput, page, perPage, total, lastPage,
+    tasks, assignees, categories, loading, error, searchInput, page, perPage, total, lastPage,
     filters, statistics, hasFilters, rangeStart, rangeEnd, loadTasks, refreshTasks,
     onSearch, applyFilters, updateFilter, clearFilters, goToPage, changePerPage, removeTask,
 } = useAdminTasks();

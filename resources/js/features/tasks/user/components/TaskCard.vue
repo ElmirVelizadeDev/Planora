@@ -8,6 +8,7 @@
             <p v-if="task.description" class="user-task-card-description">{{ task.description }}</p>
             <div class="user-task-meta">
                 <TaskPriorityBadge :priority="task.priority" />
+                <span v-if="task.category" class="user-task-category"><i :style="{ backgroundColor: task.category.color }"></i>{{ task.category.name }}</span>
                 <span v-if="task.due_date" class="user-task-due" :class="{ 'is-overdue': isOverdue(task) }">
                     <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg>
                     {{ isOverdue(task) ? 'Overdue · ' : 'Due ' }}{{ formatDate(task.due_date) }}

@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\V1\AuthController;
+use App\Http\Controllers\Api\V1\CategoryController;
 use App\Http\Controllers\Api\V1\Admin\UserActivityController;
 use App\Http\Controllers\Api\V1\Admin\ProjectManagementController;
 use App\Http\Controllers\Api\V1\Admin\UserManagementController;
@@ -11,6 +12,7 @@ use App\Http\Controllers\Api\V1\PasswordController;
 use App\Http\Controllers\Api\V1\TaskController;
 use App\Http\Controllers\Api\V1\UserTaskController;
 use App\Http\Controllers\Api\V1\UserProjectController;
+use App\Http\Controllers\Api\V1\UserCategoryController;
 use App\Http\Controllers\Api\V1\Admin\ProjectTaskManagementController;
 use Illuminate\Support\Facades\Route;
 
@@ -68,10 +70,24 @@ Route::prefix('admin/projects')->name('admin.projects.')->middleware(['auth:sanc
     Route::delete('/{project}', [ProjectManagementController::class, 'destroy'])->name('destroy');
 });
 
+Route::prefix('admin/categories')->name('admin.categories.')->middleware(['auth:sanctum', 'active', 'role:admin'])->group(function () {
+    Route::get('/', [CategoryController::class, 'index'])->name('index');
+    Route::post('/', [CategoryController::class, 'store'])->name('store');
+    Route::post('/{category}/restore', [CategoryController::class, 'restore'])->whereNumber('category')->name('restore');
+    Route::get('/{category}', [CategoryController::class, 'show'])->whereNumber('category')->name('show');
+    Route::patch('/{category}', [CategoryController::class, 'update'])->whereNumber('category')->name('update');
+    Route::delete('/{category}', [CategoryController::class, 'destroy'])->whereNumber('category')->name('destroy');
+});
+
 Route::prefix('projects')->name('projects.')->middleware(['auth:sanctum', 'active', 'role:user'])->group(function () {
     Route::get('/', [UserProjectController::class, 'index'])->name('index');
     Route::get('/{project}/tasks', [UserProjectController::class, 'tasks'])->whereNumber('project')->name('tasks.index');
     Route::get('/{project}', [UserProjectController::class, 'show'])->whereNumber('project')->name('show');
+});
+
+Route::prefix('categories')->name('categories.')->middleware(['auth:sanctum', 'active', 'role:user'])->group(function () {
+    Route::get('/', [UserCategoryController::class, 'index'])->name('index');
+    Route::get('/{category}', [UserCategoryController::class, 'show'])->whereNumber('category')->name('show');
 });
 
 Route::prefix('tasks')->name('tasks.')->middleware(['auth:sanctum', 'active', 'role:user'])->group(function () {

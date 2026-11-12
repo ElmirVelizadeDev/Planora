@@ -15,7 +15,7 @@ class DatabaseSeeder extends Seeder
         $this->call(PlanoraUsersSeeder::class);
 
         if (app()->environment('local')) {
-            $this->call([ProjectDemoSeeder::class, UserTasksDemoSeeder::class]);
+            $this->call([CategorySeeder::class, ProjectDemoSeeder::class, UserTasksDemoSeeder::class]);
         }
     }
 }

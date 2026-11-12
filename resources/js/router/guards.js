@@ -14,12 +14,16 @@ export function installRouteGuards(router) {
         if (to.meta.guestOnly && user) {
             if (auth.hasRole('admin')) return { name: 'admin.dashboard' };
             if (auth.hasRole('user')) return { name: 'dashboard' };
+            if (auth.hasRole('moderator') && auth.hasManagementPermission('users.view')) return { name: 'admin.users.index' };
             return { name: 'error.403' };
         }
         if (to.meta.requiresAuth && !user) {
             return { name: 'login', query: { redirect: to.fullPath } };
         }
-        if (to.meta.requiresRole && !auth.hasRole(to.meta.requiresRole)) {
+        const canViewAdminUsers = to.name === 'admin.users.index'
+            && auth.hasRole('moderator')
+            && auth.hasManagementPermission('users.view');
+        if (to.meta.requiresRole && !auth.hasRole(to.meta.requiresRole) && !canViewAdminUsers) {
             if (to.meta.requiresRole === 'admin' && auth.hasRole('user')) return { name: 'dashboard' };
             if (to.meta.requiresRole === 'user' && auth.hasRole('admin')) return { name: 'admin.dashboard' };
             return { name: 'error.403' };

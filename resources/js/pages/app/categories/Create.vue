@@ -1,4 +1,5 @@
-<template>
-    <main class="page-categories-create"></main>
-</template>
-<style src="../../../../css/pages/app/categories/create.css"></style>
+<template><UserCategoriesIndex /></template>
+
+<script setup>
+import UserCategoriesIndex from './UserCategoriesIndex.vue';
+</script>

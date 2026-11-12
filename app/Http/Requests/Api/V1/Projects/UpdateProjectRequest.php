@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Api\V1\Projects;
 
 use App\Models\Project;
+use App\Models\Category;
 use Illuminate\Validation\Rule;
 
 class UpdateProjectRequest extends StoreProjectRequest
@@ -13,6 +14,7 @@ class UpdateProjectRequest extends StoreProjectRequest
             'name' => ['sometimes', 'required', 'string', 'max:180'],
             'status' => ['sometimes', 'required', Rule::in(['planned', 'active', 'on_hold', 'completed'])],
             'owner_id' => ['sometimes', 'required', 'integer', Rule::exists('users', 'id')->where(fn ($query) => $query->whereNull('deleted_at')->where('role', 'user')->where('status', 'active'))],
+            'category_id' => ['sometimes', 'nullable', 'integer', Rule::exists('categories', 'id')],
         ]);
     }
 
@@ -26,6 +28,13 @@ class UpdateProjectRequest extends StoreProjectRequest
             $project = $this->route('project');
             if (! $project instanceof Project) {
                 return;
+            }
+
+            if ($this->filled('category_id')) {
+                $categoryId = (int) $this->input('category_id');
+                if ($categoryId !== (int) $project->category_id && ! Category::query()->whereKey($categoryId)->exists()) {
+                    $validator->errors()->add('category_id', 'Select an active category.');
+                }
             }
 
             $startDate = $this->has('start_date') ? $this->input('start_date') : $project->start_date?->format('Y-m-d');

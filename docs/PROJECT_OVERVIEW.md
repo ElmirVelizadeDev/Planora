@@ -1,25 +1,19 @@
 # Planora Project Overview
 
-Planora is a Laravel and Vue single-page application for personal productivity and project coordination. It combines authenticated User workspaces with an Admin Panel for account, Task, and Project management.
+Planora is a Laravel 10 and Vue 3 single-page project-management application. It combines authenticated User workspaces with an Admin Panel for account, Task, Project, and Category management.
 
 ## Implemented workflows
 
-- Authentication uses Laravel sessions with Sanctum's stateful SPA middleware. Registration and password recovery use time-limited email OTP flows; local development can issue codes from a protected Artisan command.
-- Users can create and manage Tasks they own, view Tasks assigned to them, and update status when authorized.
-- Admins can manage platform Tasks and Projects. Project records have an owner, lifecycle status, optional start/due dates, and related Tasks.
-- Users can view Projects assigned by an Admin, inspect project details, and access only Tasks in that Project that they own or are assigned to.
-- User and Admin account management applies server-side validation and authorization. Moderator permissions apply to selected user-management APIs, but moderators cannot access the Admin Vue layout.
+- Sanctum stateful-session authentication, verified registration, password recovery, and active-account restrictions.
+- Admin and User account management subject to server-side authorization and moderator permission rules.
+- Admin and User Task workflows with ownership/assignment scopes, status and priority, due dates, and optional Project and Category associations.
+- Admin Project management and User Project views scoped to Projects owned by the signed-in User.
+- Admin-managed Categories shared by Projects and Tasks, plus a read-only User catalog of active categories.
+- Category archive/restore preserves Project and Task associations. User category details expose only owned Projects and owned/assigned Tasks; Admin usage counts are global.
+- Local-only Category, Project, and User Task demo fixtures. See [Seeder Notes](../database/seeders/README.md) for important environment restrictions.
 
 ## Product boundaries
 
-The database-backed feature areas are authentication/account management, Tasks, and Projects. Category, calendar, tags, notifications, settings, reports, and several Admin destinations remain partial or scaffolded; the existence of a Vue route does not mean its persistent workflow is complete.
+Calendar, tags, notifications, settings, reports, and several Admin destinations remain partial or scaffolded. A Vue route does not imply a complete persisted workflow. Moderator APIs permit selected User Management operations, but moderators do not have access to the Admin Vue layout.
 
-Project Tasks and standalone Tasks share the Task model and API authorization rules. A Project deletion detaches its Tasks through the nullable database relationship; it does not delete those Task records.
-
-## Further reading
-
-- [System Architecture](SYSTEM_ARCHITECTURE.md)
-- [API Documentation](API_DOCUMENTATION.md)
-- [Database Design](DATABASE_DESIGN.md)
-- [Authentication Security](AUTHENTICATION_SECURITY.md)
-- [Development Roadmap](DEVELOPMENT_ROADMAP.md)
+Project-linked and standalone Tasks share the Task model. Deleting a Project detaches its Tasks through nullable `project_id`; archiving a Category retains its associations. See [System Architecture](SYSTEM_ARCHITECTURE.md), [API Documentation](API_DOCUMENTATION.md), and [Database Design](DATABASE_DESIGN.md) for implementation details.

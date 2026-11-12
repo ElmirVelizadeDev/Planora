@@ -15,7 +15,7 @@
             <AdminProjectDetails :project="detail" />
             <section class="admin-project-tasks-panel">
                 <header class="admin-project-tasks-heading"><div><h2>Project tasks</h2><p>Tasks associated with this project.</p></div><button type="button" @click="openTaskForm">Create task</button></header>
-                <div class="admin-project-tasks-filters"><label>Status <select v-model="taskStatus" @change="resetProjectTaskFilters"><option value="">All statuses</option><option value="pending">Pending</option><option value="in_progress">In progress</option><option value="completed">Completed</option></select></label><label>Priority <select v-model="taskPriority" @change="resetProjectTaskFilters"><option value="">All priorities</option><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option><option value="urgent">Urgent</option></select></label></div>
+                <div class="admin-project-tasks-filters"><label>Status <select v-model="taskStatus" @change="resetProjectTaskFilters"><option value="">All statuses</option><option value="pending">Pending</option><option value="in_progress">In progress</option><option value="completed">Completed</option></select></label><label>Priority <select v-model="taskPriority" @change="resetProjectTaskFilters"><option value="">All priorities</option><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option><option value="urgent">Urgent</option></select></label><label>Category <select v-model="taskCategoryId" @change="resetProjectTaskFilters"><option value="">All categories</option><option v-for="category in categories" :key="category.id" :value="category.id">{{ category.name }}</option></select></label></div>
                 <p v-if="taskError" class="admin-project-tasks-error" role="alert">{{ taskError }} <button type="button" @click="loadProjectTasks">Try again</button></p>
                 <p v-else-if="taskLoading && !projectTasks.length" class="admin-project-tasks-state" role="status">Loading project tasks…</p>
                 <p v-else-if="!projectTasks.length" class="admin-project-tasks-state">No tasks are associated with this project.</p>
@@ -25,10 +25,10 @@
         </template>
 
         <div v-if="dialog.type === 'edit'" class="admin-projects-backdrop" @click.self="closeDialog">
-            <AdminProjectForm :project="dialog.project" :owners="owners" :owner-error="ownersError" :saving="dialog.saving" :error="dialog.error" :errors="dialog.errors" @cancel="closeDialog" @submit="saveFromDialog" />
+            <AdminProjectForm :project="dialog.project" :owners="owners" :categories="categories" :owner-error="ownersError" :saving="dialog.saving" :error="dialog.error" :errors="dialog.errors" @cancel="closeDialog" @submit="saveFromDialog" />
         </div>
         <AdminProjectDeleteDialog v-if="dialog.type === 'delete'" :project="dialog.project" :saving="dialog.saving" :error="dialog.error" @close="closeDialog" @confirm="deleteFromDialog" />
-        <div v-if="taskFormOpen" class="admin-projects-backdrop" @click.self="taskFormOpen = false"><section class="admin-project-task-form" role="dialog" aria-modal="true"><h2>Create project task</h2><p v-if="taskFormError" class="admin-project-tasks-error" role="alert">{{ taskFormError }}</p><form @submit.prevent="createProjectTask"><AdminTaskFormFields v-model:title="taskForm.title" v-model:description="taskForm.description" v-model:status="taskForm.status" v-model:priority="taskForm.priority" v-model:due-date="taskForm.due_date" :errors="taskFieldErrors" @clear-error="clearTaskFieldError"><label>Owner<select v-model="taskForm.owner_id" required><option value="">Select active user</option><option v-for="person in taskAssignees" :key="person.id" :value="String(person.id)">{{ person.name }} · {{ person.email }}</option></select><small v-if="taskFieldErrors.owner_id">{{ taskFieldErrors.owner_id[0] }}</small></label><label>Assigned user<select v-model="taskForm.assigned_user_id"><option value="">Unassigned</option><option v-for="person in taskAssignees" :key="person.id" :value="String(person.id)">{{ person.name }} · {{ person.email }}</option></select><small v-if="taskFieldErrors.assigned_user_id">{{ taskFieldErrors.assigned_user_id[0] }}</small></label></AdminTaskFormFields><div class="admin-project-task-form-actions"><button type="button" :disabled="taskSaving" @click="taskFormOpen = false">Cancel</button><button type="submit" :disabled="taskSaving">{{ taskSaving ? 'Creating…' : 'Create task' }}</button></div></form></section></div>
+        <div v-if="taskFormOpen" class="admin-projects-backdrop" @click.self="taskFormOpen = false"><section class="admin-project-task-form" role="dialog" aria-modal="true"><h2>Create project task</h2><p v-if="taskFormError" class="admin-project-tasks-error" role="alert">{{ taskFormError }}</p><form @submit.prevent="createProjectTask"><AdminTaskFormFields v-model:title="taskForm.title" v-model:description="taskForm.description" v-model:status="taskForm.status" v-model:priority="taskForm.priority" v-model:due-date="taskForm.due_date" v-model:category-id="taskForm.category_id" :categories="categories" :errors="taskFieldErrors" @clear-error="clearTaskFieldError"><label>Owner<select v-model="taskForm.owner_id" required><option value="">Select active user</option><option v-for="person in taskAssignees" :key="person.id" :value="String(person.id)">{{ person.name }} · {{ person.email }}</option></select><small v-if="taskFieldErrors.owner_id">{{ taskFieldErrors.owner_id[0] }}</small></label><label>Assigned user<select v-model="taskForm.assigned_user_id"><option value="">Unassigned</option><option v-for="person in taskAssignees" :key="person.id" :value="String(person.id)">{{ person.name }} · {{ person.email }}</option></select><small v-if="taskFieldErrors.assigned_user_id">{{ taskFieldErrors.assigned_user_id[0] }}</small></label></AdminTaskFormFields><div class="admin-project-task-form-actions"><button type="button" :disabled="taskSaving" @click="taskFormOpen = false">Cancel</button><button type="submit" :disabled="taskSaving">{{ taskSaving ? 'Creating…' : 'Create task' }}</button></div></form></section></div>
         <AdminTaskDeleteDialog v-if="taskToDelete" :task="taskToDelete" :saving="taskDeleteSaving" :error="taskDeleteError" @close="taskToDelete = null" @confirm="deleteProjectTask" />
         <div v-if="notice" class="admin-project-detail-notice" role="status">{{ notice }}</div>
     </main>
@@ -43,7 +43,7 @@ import AdminProjectDetails from '../../../features/projects/admin/components/Adm
 import AdminProjectForm from '../../../features/projects/admin/components/AdminProjectForm.vue';
 import AdminProjectStatusBadge from '../../../features/projects/admin/components/AdminProjectStatusBadge.vue';
 import { useAdminProjects } from '../../../features/projects/admin/composables/useAdminProjects.js';
-import { createAdminProjectTask, getAdminProjectTasks } from '../../../features/projects/admin/services/adminProjectApi.js';
+import { createAdminProjectTask, getAdminProjectTasks, getAdminProjectCategories } from '../../../features/projects/admin/services/adminProjectApi.js';
 import { deleteAdminTask, getTaskAssignees } from '../../../features/tasks/admin/services/adminTaskApi.js';
 import AdminTaskFormFields from '../../../features/tasks/admin/components/AdminTaskFormFields.vue';
 import AdminTaskDeleteDialog from '../../../features/tasks/admin/components/AdminTaskDeleteDialog.vue';
@@ -57,9 +57,9 @@ const {
     dialog, loadProject, loadOwners, openEdit, openDelete, closeDialog, saveProject, confirmDelete,
 } = useAdminProjects();
 const notice = ref('');
-const projectTasks = ref([]), taskLoading = ref(false), taskError = ref(''), taskStatus = ref(''), taskPriority = ref(''), taskPage = ref(1), taskLastPage = ref(1), projectTaskTotal = ref(0);
+const projectTasks = ref([]), taskLoading = ref(false), taskError = ref(''), taskStatus = ref(''), taskPriority = ref(''), taskCategoryId = ref(''), taskPage = ref(1), taskLastPage = ref(1), projectTaskTotal = ref(0), categories = ref([]);
 const taskFormOpen = ref(false), taskSaving = ref(false), taskFormError = ref(''), taskFieldErrors = ref({}), taskAssignees = ref([]), taskToDelete = ref(null), taskDeleteSaving = ref(false), taskDeleteError = ref('');
-const taskForm = reactive({ title: '', description: '', status: 'pending', priority: 'medium', due_date: '', owner_id: '', assigned_user_id: '' });
+const taskForm = reactive({ title: '', description: '', status: 'pending', priority: 'medium', due_date: '', owner_id: '', assigned_user_id: '', category_id: '' });
 let noticeTimer;
 
 async function saveFromDialog(payload) {
@@ -79,15 +79,15 @@ async function deleteFromDialog() {
 async function loadProjectTasks() {
     if (!route.params.projectId) return;
     taskLoading.value = true; taskError.value = '';
-    try { const response = await getAdminProjectTasks(route.params.projectId, { page: taskPage.value, per_page: 10, ...(taskStatus.value ? { status: taskStatus.value } : {}), ...(taskPriority.value ? { priority: taskPriority.value } : {}) }); projectTasks.value = response.data || []; taskLastPage.value = Number(response.meta?.last_page || 1); projectTaskTotal.value = Number(response.meta?.total || 0); }
+    try { const response = await getAdminProjectTasks(route.params.projectId, { page: taskPage.value, per_page: 10, ...(taskStatus.value ? { status: taskStatus.value } : {}), ...(taskPriority.value ? { priority: taskPriority.value } : {}), ...(taskCategoryId.value ? { category_id: taskCategoryId.value } : {}) }); projectTasks.value = response.data || []; taskLastPage.value = Number(response.meta?.last_page || 1); projectTaskTotal.value = Number(response.meta?.total || 0); }
     catch { taskError.value = 'Project tasks could not be loaded.'; }
     finally { taskLoading.value = false; }
 }
 function resetProjectTaskFilters() { taskPage.value = 1; loadProjectTasks(); }
 async function openTaskForm() {
     taskFormOpen.value = true; taskFormError.value = ''; taskFieldErrors.value = {};
-    Object.assign(taskForm, { title: '', description: '', status: 'pending', priority: 'medium', due_date: '', owner_id: detail.value?.owner?.id ? String(detail.value.owner.id) : '', assigned_user_id: '' });
-    try { const response = await getTaskAssignees(); taskAssignees.value = response.data || []; }
+    Object.assign(taskForm, { title: '', description: '', status: 'pending', priority: 'medium', due_date: '', owner_id: detail.value?.owner?.id ? String(detail.value.owner.id) : '', assigned_user_id: '', category_id: '' });
+    try { const [response, categoryResponse] = await Promise.all([getTaskAssignees(), getAdminProjectCategories()]); taskAssignees.value = response.data || []; categories.value = categoryResponse.data || []; }
     catch { taskFormError.value = 'Eligible users could not be loaded.'; }
 }
 async function createProjectTask() {
@@ -107,7 +107,7 @@ function showNotice(message) {
 }
 
 watch(() => route.params.projectId, projectId => {
-    if (projectId) { loadProject(projectId); loadProjectTasks(); }
+    if (projectId) { loadProject(projectId); loadProjectTasks(); getAdminProjectCategories().then(response => { categories.value = response.data || []; }).catch(() => { categories.value = []; }); }
 }, { immediate: true });
 onBeforeUnmount(() => clearTimeout(noticeTimer));
 </script>

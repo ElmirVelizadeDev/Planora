@@ -24,6 +24,7 @@ class StoreUserTaskRequest extends FormRequest
             'created_by' => ['prohibited'],
             'assigned_user_id' => ['prohibited'],
             'project_id' => ['prohibited'],
+            'category_id' => ['nullable', 'integer', Rule::exists('categories', 'id')->whereNull('deleted_at')],
         ];
     }
 }

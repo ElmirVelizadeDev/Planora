@@ -4,6 +4,8 @@ namespace App\Http\Requests\Api\V1\Tasks;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use App\Models\Category;
+use App\Models\Task;
 
 class UpdateTaskRequest extends FormRequest
 {
@@ -25,6 +27,26 @@ class UpdateTaskRequest extends FormRequest
             'owner_id' => ['sometimes', 'required', 'integer', $availableUser()],
             'assigned_user_id' => ['sometimes', 'nullable', 'integer', $availableUser()],
             'project_id' => ['sometimes', 'nullable', 'integer', Rule::exists('projects', 'id')],
+            'category_id' => ['sometimes', 'nullable', 'integer', Rule::exists('categories', 'id')],
         ];
+    }
+
+    public function withValidator($validator): void
+    {
+        $validator->after(function ($validator): void {
+            if ($validator->errors()->isNotEmpty() || ! $this->filled('category_id')) {
+                return;
+            }
+
+            $task = $this->route('task');
+            if (! $task instanceof Task) {
+                return;
+            }
+
+            $categoryId = (int) $this->input('category_id');
+            if ($categoryId !== (int) $task->category_id && ! Category::query()->whereKey($categoryId)->exists()) {
+                $validator->errors()->add('category_id', 'Select an active category.');
+            }
+        });
     }
 }

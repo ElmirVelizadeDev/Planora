@@ -6,6 +6,7 @@
         </label>
         <label><span class="sr-only">Status</span><select :value="status" aria-label="Status" @change="updateFilter('status', $event.target.value)"><option value="">All statuses</option><option value="pending">Pending</option><option value="in_progress">In progress</option><option value="completed">Completed</option></select></label>
         <label><span class="sr-only">Priority</span><select :value="priority" aria-label="Priority" @change="updateFilter('priority', $event.target.value)"><option value="">All priorities</option><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option><option value="urgent">Urgent</option></select></label>
+        <label><span class="sr-only">Category</span><select :value="categoryId" aria-label="Category" @change="updateFilter('category_id', $event.target.value)"><option value="">All categories</option><option v-for="category in categories" :key="category.id" :value="category.id">{{ category.name }}</option></select></label>
         <label><span class="sr-only">Due date</span><select :value="due" aria-label="Due date" @change="updateFilter('due', $event.target.value)"><option value="">All dates</option><option value="today">Due today</option><option value="upcoming">Upcoming</option><option value="overdue">Overdue</option></select></label>
         <label class="user-tasks-date-filter"><input :value="startDate" type="date" aria-label="Start Date" @change="updateFilter('startDate', $event.target.value)"></label>
         <label class="user-tasks-date-filter"><input :value="endDate" type="date" aria-label="End Date" @change="updateFilter('endDate', $event.target.value)"></label>
@@ -20,6 +21,7 @@ defineProps({
     searchInput: { type: String, default: '' },
     status: { type: String, default: '' },
     priority: { type: String, default: '' },
+    categoryId: { type: [String, Number], default: '' }, categories: { type: Array, default: () => [] },
     due: { type: String, default: '' },
     startDate: { type: String, default: '' },
     endDate: { type: String, default: '' },
@@ -27,7 +29,7 @@ defineProps({
     loading: { type: Boolean, default: false },
     hasToolbarChanges: { type: Boolean, default: false },
 });
-const emit = defineEmits(['update:searchInput', 'update:status', 'update:priority', 'update:due', 'update:sort', 'update:startDate', 'update:endDate', 'search', 'change', 'refresh', 'clear']);
+const emit = defineEmits(['update:searchInput', 'update:status', 'update:priority', 'update:categoryId', 'update:due', 'update:sort', 'update:startDate', 'update:endDate', 'search', 'change', 'refresh', 'clear']);
 
 function onSearchInput(event) {
     emit('update:searchInput', event.target.value);
@@ -35,7 +37,7 @@ function onSearchInput(event) {
 }
 
 function updateFilter(filter, value) {
-    emit(`update:${filter}`, value);
+    emit(filter === 'category_id' ? 'update:categoryId' : `update:${filter}`, value);
     emit('change');
 }
 </script>

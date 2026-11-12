@@ -13,6 +13,7 @@
                 :errors="errors"
                 @clear-error="clearError"
             />
+            <label class="user-task-category-field">Category<select v-model="form.category_id"><option value="">No category</option><option v-if="archivedCategory" :value="String(archivedCategory.id)" disabled>{{ archivedCategory.name }} (archived · existing)</option><option v-for="category in categories" :key="category.id" :value="String(category.id)">{{ category.name }}</option></select><small v-if="errors.category_id">{{ errors.category_id }}</small></label>
             <div v-if="formError" class="user-task-form-error" role="alert">{{ formError }}</div>
             <footer class="user-task-form-actions"><RouterLink class="user-task-cancel" :to="{ name: 'tasks.index' }">Cancel</RouterLink><button class="user-task-submit" type="submit" :disabled="saving">{{ saving ? 'Saving…' : editing ? 'Save changes' : 'Create task' }}</button></footer>
         </form>
@@ -23,6 +24,7 @@
 import { computed, reactive, ref, watch } from 'vue';
 import TaskForm from './TaskForm.vue';
 import { createUserTask, getUserTask, updateUserTask } from '../services/userTaskApi.js';
+import { getUserCategories } from '../../../categories/user/services/userCategoryApi.js';
 
 const props = defineProps({
     mode: { type: String, required: true, validator: value => ['create', 'edit'].includes(value) },
@@ -33,20 +35,23 @@ const props = defineProps({
 const emit = defineEmits(['saved']);
 const editing = computed(() => props.mode === 'edit');
 const loading = ref(false), saving = ref(false), loadError = ref(''), formError = ref('');
-const errors = reactive({});
-const form = reactive({ title: '', description: '', status: 'pending', priority: 'medium', due_date: '' });
+const errors = reactive({}), categories = ref([]), archivedCategory = ref(null);
+const form = reactive({ title: '', description: '', status: 'pending', priority: 'medium', due_date: '', category_id: '' });
 function clearError(field) { delete errors[field]; formError.value = ''; }
 async function load() {
-    if (!editing.value) return;
-    if (!props.taskId) { loadError.value = 'This task could not be found.'; return; }
     loading.value = true; loadError.value = '';
+    try { categories.value = (await getUserCategories({ per_page: 50, sort: 'name', direction: 'asc' })).data || []; }
+    catch { categories.value = []; }
+    if (!editing.value) { loading.value = false; return; }
+    if (!props.taskId) { loadError.value = 'This task could not be found.'; loading.value = false; return; }
     Object.assign(form, { title: '', description: '', status: 'pending', priority: 'medium', due_date: '' });
     Object.keys(errors).forEach(field => delete errors[field]);
     try {
         const response = await getUserTask(props.taskId);
         const task = response.task || response.data || response;
         if (!task.is_owned) { loadError.value = 'Only the task owner can edit this task.'; return; }
-        Object.assign(form, { title: task.title || '', description: task.description || '', status: task.status || 'pending', priority: task.priority || 'medium', due_date: task.due_date || '' });
+        archivedCategory.value = task.category?.status === 'archived' ? task.category : null;
+        Object.assign(form, { title: task.title || '', description: task.description || '', status: task.status || 'pending', priority: task.priority || 'medium', due_date: task.due_date || '', category_id: task.category?.id ? String(task.category.id) : '' });
     } catch (error) {
         loadError.value = error.response?.status === 404 ? 'This task could not be found.' : 'Task details could not be loaded.';
     } finally { loading.value = false; }
@@ -57,7 +62,7 @@ async function submit() {
     if (!form.title.trim()) { errors.title = 'Enter a task title.'; return; }
     saving.value = true;
     try {
-        const payload = { ...form, title: form.title.trim(), description: form.description.trim() || null, due_date: form.due_date || null };
+        const payload = { ...form, title: form.title.trim(), description: form.description.trim() || null, due_date: form.due_date || null, category_id: form.category_id || null };
         const response = editing.value
             ? await updateUserTask(props.taskId, payload)
             : await createUserTask(payload);

@@ -11,6 +11,7 @@ Route::view('/terms-and-conditions', 'welcome')->name('terms-and-conditions');
 Route::view('/privacy-policy', 'welcome')->name('privacy-policy');
 Route::view('/forgot-password', 'welcome');
 Route::view('/reset-password', 'welcome');
+Route::view('/verify-email', 'welcome');
 Route::view('/403', 'welcome');
 Route::view('/419', 'welcome');
 Route::view('/429', 'welcome');

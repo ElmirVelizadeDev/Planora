@@ -18,6 +18,7 @@ class StoreProjectRequest extends FormRequest
             'start_date' => ['nullable', 'date_format:Y-m-d'],
             'due_date' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:start_date'],
             'owner_id' => ['required', 'integer', Rule::exists('users', 'id')->where(fn ($query) => $query->whereNull('deleted_at')->where('role', 'user')->where('status', 'active'))],
+            'category_id' => ['nullable', 'integer', Rule::exists('categories', 'id')->whereNull('deleted_at')],
         ];
     }
 }

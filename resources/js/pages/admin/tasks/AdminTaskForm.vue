@@ -11,6 +11,9 @@
                 v-model:status="form.status"
                 v-model:priority="form.priority"
                 v-model:due-date="form.due_date"
+                v-model:category-id="form.category_id"
+                :categories="categories"
+                :archived-category="archivedCategory"
                 :errors="errors"
                 @clear-error="clearError"
             >
@@ -27,25 +30,29 @@ import { computed, onMounted, reactive, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import AdminTaskAssignment from '../../../features/tasks/admin/components/AdminTaskAssignment.vue';
 import AdminTaskFormFields from '../../../features/tasks/admin/components/AdminTaskFormFields.vue';
-import { createAdminTask, getAdminTask, getTaskAssignees, updateAdminTask } from '../../../features/tasks/admin/services/adminTaskApi.js';
+import { createAdminTask, getAdminTask, getTaskAssignees, getAdminTaskCategories, updateAdminTask } from '../../../features/tasks/admin/services/adminTaskApi.js';
 
 const route = useRoute(), router = useRouter();
 const editing = computed(() => Boolean(route.params.taskId));
 const backRoute = { name: 'admin.tasks.index' };
 const loading = ref(false), saving = ref(false), loadError = ref(''), formError = ref(''), users = ref([]), errors = reactive({});
-const form = reactive({ title: '', description: '', status: 'pending', priority: 'medium', due_date: '', owner_id: '', assigned_user_id: '' });
+const categories = ref([]), archivedCategory = ref(null);
+const form = reactive({ title: '', description: '', status: 'pending', priority: 'medium', due_date: '', owner_id: '', assigned_user_id: '', category_id: '' });
 function clearError(key) { delete errors[key]; formError.value = ''; }
 async function load() {
     loading.value = true; loadError.value = '';
     try {
-        const [assigneeData, taskResponse] = await Promise.all([
+        const [assigneeData, categoryResponse, taskResponse] = await Promise.all([
             getTaskAssignees(),
+            getAdminTaskCategories(),
             editing.value ? getAdminTask(route.params.taskId) : Promise.resolve(null),
         ]);
         users.value = assigneeData.data || [];
+        categories.value = categoryResponse.data || [];
         if (editing.value) {
             const task = taskResponse.task || taskResponse.data || taskResponse;
-            Object.assign(form, { title: task.title || '', description: task.description || '', status: task.status || 'pending', priority: task.priority || 'medium', due_date: task.due_date || '', owner_id: task.owner?.id ? String(task.owner.id) : '', assigned_user_id: task.assigned_user?.id ? String(task.assigned_user.id) : '' });
+            archivedCategory.value = task.category?.status === 'archived' ? task.category : null;
+            Object.assign(form, { title: task.title || '', description: task.description || '', status: task.status || 'pending', priority: task.priority || 'medium', due_date: task.due_date || '', owner_id: task.owner?.id ? String(task.owner.id) : '', assigned_user_id: task.assigned_user?.id ? String(task.assigned_user.id) : '', category_id: task.category?.id ? String(task.category.id) : '' });
         }
     } catch (error) { loadError.value = error.response?.status === 404 ? 'The task or task management endpoint could not be found.' : 'Task information could not be loaded.'; }
     finally { loading.value = false; }

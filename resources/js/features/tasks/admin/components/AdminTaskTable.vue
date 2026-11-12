@@ -1,11 +1,12 @@
 <template>
     <div class="admin-tasks-table-wrap" :class="{ 'is-loading': loading }">
             <table class="admin-tasks-table">
-                <thead><tr><th scope="col">Task</th><th scope="col">Assigned user</th><th scope="col">Priority</th><th scope="col">Status</th><th scope="col">Due date</th><th scope="col">Created</th><th scope="col" class="admin-tasks-actions-heading">Actions</th></tr></thead>
+                <thead><tr><th scope="col">Task</th><th scope="col">Assigned user</th><th scope="col">Category</th><th scope="col">Priority</th><th scope="col">Status</th><th scope="col">Due date</th><th scope="col">Created</th><th scope="col" class="admin-tasks-actions-heading">Actions</th></tr></thead>
                 <tbody>
                     <tr v-for="task in tasks" :key="task.id">
                         <td data-label="Task"><RouterLink class="admin-tasks-task-copy" :to="{ name: 'admin.tasks.show', params: { taskId: task.id } }"><strong>{{ task.title }}</strong><span>{{ task.description || `Task #${task.id}` }}</span></RouterLink></td>
                         <td data-label="Assigned user"><div class="admin-tasks-identity"><img v-if="task.assigned_user?.avatar" :src="task.assigned_user.avatar" alt="" class="admin-tasks-avatar"><span v-else class="admin-tasks-avatar" aria-hidden="true">{{ initials(task.assigned_user?.name) }}</span><span class="admin-tasks-user-copy"><strong>{{ task.assigned_user?.name || 'Unassigned' }}</strong><span>{{ task.assigned_user?.email || '—' }}</span></span></div></td>
+                        <td data-label="Category">{{ task.category?.name || '—' }}</td>
                         <td data-label="Priority"><AdminTaskPriorityBadge :priority="task.priority" /></td>
                         <td data-label="Status"><AdminTaskStatusBadge :status="task.status" /></td>
                         <td data-label="Due date"><time v-if="task.due_date" :class="{ 'is-overdue': isOverdue(task) }" :datetime="task.due_date">{{ formatDate(task.due_date) }}</time><span v-else class="admin-tasks-muted">—</span></td>

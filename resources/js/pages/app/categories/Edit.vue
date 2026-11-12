@@ -1,4 +1,5 @@
-<template>
-    <main class="page-categories-edit"></main>
-</template>
-<style src="../../../../css/pages/app/categories/edit.css"></style>
+<template><UserCategoriesIndex /></template>
+
+<script setup>
+import UserCategoriesIndex from './UserCategoriesIndex.vue';
+</script>

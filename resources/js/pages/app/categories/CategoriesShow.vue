@@ -1,5 +1,5 @@
-<template>
-    <main class="page-categoriesshow" />
-</template>
+<template><UserCategoriesShow /></template>
 
-<style src="../../../../css/pages/app/categories/styles/CategoriesShow.css"></style>
+<script setup>
+import UserCategoriesShow from './UserCategoriesShow.vue';
+</script>

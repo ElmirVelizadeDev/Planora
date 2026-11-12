@@ -17,6 +17,8 @@
                 <AdminProjectFilters
                     v-model:search-input="searchInput"
                     v-model:status="status"
+                    v-model:category-id="categoryId"
+                    :categories="categories"
                     :loading="loading"
                     :has-filters="hasFilters"
                     @search="onSearch"
@@ -46,7 +48,7 @@
         </section>
 
         <div v-if="['create', 'edit'].includes(dialog.type)" class="admin-projects-backdrop" @click.self="closeDialog">
-            <AdminProjectForm :project="dialog.project" :owners="owners" :owner-error="ownersError" :saving="dialog.saving" :error="dialog.error" :errors="dialog.errors" @cancel="closeDialog" @submit="saveFromDialog" />
+            <AdminProjectForm :project="dialog.project" :owners="owners" :categories="categories" :owner-error="ownersError" :saving="dialog.saving" :error="dialog.error" :errors="dialog.errors" @cancel="closeDialog" @submit="saveFromDialog" />
         </div>
         <AdminProjectDeleteDialog v-if="dialog.type === 'delete'" :project="dialog.project" :saving="dialog.saving" :error="dialog.error" @close="closeDialog" @confirm="deleteFromDialog" />
         <div v-if="notice" class="admin-projects-notice" role="status">{{ notice }}</div>
@@ -61,14 +63,16 @@ import AdminProjectForm from '../../../features/projects/admin/components/AdminP
 import AdminProjectStats from '../../../features/projects/admin/components/AdminProjectStats.vue';
 import AdminProjectTable from '../../../features/projects/admin/components/AdminProjectTable.vue';
 import { useAdminProjects } from '../../../features/projects/admin/composables/useAdminProjects.js';
+import { getAdminProjectCategories } from '../../../features/projects/admin/services/adminProjectApi.js';
 
 const {
-    projects, owners, ownersError, loading, error, searchInput, status, page, total, lastPage,
+    projects, owners, ownersError, loading, error, searchInput, status, categoryId, page, total, lastPage,
     statistics, dialog, hasFilters, rangeStart, rangeEnd, loadProjects, loadOwners, refreshProjects,
     onSearch, applyFilters, clearFilters, goToPage, openCreate, openEdit, openDelete,
     closeDialog, saveProject, confirmDelete,
 } = useAdminProjects();
 const notice = ref('');
+const categories = ref([]);
 let noticeTimer;
 
 function showNotice(message) {
@@ -85,7 +89,7 @@ async function deleteFromDialog() {
     if (await confirmDelete()) showNotice('Project deleted.');
 }
 
-onMounted(() => { loadProjects(); loadOwners(); });
+onMounted(async () => { loadProjects(); loadOwners(); try { categories.value = (await getAdminProjectCategories()).data || []; } catch { categories.value = []; } });
 onBeforeUnmount(() => clearTimeout(noticeTimer));
 </script>
 

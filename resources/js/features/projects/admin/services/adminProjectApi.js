@@ -6,6 +6,10 @@ export async function getAdminProjects(params = {}) {
     return (await api.get('/admin/projects', { params })).data;
 }
 
+export async function getAdminProjectCategories() {
+    return (await api.get('/admin/categories', { params: { status: 'active', per_page: 50, sort: 'name', direction: 'asc' } })).data;
+}
+
 export async function getAdminProject(projectId) {
     return (await api.get(`/admin/projects/${projectId}`)).data;
 }

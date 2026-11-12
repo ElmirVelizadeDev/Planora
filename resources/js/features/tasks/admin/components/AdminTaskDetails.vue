@@ -24,6 +24,7 @@
                 <dl class="admin-task-information">
                     <div><dt>Task ID</dt><dd>#{{ task.id }}</dd></div>
                     <div><dt>Owner</dt><dd>{{ task.owner?.name || '—' }}</dd></div>
+                    <div><dt>Category</dt><dd>{{ task.category?.name || '—' }}</dd></div>
                     <div><dt>Status</dt><dd><AdminTaskStatusBadge :status="task.status" context="detail" /></dd></div>
                     <div><dt>Priority</dt><dd><AdminTaskPriorityBadge :priority="task.priority" context="detail" /></dd></div>
                     <div><dt>Due date</dt><dd :class="{ 'is-overdue': isOverdue }">{{ formatDate(task.due_date) }}</dd></div>

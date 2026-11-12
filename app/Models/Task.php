@@ -6,6 +6,7 @@ use App\Enums\TaskPriority;
 use App\Enums\TaskStatus;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Task extends Model
 {
@@ -13,7 +14,7 @@ class Task extends Model
 
     protected $fillable = [
         'title', 'description', 'status', 'priority', 'due_date',
-        'owner_id', 'assigned_user_id', 'created_by', 'project_id',
+        'owner_id', 'assigned_user_id', 'created_by', 'project_id', 'category_id',
     ];
 
     protected $casts = [
@@ -40,5 +41,10 @@ class Task extends Model
     public function project(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(Project::class);
+    }
+
+    public function category(): BelongsTo
+    {
+        return $this->belongsTo(Category::class)->withTrashed();
     }
 }

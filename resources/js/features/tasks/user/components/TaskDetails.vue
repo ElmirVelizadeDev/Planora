@@ -26,6 +26,7 @@
                         <div><dt>Task ID</dt><dd>#{{ task.id }}</dd></div>
                         <div><dt>Status</dt><dd><TaskStatusBadge :status="task.status" /></dd></div>
                         <div><dt>Priority</dt><dd><TaskPriorityBadge :priority="task.priority" /></dd></div>
+                        <div><dt>Category</dt><dd>{{ task.category?.name || '—' }}</dd></div>
                         <div><dt>Due date</dt><dd :class="{ 'is-overdue': overdue }">{{ formatDate(task.due_date) }}</dd></div>
                         <div><dt>Created</dt><dd>{{ formatDateTime(task.created_at) }}</dd></div>
                         <div><dt>Last updated</dt><dd>{{ formatDateTime(task.updated_at) }}</dd></div>

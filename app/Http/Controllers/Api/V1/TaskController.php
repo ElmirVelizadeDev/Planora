@@ -44,7 +44,7 @@ class TaskController extends Controller
 
     public function show(Task $task): JsonResponse
     {
-        $task->load(['owner', 'assignedUser', 'creator']);
+        $task->load(['owner', 'assignedUser', 'creator', 'category']);
 
         return response()->json(['task' => TaskResource::make($task)->resolve(request())]);
     }

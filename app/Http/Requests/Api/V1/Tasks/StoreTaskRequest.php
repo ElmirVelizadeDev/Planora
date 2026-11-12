@@ -25,6 +25,7 @@ class StoreTaskRequest extends FormRequest
             'owner_id' => ['required', 'integer', $availableUser()],
             'assigned_user_id' => ['nullable', 'integer', $availableUser()],
             'project_id' => ['sometimes', 'nullable', 'integer', Rule::exists('projects', 'id')],
+            'category_id' => ['nullable', 'integer', Rule::exists('categories', 'id')->whereNull('deleted_at')],
         ];
     }
 }

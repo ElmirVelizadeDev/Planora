@@ -16,7 +16,7 @@ class UserTaskService
 
     public function paginate(int $userId, array $filters): LengthAwarePaginator
     {
-        $query = $this->queryFor($userId);
+        $query = $this->queryFor($userId)->with('category');
 
         if (! empty($filters['search'])) {
             $term = trim($filters['search']);
@@ -25,6 +25,7 @@ class UserTaskService
         }
         if (! empty($filters['status'])) $query->where('status', $filters['status']);
         if (! empty($filters['priority'])) $query->where('priority', $filters['priority']);
+        if (! empty($filters['category_id'])) $query->where('category_id', $filters['category_id']);
 
         $today = now()->toDateString();
         match ($filters['due'] ?? null) {
@@ -52,13 +53,14 @@ class UserTaskService
 
     public function paginateForProject(int $userId, int $projectId, array $filters): LengthAwarePaginator
     {
-        $query = $this->queryFor($userId)->where('project_id', $projectId)->with(['owner', 'assignedUser']);
+        $query = $this->queryFor($userId)->where('project_id', $projectId)->with(['owner', 'assignedUser', 'category']);
         if (! empty($filters['search'])) {
             $term = trim($filters['search']);
             $query->where(fn ($q) => $q->where('title', 'like', "%{$term}%")->orWhere('description', 'like', "%{$term}%"));
         }
         if (! empty($filters['status'])) $query->where('status', $filters['status']);
         if (! empty($filters['priority'])) $query->where('priority', $filters['priority']);
+        if (! empty($filters['category_id'])) $query->where('category_id', $filters['category_id']);
         return $query->latest('created_at')->latest('id')->paginate($filters['per_page'] ?? 10)->withQueryString();
     }
 
@@ -83,14 +85,14 @@ class UserTaskService
             'owner_id' => $userId,
             'created_by' => $userId,
             'assigned_user_id' => null,
-        ]);
+        ])->load('category');
     }
 
     public function update(Task $task, array $data): Task
     {
         $task->fill($data)->save();
 
-        return $task->refresh();
+        return $task->refresh()->load('category');
     }
 
     public function updateStatus(Task $task, string $status): Task
@@ -98,7 +100,7 @@ class UserTaskService
         $task->status = $status;
         $task->save();
 
-        return $task->refresh();
+        return $task->refresh()->load('category');
     }
 
     public function delete(Task $task): void

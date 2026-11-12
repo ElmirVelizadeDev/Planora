@@ -1,11 +1,12 @@
 <template>
         <div class="admin-projects-table-wrap" :class="{ 'is-loading': loading }">
             <table class="admin-projects-table">
-                <thead><tr><th scope="col">Project</th><th scope="col">Owner</th><th scope="col">Status</th><th scope="col">Start date</th><th scope="col">Due date</th><th scope="col">Created</th><th scope="col" class="actions-heading">Actions</th></tr></thead>
+                <thead><tr><th scope="col">Project</th><th scope="col">Owner</th><th scope="col">Category</th><th scope="col">Status</th><th scope="col">Start date</th><th scope="col">Due date</th><th scope="col">Created</th><th scope="col" class="actions-heading">Actions</th></tr></thead>
                 <tbody>
                     <tr v-for="project in projects" :key="project.id">
                         <td data-label="Project"><RouterLink class="admin-projects-project-copy" :to="{ name: 'admin.projects.show', params: { projectId: project.id } }"><strong :title="project.name">{{ project.name }}</strong><span :title="project.description || ''">{{ project.description || 'No description' }}</span></RouterLink></td>
                         <td data-label="Owner"><div v-if="project.owner" class="admin-projects-owner"><span>{{ initials(project.owner.name) }}</span><div><strong>{{ project.owner.name }}</strong><small>{{ project.owner.email }}</small></div></div><span v-else class="admin-projects-muted">Unassigned</span></td>
+                        <td data-label="Category">{{ project.category?.name || '—' }}</td>
                         <td data-label="Status"><AdminProjectStatusBadge :status="project.status" /></td>
                         <td data-label="Start date"><time v-if="project.start_date" :datetime="project.start_date">{{ formatDate(project.start_date) }}</time><span v-else class="admin-projects-muted">—</span></td>
                         <td data-label="Due date"><time v-if="project.due_date" :datetime="project.due_date">{{ formatDate(project.due_date) }}</time><span v-else class="admin-projects-muted">—</span></td>

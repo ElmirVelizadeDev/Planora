@@ -10,6 +10,7 @@
                 <div><dt>Project ID</dt><dd>#{{ project.id }}</dd></div>
                 <div><dt>Project name</dt><dd>{{ project.name || '—' }}</dd></div>
                 <div><dt>Owner</dt><dd>{{ project.owner?.name || 'Unassigned' }}</dd></div>
+                <div><dt>Category</dt><dd>{{ project.category?.name || '—' }}</dd></div>
                 <div><dt>Owner email</dt><dd>{{ project.owner?.email || '—' }}</dd></div>
                 <div><dt>Status</dt><dd><AdminProjectStatusBadge :status="project.status" /></dd></div>
                 <div><dt>Start date</dt><dd>{{ formatDate(project.start_date) }}</dd></div>
