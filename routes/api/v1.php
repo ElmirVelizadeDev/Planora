@@ -14,6 +14,7 @@ use App\Http\Controllers\Api\V1\UserTaskController;
 use App\Http\Controllers\Api\V1\UserProjectController;
 use App\Http\Controllers\Api\V1\UserCategoryController;
 use App\Http\Controllers\Api\V1\Admin\ProjectTaskManagementController;
+use App\Http\Controllers\Api\V1\Admin\AdminReportController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('auth')->name('auth.')->group(function () {
@@ -77,6 +78,15 @@ Route::prefix('admin/categories')->name('admin.categories.')->middleware(['auth:
     Route::get('/{category}', [CategoryController::class, 'show'])->whereNumber('category')->name('show');
     Route::patch('/{category}', [CategoryController::class, 'update'])->whereNumber('category')->name('update');
     Route::delete('/{category}', [CategoryController::class, 'destroy'])->whereNumber('category')->name('destroy');
+});
+
+Route::prefix('admin/reports')->name('admin.reports.')->middleware(['auth:sanctum', 'active', 'role:admin'])->group(function () {
+    Route::get('/', [AdminReportController::class, 'overview'])->name('overview');
+    Route::get('/filters', [AdminReportController::class, 'filterOptions'])->name('filters');
+    Route::get('/tables/{table}', [AdminReportController::class, 'table'])
+        ->where('table', 'registrations|projects|tasks|overdue|upcoming|categories|unused_categories|assignees')
+        ->name('tables.show');
+    Route::get('/export', [AdminReportController::class, 'export'])->name('export');
 });
 
 Route::prefix('projects')->name('projects.')->middleware(['auth:sanctum', 'active', 'role:user'])->group(function () {

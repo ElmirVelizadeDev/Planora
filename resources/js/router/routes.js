@@ -81,7 +81,7 @@ export const routes = [
             { path: 'tags', name: 'admin.tags.index', component: adminPage('tags', 'AdminTagsIndex') },
             { path: 'tags/create', name: 'admin.tags.create', component: adminPage('tags', 'AdminTagsCreate') },
             { path: 'tags/:tagId/edit', name: 'admin.tags.edit', component: adminPage('tags', 'AdminTagsEdit') },
-            { path: 'reports', name: 'admin.reports', component: adminPage('reports', 'AdminReportsIndex') },
+            { path: 'reports', name: 'admin.reports', component: () => import('../pages/admin/reports/AdminReportsIndex.vue') },
             { path: 'analytics', name: 'admin.analytics', component: adminPage('reports', 'AdminAnalyticsIndex') },
             { path: 'notifications', name: 'admin.notifications.index', component: adminPage('notifications', 'AdminNotificationsIndex') },
             { path: 'notifications/create', name: 'admin.notifications.create', component: adminPage('notifications', 'AdminNotificationsCreate') },
