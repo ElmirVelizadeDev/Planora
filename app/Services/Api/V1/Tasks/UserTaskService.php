@@ -3,11 +3,17 @@
 namespace App\Services\Api\V1\Tasks;
 
 use App\Models\Task;
+use App\Models\User;
+use App\Services\Api\V1\Admin\UserActivityLogger;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 
 class UserTaskService
 {
+    public function __construct(private readonly UserActivityLogger $activityLogger)
+    {
+    }
+
     public function queryFor(int $userId)
     {
         return Task::query()->where(fn ($query) => $query->where('owner_id', $userId)
@@ -79,32 +85,107 @@ class UserTaskService
         ];
     }
 
-    public function create(array $data, int $userId): Task
+    public function create(array $data, User $actor): Task
     {
-        return Task::query()->create($data + [
-            'owner_id' => $userId,
-            'created_by' => $userId,
-            'assigned_user_id' => null,
-        ])->load('category');
+        return DB::transaction(function () use ($data, $actor): Task {
+            $task = Task::query()->create($data + [
+                'owner_id' => $actor->id,
+                'created_by' => $actor->id,
+                'assigned_user_id' => null,
+            ]);
+            $this->activityLogger->recordChange(
+                'task.created', 'Task created by its owner.', $task, $actor, [],
+                $this->auditValues($task, ['title', 'status', 'priority', 'due_date', 'owner_id', 'assigned_user_id', 'project_id', 'category_id']),
+                ['description_changed' => filled($task->description)],
+            );
+
+            return $task->load('category');
+        });
     }
 
-    public function update(Task $task, array $data): Task
+    public function update(Task $task, array $data, User $actor): Task
     {
-        $task->fill($data)->save();
+        return DB::transaction(function () use ($task, $data, $actor): Task {
+            $task = Task::query()->lockForUpdate()->findOrFail($task->id);
+            $fields = ['title', 'status', 'priority', 'due_date', 'category_id'];
+            $before = $this->auditValues($task, $fields);
+            $task->fill($data);
+            $changed = array_values(array_diff(array_keys($task->getDirty()), ['updated_at']));
+            if ($changed !== []) {
+                $task->save();
+                $safeFields = array_values(array_intersect($changed, $fields));
+                $event = $this->updateEvent($before, $this->auditValues($task, $safeFields), $safeFields);
+                if ($safeFields !== []) {
+                    $this->activityLogger->recordChange($event, $this->descriptionFor($event), $task, $actor,
+                        array_intersect_key($before, array_flip($safeFields)), $this->auditValues($task, $safeFields),
+                        ['changed_fields' => $changed]);
+                } else {
+                    $this->activityLogger->record('task.updated', 'Task updated.', $task, $actor, ['changed_fields' => $changed]);
+                }
+            }
 
-        return $task->refresh()->load('category');
+            return $task->refresh()->load('category');
+        });
     }
 
-    public function updateStatus(Task $task, string $status): Task
+    public function updateStatus(Task $task, string $status, User $actor): Task
     {
-        $task->status = $status;
-        $task->save();
+        return DB::transaction(function () use ($task, $status, $actor): Task {
+            $task = Task::query()->lockForUpdate()->findOrFail($task->id);
+            $before = $task->status?->value ?? $task->status;
+            if ($before !== $status) {
+                $task->status = $status;
+                $task->save();
+                $event = $status === 'completed' ? 'task.completed' : 'task.status_changed';
+                $this->activityLogger->recordChange($event, $this->descriptionFor($event), $task, $actor,
+                    ['status' => $before], ['status' => $status]);
+            }
 
-        return $task->refresh()->load('category');
+            return $task->refresh()->load('category');
+        });
     }
 
-    public function delete(Task $task): void
+    public function delete(Task $task, User $actor): void
     {
-        $task->delete();
+        DB::transaction(function () use ($task, $actor): void {
+            $locked = Task::query()->lockForUpdate()->findOrFail($task->id);
+            $this->activityLogger->record('task.deleted', 'Task moved to soft-deleted recovery.', $locked, $actor);
+            $locked->delete();
+        });
+    }
+
+    private function updateEvent(array $before, array $after, array $fields): string
+    {
+        if (in_array('status', $fields, true) && ($after['status'] ?? null) === 'completed') {
+            return 'task.completed';
+        }
+        if (in_array('status', $fields, true) && ($before['status'] ?? null) !== ($after['status'] ?? null)) {
+            return 'task.status_changed';
+        }
+        if (in_array('priority', $fields, true) && ($before['priority'] ?? null) !== ($after['priority'] ?? null)) {
+            return 'task.priority_changed';
+        }
+
+        return 'task.updated';
+    }
+
+    private function descriptionFor(string $event): string
+    {
+        return match ($event) {
+            'task.completed' => 'Task completed.',
+            'task.status_changed' => 'Task status changed.',
+            'task.priority_changed' => 'Task priority changed.',
+            default => 'Task updated.',
+        };
+    }
+
+    private function auditValues(Task $task, array $fields): array
+    {
+        $values = [];
+        foreach ($fields as $field) {
+            $values[$field] = $task->getAttributes()[$field] ?? $task->getRawOriginal($field);
+        }
+
+        return $values;
     }
 }

@@ -58,7 +58,7 @@ export const useAuthStore = defineStore('auth', () => {
     async function register(attributes) {
         const response = await registerRequest(attributes);
         const payload = response.data.data ?? response.data;
-        return { email: payload.email, deliveryMode: payload.delivery_mode || 'email' };
+        return { email: payload.email, deliveryMode: payload.delivery_mode || 'email', expiresIn: payload.expires_in, resendIn: payload.resend_in };
     }
 
     async function verifyRegistration(attributes) {

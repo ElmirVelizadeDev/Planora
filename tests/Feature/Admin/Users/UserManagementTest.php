@@ -627,11 +627,20 @@ class UserManagementTest extends TestCase
     {
         $admin = $this->admin();
         $user = User::factory()->create(['role' => 'user']);
-        UserActivityLog::create(['user_id' => $user->id, 'actor_id' => $admin->id, 'event' => 'profile.updated', 'description' => 'User profile updated.', 'created_at' => now()]);
+        UserActivityLog::create([
+            'user_id' => $user->id,
+            'actor_id' => $admin->id,
+            'event' => 'profile.updated',
+            'description' => 'User profile updated.',
+            'context' => ['nested' => ['session_id' => 'legacy-session-marker', 'status' => 'active']],
+            'created_at' => now(),
+        ]);
 
         $this->actingAs($admin, 'sanctum')->withHeaders($this->headers())
             ->getJson('/api/v1/admin/users/activity?user_id='.$user->id)
-            ->assertOk()->assertJsonPath('data.0.event', 'profile.updated');
+            ->assertOk()
+            ->assertJsonPath('data.0.event', 'profile.updated')
+            ->assertJsonPath('data.0.context.nested', ['status' => 'active']);
         $this->actingAs($admin, 'sanctum')->withHeaders($this->headers())
             ->getJson('/api/v1/admin/users/roles-permissions')
             ->assertOk()->assertJsonPath('roles.moderator', 'Limited user visibility and only explicitly assigned moderation actions.');

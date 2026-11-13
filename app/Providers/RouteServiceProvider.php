@@ -7,6 +7,7 @@ use Illuminate\Foundation\Support\Providers\RouteServiceProvider as ServiceProvi
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Route;
+use App\Services\Settings\SettingsService;
 
 class RouteServiceProvider extends ServiceProvider
 {
@@ -31,9 +32,12 @@ class RouteServiceProvider extends ServiceProvider
         RateLimiter::for('auth-login', function (Request $request) {
             $email = is_string($request->input('email')) ? mb_strtolower(trim($request->input('email'))) : '';
             $emailKey = hash_hmac('sha256', $email, (string) config('app.key'));
+            $settings = app(SettingsService::class)->passwordPolicy();
+            $attempts = max(3, min(20, (int) ($settings['max_login_attempts'] ?? 10)));
+            $lockout = max(1, min(60, (int) ($settings['login_lockout_minutes'] ?? 1)));
 
             return [
-                Limit::perMinute(10)->by('auth-login-ip:'.$request->ip()),
+                Limit::perMinutes($lockout, $attempts)->by('auth-login-ip:'.$request->ip()),
                 Limit::perHour(30)->by('auth-login-account:'.$emailKey),
             ];
         });

@@ -1,21 +1,26 @@
 <?php
 
-use App\Http\Controllers\Api\V1\AuthController;
-use App\Http\Controllers\Api\V1\CategoryController;
-use App\Http\Controllers\Api\V1\Admin\UserActivityController;
-use App\Http\Controllers\Api\V1\Admin\ProjectManagementController;
-use App\Http\Controllers\Api\V1\Admin\UserManagementController;
-use App\Http\Controllers\Api\V1\Admin\UserRoleController;
-use App\Http\Controllers\Api\V1\Admin\UserRolePermissionsController;
-use App\Http\Controllers\Api\V1\CurrentUserController;
-use App\Http\Controllers\Api\V1\PasswordController;
-use App\Http\Controllers\Api\V1\TaskController;
-use App\Http\Controllers\Api\V1\UserTaskController;
-use App\Http\Controllers\Api\V1\UserProjectController;
-use App\Http\Controllers\Api\V1\UserCategoryController;
-use App\Http\Controllers\Api\V1\Admin\ProjectTaskManagementController;
-use App\Http\Controllers\Api\V1\Admin\AdminReportController;
+use App\Http\Controllers\Api\V1\Auth\AuthController;
+use App\Http\Controllers\Api\V1\Admin\Categories\CategoryController;
+use App\Http\Controllers\Api\V1\Admin\Users\UserActivityController;
+use App\Http\Controllers\Api\V1\Admin\Projects\ProjectManagementController;
+use App\Http\Controllers\Api\V1\Admin\Users\UserManagementController;
+use App\Http\Controllers\Api\V1\Admin\Users\UserRoleController;
+use App\Http\Controllers\Api\V1\Admin\Users\UserRolePermissionsController;
+use App\Http\Controllers\Api\V1\User\Profile\CurrentUserController;
+use App\Http\Controllers\Api\V1\Auth\PasswordController;
+use App\Http\Controllers\Api\V1\Admin\Tasks\TaskController;
+use App\Http\Controllers\Api\V1\User\Tasks\UserTaskController;
+use App\Http\Controllers\Api\V1\User\Projects\UserProjectController;
+use App\Http\Controllers\Api\V1\User\Categories\UserCategoryController;
+use App\Http\Controllers\Api\V1\Admin\Projects\ProjectTaskManagementController;
+use App\Http\Controllers\Api\V1\Admin\Reports\AdminReportController;
+use App\Http\Controllers\Api\V1\Admin\ActivityLogs\ActivityLogsController;
+use App\Http\Controllers\Api\V1\Admin\Settings\AdminSettingsController;
+use App\Http\Controllers\Api\V1\Settings\SettingsBrandingController;
 use Illuminate\Support\Facades\Route;
+
+Route::get('/settings/branding', [SettingsBrandingController::class, 'show'])->name('settings.branding');
 
 Route::prefix('auth')->name('auth.')->group(function () {
     Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:auth-login')->name('login');
@@ -87,6 +92,26 @@ Route::prefix('admin/reports')->name('admin.reports.')->middleware(['auth:sanctu
         ->where('table', 'registrations|projects|tasks|overdue|upcoming|categories|unused_categories|assignees')
         ->name('tables.show');
     Route::get('/export', [AdminReportController::class, 'export'])->name('export');
+});
+
+Route::prefix('admin/activity-logs')->name('admin.activity-logs.')->middleware([
+    'auth:sanctum', 'active', 'role:admin,moderator', 'can:viewActivity,App\\Models\\User',
+])->group(function () {
+    Route::get('/', [ActivityLogsController::class, 'index'])->name('index');
+    Route::get('/filters', [ActivityLogsController::class, 'filters'])->name('filters');
+    Route::get('/statistics', [ActivityLogsController::class, 'statistics'])->name('statistics');
+    Route::get('/export', [ActivityLogsController::class, 'export'])->name('export');
+    Route::get('/{activityLog}', [ActivityLogsController::class, 'show'])->whereNumber('activityLog')->name('show');
+});
+
+Route::prefix('admin/settings')->name('admin.settings.')->middleware(['auth:sanctum', 'active', 'role:admin'])->group(function () {
+    Route::get('/', [AdminSettingsController::class, 'index'])->name('index');
+    Route::get('/{group}', [AdminSettingsController::class, 'show'])->whereIn('group', ['general', 'security', 'email'])->name('show');
+    Route::put('/{group}', [AdminSettingsController::class, 'update'])->whereIn('group', ['general', 'security', 'email'])->name('update');
+    Route::post('/{group}/reset', [AdminSettingsController::class, 'reset'])->whereIn('group', ['general', 'security', 'email'])->name('reset');
+    Route::post('/email/test', [AdminSettingsController::class, 'testEmail'])->middleware('throttle:3,1')->name('email.test');
+    Route::post('/general/logo', [AdminSettingsController::class, 'uploadLogo'])->name('general.logo.upload');
+    Route::delete('/general/logo', [AdminSettingsController::class, 'removeLogo'])->name('general.logo.remove');
 });
 
 Route::prefix('projects')->name('projects.')->middleware(['auth:sanctum', 'active', 'role:user'])->group(function () {

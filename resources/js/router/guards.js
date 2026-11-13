@@ -23,7 +23,11 @@ export function installRouteGuards(router) {
         const canViewAdminUsers = to.name === 'admin.users.index'
             && auth.hasRole('moderator')
             && auth.hasManagementPermission('users.view');
-        if (to.meta.requiresRole && !auth.hasRole(to.meta.requiresRole) && !canViewAdminUsers) {
+        const canViewActivityLogs = typeof to.name === 'string'
+            && to.name.startsWith('admin.activity-logs.')
+            && auth.hasRole('moderator')
+            && auth.hasManagementPermission('activity.view');
+        if (to.meta.requiresRole && !auth.hasRole(to.meta.requiresRole) && !canViewAdminUsers && !canViewActivityLogs) {
             if (to.meta.requiresRole === 'admin' && auth.hasRole('user')) return { name: 'dashboard' };
             if (to.meta.requiresRole === 'user' && auth.hasRole('admin')) return { name: 'admin.dashboard' };
             return { name: 'error.403' };

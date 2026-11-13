@@ -7,6 +7,7 @@ use App\Models\EmailVerificationOtp;
 use App\Models\PendingRegistration;
 use App\Models\User;
 use App\Services\Api\V1\Admin\UserActivityLogger;
+use App\Services\Settings\SettingsService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
@@ -16,11 +17,7 @@ use Throwable;
 
 class RegistrationService
 {
-    private const OTP_TTL_MINUTES = 5;
-    private const OTP_RESEND_SECONDS = 60;
-    private const MAX_OTP_ATTEMPTS = 5;
-
-    public function __construct(private readonly UserActivityLogger $activityLogger)
+    public function __construct(private readonly UserActivityLogger $activityLogger, private readonly SettingsService $settings)
     {
     }
 
@@ -31,7 +28,10 @@ class RegistrationService
         $otpHash = Hash::make($code);
         $developmentMode = app()->environment('local');
 
-        $issueStatus = DB::transaction(function () use ($attributes, $email, $otpHash, $code) {
+        $policy = $this->settings->passwordPolicy();
+        $ttl = (int) ($policy['otp_expiration_minutes'] ?? 5);
+        $cooldown = (int) ($policy['otp_resend_cooldown_seconds'] ?? 60);
+        $issueStatus = DB::transaction(function () use ($attributes, $email, $otpHash, $ttl, $cooldown) {
             if (User::withTrashed()->where('email', $email)->lockForUpdate()->exists()) {
                 return 'registered';
             }
@@ -39,7 +39,7 @@ class RegistrationService
             $otp = EmailVerificationOtp::query()->where('email', $email)->lockForUpdate()->first();
             $pending = PendingRegistration::query()->where('email', $email)->lockForUpdate()->first();
 
-            if ($otp?->last_sent_at && $otp->last_sent_at->addSeconds(self::OTP_RESEND_SECONDS)->isFuture()
+            if ($otp?->last_sent_at && $otp->last_sent_at->addSeconds($cooldown)->isFuture()
                 && $pending?->expires_at?->isFuture()) {
                 return 'cooldown';
             }
@@ -54,7 +54,7 @@ class RegistrationService
             $otp ??= new EmailVerificationOtp();
             $otp->email = $email;
             $otp->otp_hash = $otpHash;
-            $otp->expires_at = now()->addMinutes(self::OTP_TTL_MINUTES);
+            $otp->expires_at = now()->addMinutes($ttl);
             $otp->last_sent_at = now();
             $otp->attempts = 0;
             $otp->save();
@@ -76,18 +76,21 @@ class RegistrationService
         $otpHash = Hash::make($code);
         $developmentMode = app()->environment('local');
 
-        $shouldSend = DB::transaction(function () use ($email, $otpHash, $code) {
+        $policy = $this->settings->passwordPolicy();
+        $ttl = (int) ($policy['otp_expiration_minutes'] ?? 5);
+        $cooldown = (int) ($policy['otp_resend_cooldown_seconds'] ?? 60);
+        $shouldSend = DB::transaction(function () use ($email, $otpHash, $ttl, $cooldown) {
             $otp = EmailVerificationOtp::query()->where('email', $email)->lockForUpdate()->first();
             $pending = PendingRegistration::query()->where('email', $email)->lockForUpdate()->first();
             if (! $pending || ! $pending->password_hash || ! $pending->expires_at?->isFuture() || ! $otp) {
                 return false;
             }
-            if (! $otp->last_sent_at || $otp->last_sent_at->addSeconds(self::OTP_RESEND_SECONDS)->isFuture()) {
+            if (! $otp->last_sent_at || $otp->last_sent_at->addSeconds($cooldown)->isFuture()) {
                 return false;
             }
 
             $otp->otp_hash = $otpHash;
-            $otp->expires_at = now()->addMinutes(self::OTP_TTL_MINUTES);
+            $otp->expires_at = now()->addMinutes($ttl);
             $otp->last_sent_at = now();
             $otp->attempts = 0;
             $otp->save();
@@ -104,7 +107,8 @@ class RegistrationService
 
     public function verify(string $email, string $code): User
     {
-        $result = DB::transaction(function () use ($email, $code) {
+        $maxAttempts = (int) ($this->settings->passwordPolicy()['otp_max_attempts'] ?? 5);
+        $result = DB::transaction(function () use ($email, $code, $maxAttempts) {
             $email = mb_strtolower(trim($email));
             $otp = EmailVerificationOtp::query()->where('email', $email)->lockForUpdate()->first();
             $pending = PendingRegistration::query()->where('email', $email)->lockForUpdate()->first();
@@ -118,14 +122,14 @@ class RegistrationService
             if (! $otp->expires_at || $otp->expires_at->isPast()) {
                 return ['error' => 'expired'];
             }
-            if ($otp->attempts >= self::MAX_OTP_ATTEMPTS) {
+            if ($otp->attempts >= $maxAttempts) {
                 return ['error' => 'locked'];
             }
             if (! Hash::check($code, $otp->otp_hash)) {
                 $otp->attempts++;
                 $otp->save();
 
-                return ['error' => $otp->attempts >= self::MAX_OTP_ATTEMPTS ? 'locked' : 'invalid'];
+                return ['error' => $otp->attempts >= $maxAttempts ? 'locked' : 'invalid'];
             }
 
             if (User::withTrashed()->where('email', $pending->email)->lockForUpdate()->exists()) {

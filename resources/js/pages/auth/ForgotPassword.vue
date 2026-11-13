@@ -85,7 +85,7 @@ async function submitEmail() {
     try {
         const response = await requestPasswordRecovery({ email: email.value });
         localDevelopment.value = response.data.delivery_mode === 'local';
-        sent.value = true; step.value = 'code'; secondsLeft.value = 300; resendSeconds.value = 60;
+        sent.value = true; step.value = 'code'; secondsLeft.value = Number(response.data.expires_in) || 300; resendSeconds.value = Number(response.data.resend_in) || 60;
         window.setTimeout(() => inputRefs.value[0]?.focus(), 0);
     } catch (error) {
         fieldErrors.value = error.response?.data?.errors || {};
@@ -97,7 +97,7 @@ async function resend() {
     try {
         const response = await resendPasswordRecovery({ email: email.value });
         localDevelopment.value = response.data.delivery_mode === 'local';
-        digits.value = ['', '', '', '', '', '']; secondsLeft.value = 300; resendSeconds.value = 60;
+        digits.value = ['', '', '', '', '', '']; secondsLeft.value = Number(response.data.expires_in) || 300; resendSeconds.value = Number(response.data.resend_in) || 60;
     } catch (error) {
         errorMessage.value = error.response?.data?.message || 'We could not resend the code. Please try again.';
     } finally { loading.value = false; }

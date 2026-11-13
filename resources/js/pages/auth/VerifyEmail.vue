@@ -135,6 +135,7 @@ async function verifyCode() {
         const result = await auth.verifyRegistration({ email: email.value, code: digits.value.join('') });
         sessionStorage.removeItem('planora.pending-registration-email');
         sessionStorage.removeItem('planora.pending-registration-delivery');
+        sessionStorage.removeItem('planora.pending-registration-resend');
         await router.replace(result.redirectTo || '/dashboard');
     } catch (error) {
         errorMessage.value = error.response?.data?.errors?.code?.[0]
@@ -151,12 +152,14 @@ async function resendCode() {
     errorMessage.value = '';
     successMessage.value = '';
     try {
-        await auth.resendRegistrationCode({ email: email.value });
+        const response = await auth.resendRegistrationCode({ email: email.value });
         digits.value = Array(6).fill('');
         successMessage.value = isDatabaseDelivery.value
             ? 'If a pending registration exists, a new local code can be generated from the project terminal.'
             : 'If a pending registration exists, a new verification code will be sent.';
-        startCountdown(60);
+        const cooldown = Number(response.resend_in) || 60;
+        sessionStorage.setItem('planora.pending-registration-resend', String(cooldown));
+        startCountdown(cooldown);
         inputRefs.value[0]?.focus();
     } catch (error) {
         errorMessage.value = error.response?.data?.message || 'We could not resend the code. Please try again.';
@@ -169,7 +172,7 @@ async function resendCode() {
 onMounted(() => {
     email.value = sessionStorage.getItem('planora.pending-registration-email') || '';
     isDatabaseDelivery.value = sessionStorage.getItem('planora.pending-registration-delivery') === 'database';
-    if (email.value) startCountdown(60);
+    if (email.value) startCountdown(Number(sessionStorage.getItem('planora.pending-registration-resend')) || 60);
 });
 onBeforeUnmount(() => clearInterval(countdownTimer));
 </script>

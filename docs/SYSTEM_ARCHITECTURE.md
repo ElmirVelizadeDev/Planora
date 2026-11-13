@@ -27,6 +27,7 @@ flowchart LR
 - New Project and Task category assignments must reference an active Category. Existing archived associations can remain unchanged on update and are serialized with archived status for historical display.
 - Admin Project and Task APIs are restricted to active Admin sessions. Admin user-management APIs have their own Admin/moderator permission checks.
 - A Task may be standalone or linked to a Project. The nullable foreign key preserves the Task when its Project is deleted by setting `project_id` to null.
+- Activity Logs reuse the existing `user_activity_logs` table and centralized `UserActivityLogger`; domain services write audit rows inside their mutation transactions. Credentials and request secrets are redacted. Admins can review all audit events, while Moderators require `activity.view` and are restricted to user/account activity for non-Admin accounts.
 
 ## Runtime and tooling
 

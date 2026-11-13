@@ -11,8 +11,8 @@
             </button>
             <div class="workspace-header-context">
                 <span class="workspace-header-eyebrow">
-                    <img :src="'/images/branding/planora-master-512.png'" alt="" width="16" height="16">
-                    {{ variant === 'admin' ? 'Planora Admin' : 'Planora' }}
+                    <img :src="branding.application_logo_url || '/images/branding/planora-master-512.png'" alt="" width="16" height="16">
+                    {{ variant === 'admin' ? `${branding.application_name || 'Planora'} Admin` : (branding.workspace_name || 'Planora') }}
                 </span>
                 <span class="workspace-header-label">{{ pageContext }}</span>
             </div>
@@ -30,13 +30,14 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { useRoute } from 'vue-router';
 import HeaderHelpCenter from './HeaderHelpCenter.vue';
 import HeaderQuickActions from './HeaderQuickActions.vue';
 import NotificationDropdown from '../NotificationDropdown.vue';
 import ProfileDropdown from '../ProfileDropdown.vue';
 import SearchBar from '../SearchBar.vue';
+import { getPublicBranding } from '../../../features/settings/services/settingsApi.js';
 
 const props = defineProps({
     variant: { type: String, required: true, validator: (value) => ['user', 'admin'].includes(value) },
@@ -47,6 +48,15 @@ defineEmits(['toggle-sidebar']);
 const route = useRoute();
 const searchRef = ref(null);
 const searchOverlayOpen = ref(false);
+const branding = ref({ application_name: 'Planora', workspace_name: 'Planora' });
+function updateBranding(event) {
+    branding.value = { ...branding.value, ...(event.detail || {}) };
+}
+onMounted(async () => {
+    window.addEventListener('planora:settings-updated', updateBranding);
+    try { branding.value = await getPublicBranding(); } catch { /* Keep the built-in Planora identity available if branding is unavailable. */ }
+});
+onBeforeUnmount(() => window.removeEventListener('planora:settings-updated', updateBranding));
 const pageContext = computed(() => {
     const name = String(route.name || '');
 

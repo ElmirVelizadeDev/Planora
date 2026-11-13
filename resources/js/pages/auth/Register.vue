@@ -197,6 +197,7 @@ async function submit() {
         });
         sessionStorage.setItem('planora.pending-registration-email', result.email || email.value.trim().toLowerCase());
         sessionStorage.setItem('planora.pending-registration-delivery', result.deliveryMode || 'email');
+        sessionStorage.setItem('planora.pending-registration-resend', String(result.resendIn || 60));
         name.value = '';
         email.value = '';
         password.value = '';

@@ -76,12 +76,17 @@ class UserManagementService
                     $data['profile_photo'] = null;
                 }
 
-                $user->fill($data)->save();
-                $this->activityLogger->record('user.profile_updated', 'Administrator updated account information.', $user, $actor, [
-                    'fields' => array_keys($data),
-                    'avatar_removed' => $removeAvatar,
-                    'avatar_replaced' => $avatar instanceof UploadedFile,
-                ]);
+                $user->fill($data);
+                $changed = array_values(array_diff(array_keys($user->getDirty()), ['updated_at']));
+                if ($changed !== []) {
+                    $user->save();
+                    $event = in_array('profile_photo', $changed, true) ? 'user.avatar_changed' : 'user.profile_updated';
+                    $this->activityLogger->record($event, 'Administrator updated account information.', $user, $actor, [
+                        'fields' => $changed,
+                        'avatar_removed' => $removeAvatar,
+                        'avatar_replaced' => $avatar instanceof UploadedFile,
+                    ]);
+                }
 
                 return $user->fresh('statusChangedBy:id,name');
             });
@@ -119,11 +124,16 @@ class UserManagementService
             abort_unless($oldRole !== 'admin' || $role === 'admin', 403, 'Administrator accounts cannot be demoted.');
             $this->protectLastActiveAdmin($user, $oldRole === 'admin' && $role === 'admin');
 
+            $newPermissions = $role === 'moderator' ? ($permissions ?? ($oldRole === 'moderator' ? $user->moderator_permissions : [])) : null;
+            if ($oldRole === $role && $user->moderator_permissions === $newPermissions) {
+                return $user;
+            }
             $user->role = $role;
-            $user->moderator_permissions = $role === 'moderator' ? ($permissions ?? ($oldRole === 'moderator' ? $user->moderator_permissions : [])) : null;
+            $user->moderator_permissions = $newPermissions;
             $user->save();
 
-            $this->activityLogger->record('user.role_changed', 'Administrator changed the account role.', $user, $actor, ['from' => $oldRole, 'to' => $role]);
+            $this->activityLogger->recordChange('user.role_changed', 'Administrator changed the account role.', $user, $actor,
+                ['role' => $oldRole], ['role' => $role], ['from' => $oldRole, 'to' => $role]);
 
             return $user->fresh('statusChangedBy:id,name');
         });
@@ -137,7 +147,8 @@ class UserManagementService
             $before = $user->moderator_permissions ?? [];
             $user->moderator_permissions = array_values(array_unique($permissions));
             $user->save();
-            $this->activityLogger->record('moderator.permissions_changed', 'Administrator updated moderator permissions.', $user, $actor, ['from' => $before, 'to' => $user->moderator_permissions]);
+            $this->activityLogger->recordChange('moderator.permissions_changed', 'Administrator updated moderator permissions.', $user, $actor,
+                ['permissions' => $before], ['permissions' => $user->moderator_permissions], ['from' => $before, 'to' => $user->moderator_permissions]);
 
             return $user->fresh();
         });
@@ -150,6 +161,10 @@ class UserManagementService
             $user = User::query()->lockForUpdate()->findOrFail($user->id);
             abort_unless($actor->isNot($user), 403, 'You cannot change your own account status.');
             $oldStatus = $user->status;
+            $oldReason = $user->status_reason;
+            if ($oldStatus === $status && $oldReason === (in_array($status, ['suspended', 'banned'], true) ? $reason : null)) {
+                return $user;
+            }
             $this->protectLastActiveAdmin($user, $user->role === 'admin' && $status === 'active');
 
             $user->status = $status;
@@ -164,7 +179,8 @@ class UserManagementService
                 'active' => in_array($oldStatus, ['suspended', 'banned', 'inactive'], true) ? 'account.restored' : 'account.status_changed',
                 default => 'account.status_changed',
             };
-            $this->activityLogger->record($event, 'Administrator changed account status.', $user, $actor, ['from' => $oldStatus, 'to' => $status, 'reason' => $user->status_reason]);
+            $this->activityLogger->recordChange($event, 'Administrator changed account status.', $user, $actor,
+                ['status' => $oldStatus], ['status' => $status], ['from' => $oldStatus, 'to' => $status]);
 
             return $user->fresh('statusChangedBy:id,name');
         });
@@ -193,7 +209,8 @@ class UserManagementService
             $user->status_changed_by = $actor->id;
             $user->status_changed_at = now();
             $user->save();
-            $this->activityLogger->record('account.restored', 'Administrator restored the account.', $user, $actor, ['from' => $previous, 'to' => 'active']);
+            $this->activityLogger->recordChange('account.restored', 'Administrator restored the account.', $user, $actor,
+                ['status' => $previous], ['status' => 'active'], ['from' => $previous, 'to' => 'active']);
 
             return $user->fresh('statusChangedBy:id,name');
         });

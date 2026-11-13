@@ -31,15 +31,18 @@ const adminLinks = [
     { label: 'Tasks', icon: '✓', to: { name: 'admin.tasks.index' } },
     { label: 'Categories', icon: '◉', to: { name: 'admin.categories.index' }, activeOn: ['admin.categories.index', 'admin.categories.create', 'admin.categories.show', 'admin.categories.edit'] },
     { label: 'Reports & Analytics', icon: '▥', to: { name: 'admin.reports' } },
-    { label: 'Activity Logs', icon: '◷', to: { name: 'admin.activity-logs.index' } },
+    { label: 'Activity Logs', icon: '◷', to: { name: 'admin.activity-logs.index' }, activeOn: ['admin.activity-logs.index', 'admin.activity-logs.show'] },
     { label: 'Settings', icon: '⚙', to: { name: 'admin.settings.index' } },
 ];
 const isAdmin = computed(() => auth.hasRole('admin'));
-const brandLabel = computed(() => isAdmin.value ? 'Administration' : 'User management');
-const homeRoute = computed(() => isAdmin.value ? 'admin.dashboard' : 'admin.users.index');
+const brandLabel = computed(() => isAdmin.value ? 'Administration' : 'Management');
+const homeRoute = computed(() => isAdmin.value ? 'admin.dashboard' : (auth.hasManagementPermission('users.view') ? 'admin.users.index' : 'admin.activity-logs.index'));
 const links = computed(() => {
     if (isAdmin.value) return adminLinks;
-    return auth.hasManagementPermission('users.view') ? [adminLinks[1]] : [];
+    return [
+        ...(auth.hasManagementPermission('users.view') ? [adminLinks[1]] : []),
+        ...(auth.hasManagementPermission('activity.view') ? [adminLinks[6]] : []),
+    ];
 });
 </script>
 

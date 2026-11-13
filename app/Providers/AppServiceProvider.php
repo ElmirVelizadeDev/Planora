@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Services\Settings\SettingsService;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -18,5 +19,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        if (! $this->app->runningInConsole()) {
+            $this->app->make(SettingsService::class)->applyRuntimeConfig();
+        }
     }
 }

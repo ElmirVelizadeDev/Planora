@@ -10,7 +10,7 @@ Laravel database settings come from the environment; `.env.example` selects MySQ
 | `projects` | Project name and description, lifecycle status, optional dates, nullable User owner, optional Category, and timestamps. |
 | `tasks` | Task content, status, priority, optional due date, optional Project and Category, owner, assignee, creator, timestamps, and soft deletion. |
 | `categories` | Category name, optional description, display color, timestamps, and soft deletion. |
-| `user_activity_logs` | Account and authentication activity with optional context and actor/subject references. |
+| `user_activity_logs` | Immutable account, authentication, and business activity with actor/subject snapshots, safe change values, request context, result status, and filter indexes. |
 | `pending_registrations` | Temporary registration details and password hash retained until verification or expiry. |
 | `email_verification_otps` | Registration OTP hash, expiry, attempt count, and resend timestamp. Plaintext codes are not stored. |
 | `password_reset_otps` | Password-recovery OTP hash, expiry, verification, attempt, and recovery-token state. |
@@ -46,5 +46,7 @@ The Project schema is created by `2026_11_11_000001_create_projects_table.php`; 
 `DatabaseSeeder` always invokes `PlanoraUsersSeeder`; it invokes Category, Project, and User Task demo seeders only under `APP_ENV=local`. The three demo seeders are individually guarded for local use. Because the account seeder is not guarded, do not run `db:seed` or `migrate --seed` outside a disposable local database. See [Seeder Notes](../database/seeders/README.md).
 
 The ten CategorySeeder names are inserted only when no case-insensitive active or archived name match exists. Existing Categories are not updated. Project and Task demo seeders create marked records for active normal Users; they preserve an existing non-null category association, including an archived Category, and only fill an absent association from a matching active Category. They do not rewrite unrelated records.
+
+The Activity Logs audit-trail migration extends the existing `user_activity_logs` table rather than introducing a duplicate log table. New fields are nullable where necessary so historical rows remain valid. Actor and legacy subject foreign keys use null-on-delete, while safe name/role snapshots, subject labels, and event metadata retain useful history. Activity rows are not soft-deleted or editable through application endpoints. Search/filter indexes cover module, event, status, actor, target, and creation time.
 
 Subtask, tag, calendar-event, and notification tables are not defined by the current migrations; their routes or components do not imply persisted workflows.

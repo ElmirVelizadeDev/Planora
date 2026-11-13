@@ -22,6 +22,10 @@ Route::view('/admin/users/{path?}', 'welcome')
     ->where('path', '.*')
     ->middleware(['auth', 'active', 'auth.session', 'role:admin,moderator', 'management.access']);
 
+Route::view('/admin/activity-logs/{path?}', 'welcome')
+    ->where('path', '.*')
+    ->middleware(['auth', 'active', 'auth.session', 'role:admin,moderator', 'can:viewActivity,App\\Models\\User']);
+
 Route::view('/admin/{path?}', 'welcome')
     ->where('path', '^(?!users(?:/|$)).*')
     ->middleware(['auth', 'active', 'auth.session', 'role:admin']);

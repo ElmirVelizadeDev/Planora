@@ -68,7 +68,7 @@
                 </button>
             </div>
             <div v-else-if="variant === 'admin'" class="workspace-sidebar-account admin-sidebar-account">
-                <RouterLink class="workspace-account-link" :to="{ name: auth.hasRole('admin') ? 'admin.settings.index' : 'admin.users.index' }" @click="closeOnMobile">
+                <RouterLink class="workspace-account-link" :to="{ name: auth.hasRole('admin') ? 'admin.settings.index' : (auth.hasManagementPermission('users.view') ? 'admin.users.index' : 'admin.activity-logs.index') }" @click="closeOnMobile">
                     <span class="workspace-account-avatar" aria-hidden="true">{{ accountInitials }}</span>
                     <span v-if="!collapsed || mobileOpen" class="workspace-account-copy"><strong>{{ accountName }}</strong><small>{{ auth.hasRole('admin') ? 'Administrator' : 'Moderator' }}</small></span>
                     <span v-if="!collapsed || mobileOpen" class="workspace-account-chevron" aria-hidden="true">···</span>
