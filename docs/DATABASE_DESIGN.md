@@ -35,7 +35,8 @@ erDiagram
 - Categories use soft deletion for archiving. Project and Task relationships load archived Categories for historical display. Archiving does not delete or detach related records; restoring makes the Category active again.
 - The Category foreign keys use restrictive delete behavior. The API provides archive and restore operations, not permanent Category deletion. A referenced Category cannot be permanently deleted without first resolving its associations.
 - Projects are not soft-deleted. Deleting a Project sets linked Tasks' nullable `project_id` to null, preserving those Tasks.
-- `projects.owner_id` is nullable and becomes null when its User is deleted. Task owner, assignee, and creator are User references. Tasks are soft-deleted.
+- `projects.owner_id` is nullable and becomes null when its User is deleted. Task owner, assignee, and creator are User references. Tasks are soft-deleted and can be restored by an Admin; restoration preserves surviving references, while deleted Projects already detach Tasks through the nullable FK and soft-deleted Users remain resolvable for historical assignment display.
+- Roles are fixed in the `users.role` column. The supported Moderator permission catalog lives in Laravel config, while per-account assignments are stored in `users.moderator_permissions` JSON. No dynamic role/permission tables are used.
 - User Project queries are restricted to Projects owned by the authenticated User. User-visible Tasks are restricted to Tasks owned by or assigned to that User; category detail counts and related records apply the same scopes.
 - Admin category usage counts are global. Project counts include related Projects; Task counts follow the Task model's normal soft-delete scope.
 

@@ -26,7 +26,7 @@
                     <div class="settings-test-email"><label class="settings-field"><span>Recipient</span><input v-model="recipient" type="email" autocomplete="email" placeholder="admin@example.com"></label><button class="settings-button settings-button--secondary" type="button" :disabled="testing || form.dirty || !recipient" @click="testEmail">{{ testing ? 'Sending…' : 'Send test email' }}</button></div>
                     <p v-if="testMessage" class="settings-feedback" :class="testError ? 'is-error' : 'is-success'" :role="testError ? 'alert' : 'status'">{{ testMessage }}</p>
                 </section>
-                <SettingsSaveBar :dirty="form.dirty" :saving="form.saving" @save="save" @reset="reset" />
+                <SettingsSaveBar :dirty="form.dirty" :saving="form.saving" :confirmation="form.confirmation" @save="openSaveConfirmation" @reset="openResetConfirmation" @confirm="form.confirmConfirmation" @cancel="form.cancelConfirmation" />
             </template>
         </div>
     </AdminSettingsLayout>
@@ -46,15 +46,15 @@ const testing = ref(false);
 const testMessage = ref('');
 const testError = ref(false);
 
-async function save() {
-    if ((form.values.mail_password || form.values.remove_mail_password) && !window.confirm('Apply these mail settings? Credential changes affect future application email.')) return;
-    const saved = await form.save();
-    if (saved) form.mergeSavedValues({ mail_password: '', remove_mail_password: false });
+function openSaveConfirmation() {
+    const credentialsChanged = Boolean(form.values.mail_password || form.values.remove_mail_password);
+    const message = credentialsChanged
+        ? 'Are you sure you want to save these Email settings? Credential changes affect future application email.'
+        : 'Are you sure you want to save your updated Email settings?';
+    form.openSaveConfirmation(message, () => form.mergeSavedValues({ mail_password: '', remove_mail_password: false }));
 }
-async function reset() {
-    if (!window.confirm('Restore Email settings to their defaults and remove the saved SMTP credential?')) return;
-    await form.reset();
-    form.mergeSavedValues({ mail_password: '', remove_mail_password: false });
+function openResetConfirmation() {
+    form.openResetConfirmation('Are you sure you want to reset Email settings to their default values? This will also remove the saved SMTP credential.', () => form.mergeSavedValues({ mail_password: '', remove_mail_password: false }));
 }
 async function testEmail() {
     testing.value = true; testMessage.value = ''; testError.value = false;

@@ -1,5 +1,5 @@
 <template>
-    <main class="admin-settings">
+    <main class="admin-settings" :class="{ 'admin-settings--detail': route.name !== 'admin.settings.index' }">
         <header class="admin-settings__header">
             <nav class="admin-settings-breadcrumbs" aria-label="Breadcrumb">
                 <RouterLink :to="{ name: 'admin.dashboard' }">Administration</RouterLink>
@@ -59,6 +59,10 @@
 </template>
 
 <script setup>
+import { useRoute } from 'vue-router';
+
+const route = useRoute();
+
 defineProps({
     pageTitle: { type: String, required: true },
     pageDescription: { type: String, required: true },

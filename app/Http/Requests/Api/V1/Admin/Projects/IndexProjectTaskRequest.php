@@ -9,7 +9,7 @@ use Illuminate\Validation\Rule;
 
 class IndexProjectTaskRequest extends FormRequest
 {
-    public function authorize(): bool { return $this->user()?->role === 'admin'; }
+    public function authorize(): bool { return $this->user()?->can('view', $this->route('project')) ?? false; }
 
     public function rules(): array
     {

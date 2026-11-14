@@ -7,11 +7,11 @@
                         <td data-label="Project"><RouterLink class="admin-projects-project-copy" :to="{ name: 'admin.projects.show', params: { projectId: project.id } }"><strong :title="project.name">{{ project.name }}</strong><span :title="project.description || ''">{{ project.description || 'No description' }}</span></RouterLink></td>
                         <td data-label="Owner"><div v-if="project.owner" class="admin-projects-owner"><span>{{ initials(project.owner.name) }}</span><div><strong>{{ project.owner.name }}</strong><small>{{ project.owner.email }}</small></div></div><span v-else class="admin-projects-muted">Unassigned</span></td>
                         <td data-label="Category">{{ project.category?.name || '—' }}</td>
-                        <td data-label="Status"><AdminProjectStatusBadge :status="project.status" /></td>
+                        <td data-label="Status"><AdminStatusSelect v-if="canManageStatus" :model-value="project.status" :options="ADMIN_PROJECT_STATUSES" :disabled="loading" :aria-label="`Change status for ${project.name}`" @update:model-value="$emit('status-change', { project, status: $event })" /><AdminProjectStatusBadge v-else :status="project.status" /></td>
                         <td data-label="Start date"><time v-if="project.start_date" :datetime="project.start_date">{{ formatDate(project.start_date) }}</time><span v-else class="admin-projects-muted">—</span></td>
                         <td data-label="Due date"><time v-if="project.due_date" :datetime="project.due_date">{{ formatDate(project.due_date) }}</time><span v-else class="admin-projects-muted">—</span></td>
                         <td data-label="Created"><time :datetime="project.created_at">{{ formatDate(project.created_at) }}</time></td>
-                        <td data-label="Actions"><div class="admin-projects-actions"><RouterLink :to="{ name: 'admin.projects.show', params: { projectId: project.id } }">View</RouterLink><button type="button" @click="$emit('edit', project)">Edit</button><button class="is-danger" type="button" @click="$emit('delete', project)">Delete</button></div></td>
+                        <td data-label="Actions"><div class="admin-projects-actions"><RouterLink :to="{ name: 'admin.projects.show', params: { projectId: project.id } }">View</RouterLink><template v-if="isAdmin"><button type="button" @click="$emit('edit', project)">Edit</button><button class="is-danger" type="button" @click="$emit('delete', project)">Delete</button></template></div></td>
                     </tr>
                 </tbody>
             </table>
@@ -21,13 +21,16 @@
 
 <script setup>
 import AdminProjectStatusBadge from './AdminProjectStatusBadge.vue';
+import AdminStatusSelect from '../../../../shared/components/AdminStatusSelect.vue';
+import { ADMIN_PROJECT_STATUSES } from '../composables/useAdminProjects.js';
 
 defineProps({
     projects: { type: Array, required: true }, loading: { type: Boolean, default: false },
     page: { type: Number, required: true }, lastPage: { type: Number, required: true },
     total: { type: Number, required: true }, rangeStart: { type: Number, required: true }, rangeEnd: { type: Number, required: true },
+    isAdmin: { type: Boolean, default: true }, canManageStatus: { type: Boolean, default: false },
 });
-defineEmits(['edit', 'delete', 'page-change']);
+defineEmits(['edit', 'delete', 'page-change', 'status-change']);
 
 function formatNumber(value) { return new Intl.NumberFormat().format(Number(value) || 0); }
 function formatDate(value) {

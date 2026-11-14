@@ -473,6 +473,17 @@ class UserManagementTest extends TestCase
             ->assertForbidden();
     }
 
+    public function test_moderator_cannot_restore_a_soft_deleted_user_directly(): void
+    {
+        $moderator = User::factory()->create(['role' => 'moderator', 'moderator_permissions' => ['users.view', 'users.status.manage']]);
+        $deletedUser = User::factory()->create(['role' => 'user']);
+        $deletedUser->delete();
+
+        $this->actingAs($moderator, 'sanctum')->withHeaders($this->headers())
+            ->postJson('/api/v1/admin/users/'.$deletedUser->id.'/restore')->assertForbidden();
+        $this->assertSoftDeleted('users', ['id' => $deletedUser->id]);
+    }
+
     public function test_suspended_and_banned_accounts_are_blocked_and_restorable(): void
     {
         $admin = $this->admin();

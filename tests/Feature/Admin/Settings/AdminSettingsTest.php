@@ -56,6 +56,36 @@ class AdminSettingsTest extends TestCase
         $this->putJson('/api/v1/admin/settings/general', [...$values, 'date_format' => 'Y-m-d H:i:s e'])->assertUnprocessable();
     }
 
+    public function test_settings_groups_persist_independently_and_reset_to_registry_defaults(): void
+    {
+        $admin = $this->admin();
+        $this->actingAs($admin, 'sanctum');
+
+        $this->putJson('/api/v1/admin/settings/general', [
+            'application_name' => 'Planora Workspace', 'workspace_name' => 'Product Studio',
+            'workspace_description' => 'Planning across product teams.', 'contact_email' => 'contact@example.test',
+            'default_language' => 'en', 'timezone' => 'Asia/Baku', 'date_format' => 'd/m/Y', 'time_format' => '24h',
+        ])->assertOk();
+
+        $this->putJson('/api/v1/admin/settings/security', [
+            'minimum_password_length' => 12, 'require_uppercase' => true, 'require_lowercase' => true,
+            'require_number' => true, 'require_special_character' => false, 'max_login_attempts' => 6,
+            'login_lockout_minutes' => 5, 'otp_expiration_minutes' => 8, 'otp_max_attempts' => 4,
+            'otp_resend_cooldown_seconds' => 90,
+        ])->assertOk()->assertJsonPath('data.minimum_password_length', 12);
+
+        $this->getJson('/api/v1/admin/settings/general')
+            ->assertOk()->assertJsonPath('data.workspace_name', 'Product Studio')->assertJsonPath('data.timezone', 'Asia/Baku');
+        $this->assertDatabaseHas('settings', ['key' => 'workspace_name', 'value' => 'Product Studio']);
+
+        $defaults = app(\App\Services\Settings\SettingsRegistry::class)->group('security');
+        $this->postJson('/api/v1/admin/settings/security/reset')
+            ->assertOk()->assertJsonPath('data.minimum_password_length', $defaults['minimum_password_length']['default']);
+        $this->getJson('/api/v1/admin/settings/security')->assertOk()
+            ->assertJsonPath('data.minimum_password_length', $defaults['minimum_password_length']['default']);
+        $this->assertDatabaseHas('settings', ['key' => 'workspace_name', 'value' => 'Product Studio']);
+    }
+
     public function test_security_policy_is_persisted_and_used_for_registration_password_validation(): void
     {
         $this->actingAs($this->admin(), 'sanctum')->putJson('/api/v1/admin/settings/security', [

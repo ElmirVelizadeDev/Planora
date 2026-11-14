@@ -26,6 +26,10 @@ export async function updateAdminProject(projectId, payload) {
     return (await api.patch(`/admin/projects/${projectId}`, payload)).data;
 }
 
+export async function updateAdminProjectStatus(projectId, status) {
+    return (await api.patch(`/admin/projects/${projectId}/status`, { status })).data;
+}
+
 export async function deleteAdminProject(projectId) {
     return (await api.delete(`/admin/projects/${projectId}`)).data;
 }

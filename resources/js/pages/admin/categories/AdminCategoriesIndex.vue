@@ -1,6 +1,6 @@
 <template>
     <main class="admin-categories" :aria-busy="list.loading">
-        <CategoryManagementHeader @create="openCreate" />
+        <CategoryManagementHeader :can-manage="isAdmin" @create="openCreate" />
 
         <section class="ac-stats" aria-label="Category statistics">
             <article><span class="ac-stat-icon">◉</span><strong>{{ list.stats.total }}</strong><span>Total categories</span></article>
@@ -31,6 +31,7 @@
                 v-else
                 :categories="list.categories.value"
                 :direction="filters.filters.direction"
+                :can-manage="isAdmin"
                 @sort="filters.toggleSort(() => { list.page.value = 1; reload(); })"
                 @view="openView"
                 @edit="openEdit"
@@ -48,9 +49,9 @@
             />
         </section>
 
-        <CategoryForm :open="formOpen" :category="formCategory" @close="closeForm" @saved="onFormSaved" />
-        <CategoryDetails :category="viewing" :loading="detailLoading" :error="detailError" @close="closeDetails" @edit="openEdit" />
-        <CategoryArchiveDialog :category="archiveTarget" :saving="actions.saving.value" :error="actions.error.value" @cancel="archiveTarget = null" @confirm="archiveCategory" />
+        <CategoryForm v-if="isAdmin" :open="formOpen" :category="formCategory" @close="closeForm" @saved="onFormSaved" />
+        <CategoryDetails :category="viewing" :loading="detailLoading" :error="detailError" :can-manage="isAdmin" @close="closeDetails" @edit="openEdit" />
+        <CategoryArchiveDialog v-if="isAdmin" :category="archiveTarget" :saving="actions.saving.value" :error="actions.error.value" @cancel="archiveTarget = null" @confirm="archiveCategory" />
         <p v-if="notice" class="ac-toast" role="status">{{ notice }}</p>
     </main>
 </template>
@@ -58,6 +59,8 @@
 <script setup>
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { computed } from 'vue';
+import { useAuthStore } from '../../../features/auth/stores/authStore.js';
 import { getAdminCategory } from '../../../features/categories/admin/services/adminCategoryApi.js';
 import { useAdminCategories } from '../../../features/categories/admin/composables/useAdminCategories.js';
 import { useAdminCategoryActions } from '../../../features/categories/admin/composables/useAdminCategoryActions.js';
@@ -73,6 +76,8 @@ import CategoryManagementToolbar from '../../../features/categories/admin/compon
 
 const route = useRoute();
 const router = useRouter();
+const auth = useAuthStore();
+const isAdmin = computed(() => auth.hasRole('admin'));
 const list = useAdminCategories();
 const filters = useAdminCategoryFilters();
 const formOpen = ref(false);

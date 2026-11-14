@@ -5,10 +5,16 @@
 .al-header small { display: block; margin-top: 8px; color: var(--color-text-secondary, #8490a5); font-size: 11px; }
 .al-eyebrow { margin: 0 0 5px; color: var(--color-primary, #5b6cfa); font-size: 10px; font-weight: 750; letter-spacing: .08em; text-transform: uppercase; }
 .al-actions { display: flex; gap: 9px; }
-.al-button { display: inline-flex; min-height: 38px; align-items: center; justify-content: center; gap: 7px; padding: 0 14px; border: 1px solid transparent; border-radius: 9px; font: inherit; font-size: 12px; font-weight: 650; text-decoration: none; cursor: pointer; }
-.al-button:disabled, .al-button[aria-disabled="true"] { opacity: .55; pointer-events: none; }
-.al-button--secondary { border-color: #e3e8f1; background: #fff; color: #364157; }
-.al-button--primary { background: #5b6cfa; color: white; }
+.al-button { display: inline-flex; min-height: 38px; align-items: center; justify-content: center; gap: 8px; padding: 0 13px; border: 1px solid transparent; border-radius: 9px; font: inherit; font-size: 11px; font-weight: 650; text-decoration: none; cursor: pointer; transition: background 140ms ease, border-color 140ms ease, transform 140ms ease; }
+.al-button svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.8; }
+.al-button:focus-visible { outline: 3px solid rgb(91 108 250 / 24%); outline-offset: 2px; }
+.al-button:disabled { cursor: not-allowed; opacity: .58; }
+.al-button--secondary { border-color: var(--color-border); color: var(--color-text); background: var(--color-surface); }
+.al-button--secondary:hover:not(:disabled) { border-color: var(--color-primary); color: var(--color-primary); }
+.al-button--primary { color: #fff; background: var(--color-primary); }
+.al-button--primary:hover:not(:disabled) { background: #4b5ce6; transform: translateY(-1px); }
+.al-button svg.is-spinning { animation: activity-logs-reports-spin .8s linear infinite; }
+@keyframes activity-logs-reports-spin { to { transform: rotate(360deg); } }
 .al-stats { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 13px; }
 .al-stats article { display: flex; min-height: 84px; align-items: center; gap: 13px; padding: 16px; border: 1px solid #e8ecf3; border-radius: 12px; background: white; }
 .al-stat-icon { display: grid; width: 38px; height: 38px; place-items: center; border-radius: 10px; background: #f0efff; color: #5b6cfa; font-size: 18px; }
@@ -39,4 +45,4 @@
 @media (max-width: 1100px) { .al-toolbar .al-search { flex-basis: 45%; }.al-ip-col { display: none; } }
 @media (max-width: 760px) { .al-header { flex-direction: column; }.al-actions { width: 100%; }.al-actions .al-button { flex: 1; }.al-stats { grid-template-columns: repeat(2,minmax(0,1fr)); }.al-toolbar label:not(.al-search) { flex: 1 1 42%; }.al-toolbar .al-search,.al-toolbar .al-actor-search { min-width: 100%!important; flex-basis: 100%; }.al-toolbar .al-date { flex-basis: 42%; }.al-pagination { align-items: flex-start; flex-direction: column; }.al-pagination>div { width: 100%; justify-content: space-between; }.al-detail-grid { grid-template-columns: 1fr; }.al-change-card,.al-request-card { grid-column: auto; }.al-detail-card dl>div { grid-template-columns: 95px minmax(0,1fr); }.al-modal-backdrop { align-items: start; padding: 10px; }.al-detail-modal { max-height: calc(100vh - 20px); padding: 14px; border-radius: 12px; } }
 @media (max-width: 420px) { .al-stats { gap: 8px; }.al-stats article { min-height: 74px; gap: 8px; padding: 10px; }.al-stat-icon { width: 32px; height: 32px; }.al-stats strong { font-size: 18px; }.al-presets { gap: 4px; }.al-presets button { padding: 6px; }.al-change-head,.al-change-row { min-width: 480px; } }
-@media (prefers-reduced-motion: reduce) { .activity-logs *, .activity-logs *::before, .activity-logs *::after { scroll-behavior: auto; animation-duration: .01ms; transition-duration: .01ms; } }
+@media (prefers-reduced-motion: reduce) { .activity-logs *, .activity-logs *::before, .activity-logs *::after { scroll-behavior: auto; animation-duration: .01ms; transition-duration: .01ms; }.activity-logs .al-button svg.is-spinning { animation: none; } }

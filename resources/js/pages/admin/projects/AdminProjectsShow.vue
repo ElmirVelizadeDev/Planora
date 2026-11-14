@@ -10,16 +10,16 @@
         <template v-else-if="detail">
             <header class="admin-project-detail-header">
                 <div class="admin-project-detail-heading"><p class="admin-project-detail-eyebrow">Project #{{ detail.id }}</p><h1>{{ detail.name || 'Untitled project' }}</h1><AdminProjectStatusBadge :status="detail.status" /></div>
-                <div class="admin-project-detail-actions"><button class="admin-project-detail-primary" type="button" @click="editCurrentProject">Edit project</button><button class="admin-project-detail-danger" type="button" @click="openDelete(detail)">Delete</button></div>
+                <div v-if="isAdmin || canManageProjectStatus" class="admin-project-detail-actions"><select v-if="canManageProjectStatus" :value="detail.status" :disabled="statusSaving" aria-label="Change project status" @change="changeProjectStatus($event.target.value)"><option value="planned">Planned</option><option value="active">Active</option><option value="on_hold">On hold</option><option value="completed">Completed</option></select><button v-if="isAdmin" class="admin-project-detail-primary" type="button" @click="editCurrentProject">Edit project</button><button v-if="isAdmin" class="admin-project-detail-danger" type="button" @click="openDelete(detail)">Delete</button></div>
             </header>
             <AdminProjectDetails :project="detail" />
             <section class="admin-project-tasks-panel">
-                <header class="admin-project-tasks-heading"><div><h2>Project tasks</h2><p>Tasks associated with this project.</p></div><button type="button" @click="openTaskForm">Create task</button></header>
+                <header class="admin-project-tasks-heading"><div><h2>Project tasks</h2><p>Tasks associated with this project.</p></div><button v-if="isAdmin" type="button" @click="openTaskForm">Create task</button></header>
                 <div class="admin-project-tasks-filters"><label>Status <select v-model="taskStatus" @change="resetProjectTaskFilters"><option value="">All statuses</option><option value="pending">Pending</option><option value="in_progress">In progress</option><option value="completed">Completed</option></select></label><label>Priority <select v-model="taskPriority" @change="resetProjectTaskFilters"><option value="">All priorities</option><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option><option value="urgent">Urgent</option></select></label><label>Category <select v-model="taskCategoryId" @change="resetProjectTaskFilters"><option value="">All categories</option><option v-for="category in categories" :key="category.id" :value="category.id">{{ category.name }}</option></select></label></div>
                 <p v-if="taskError" class="admin-project-tasks-error" role="alert">{{ taskError }} <button type="button" @click="loadProjectTasks">Try again</button></p>
                 <p v-else-if="taskLoading && !projectTasks.length" class="admin-project-tasks-state" role="status">Loading project tasks…</p>
                 <p v-else-if="!projectTasks.length" class="admin-project-tasks-state">No tasks are associated with this project.</p>
-                <div v-else class="admin-project-tasks-list"><article v-for="task in projectTasks" :key="task.id"><div class="admin-project-task-copy"><RouterLink :to="{ name: 'admin.tasks.show', params: { taskId: task.id } }">{{ task.title }}</RouterLink><span>{{ task.assigned_user?.name || 'Unassigned' }} · {{ task.due_date ? formatTaskDate(task.due_date) : 'No due date' }}</span></div><div class="admin-project-task-badges"><AdminTaskStatusBadge :status="task.status"/><AdminTaskPriorityBadge :priority="task.priority"/></div><div class="admin-project-task-actions"><RouterLink :to="{ name: 'admin.tasks.edit', params: { taskId: task.id } }">Edit</RouterLink><button type="button" @click="taskToDelete = task">Delete</button></div></article></div>
+                <div v-else class="admin-project-tasks-list"><article v-for="task in projectTasks" :key="task.id"><div class="admin-project-task-copy"><RouterLink :to="{ name: 'admin.tasks.show', params: { taskId: task.id } }">{{ task.title }}</RouterLink><span>{{ task.assigned_user?.name || 'Unassigned' }} · {{ task.due_date ? formatTaskDate(task.due_date) : 'No due date' }}</span></div><div class="admin-project-task-badges"><select v-if="canManageTaskStatus" :value="task.status" :disabled="taskLoading" :aria-label="`Change status for ${task.title}`" @change="changeTaskStatus(task, $event.target.value)"><option value="pending">Pending</option><option value="in_progress">In progress</option><option value="completed">Completed</option></select><AdminTaskStatusBadge v-else :status="task.status"/><AdminTaskPriorityBadge :priority="task.priority"/></div><div v-if="isAdmin" class="admin-project-task-actions"><RouterLink :to="{ name: 'admin.tasks.edit', params: { taskId: task.id } }">Edit</RouterLink><button type="button" @click="taskToDelete = task">Delete</button></div></article></div>
                 <footer v-if="taskLastPage > 1" class="admin-project-tasks-pagination"><span>{{ projectTaskTotal }} tasks</span><div><button type="button" :disabled="taskPage <= 1 || taskLoading" @click="taskPage--; loadProjectTasks()">Previous</button><span>Page {{ taskPage }} of {{ taskLastPage }}</span><button type="button" :disabled="taskPage >= taskLastPage || taskLoading" @click="taskPage++; loadProjectTasks()">Next</button></div></footer>
             </section>
         </template>
@@ -35,7 +35,7 @@
 </template>
 
 <script setup>
-import { onBeforeUnmount, ref, watch } from 'vue';
+import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import { reactive } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import AdminProjectDeleteDialog from '../../../features/projects/admin/components/AdminProjectDeleteDialog.vue';
@@ -43,8 +43,9 @@ import AdminProjectDetails from '../../../features/projects/admin/components/Adm
 import AdminProjectForm from '../../../features/projects/admin/components/AdminProjectForm.vue';
 import AdminProjectStatusBadge from '../../../features/projects/admin/components/AdminProjectStatusBadge.vue';
 import { useAdminProjects } from '../../../features/projects/admin/composables/useAdminProjects.js';
-import { createAdminProjectTask, getAdminProjectTasks, getAdminProjectCategories } from '../../../features/projects/admin/services/adminProjectApi.js';
-import { deleteAdminTask, getTaskAssignees } from '../../../features/tasks/admin/services/adminTaskApi.js';
+import { createAdminProjectTask, getAdminProjectTasks, getAdminProjectCategories, updateAdminProjectStatus } from '../../../features/projects/admin/services/adminProjectApi.js';
+import { deleteAdminTask, getTaskAssignees, updateAdminTaskStatus } from '../../../features/tasks/admin/services/adminTaskApi.js';
+import { useAuthStore } from '../../../features/auth/stores/authStore.js';
 import AdminTaskFormFields from '../../../features/tasks/admin/components/AdminTaskFormFields.vue';
 import AdminTaskDeleteDialog from '../../../features/tasks/admin/components/AdminTaskDeleteDialog.vue';
 import AdminTaskStatusBadge from '../../../features/tasks/admin/components/AdminTaskStatusBadge.vue';
@@ -52,6 +53,10 @@ import AdminTaskPriorityBadge from '../../../features/tasks/admin/components/Adm
 
 const route = useRoute();
 const router = useRouter();
+const auth = useAuthStore();
+const isAdmin = computed(() => auth.hasRole('admin'));
+const canManageProjectStatus = computed(() => isAdmin.value || auth.hasManagementPermission('projects.status.manage'));
+const canManageTaskStatus = computed(() => isAdmin.value || auth.hasManagementPermission('tasks.status.manage'));
 const {
     detail, detailLoading, detailError, detailNotFound, owners, ownersError, ownersLoading,
     dialog, loadProject, loadOwners, openEdit, openDelete, closeDialog, saveProject, confirmDelete,
@@ -60,16 +65,31 @@ const notice = ref('');
 const projectTasks = ref([]), taskLoading = ref(false), taskError = ref(''), taskStatus = ref(''), taskPriority = ref(''), taskCategoryId = ref(''), taskPage = ref(1), taskLastPage = ref(1), projectTaskTotal = ref(0), categories = ref([]);
 const taskFormOpen = ref(false), taskSaving = ref(false), taskFormError = ref(''), taskFieldErrors = ref({}), taskAssignees = ref([]), taskToDelete = ref(null), taskDeleteSaving = ref(false), taskDeleteError = ref('');
 const taskForm = reactive({ title: '', description: '', status: 'pending', priority: 'medium', due_date: '', owner_id: '', assigned_user_id: '', category_id: '' });
+const statusSaving = ref(false);
 let noticeTimer;
 
 async function saveFromDialog(payload) {
     if (await saveProject(payload, { refreshList: false })) showNotice('Project saved.');
 }
 
+async function changeProjectStatus(status) {
+    if (!detail.value || statusSaving.value) return;
+    statusSaving.value = true;
+    try { const result = await updateAdminProjectStatus(detail.value.id, status); detail.value = result.project || { ...detail.value, status }; showNotice('Project status updated.'); }
+    catch (e) { showNotice(e.response?.data?.message || 'Project status could not be updated.'); }
+    finally { statusSaving.value = false; }
+}
+
+async function changeTaskStatus(task, status) {
+    if (taskLoading.value) return;
+    try { await updateAdminTaskStatus(task.id, status); await loadProjectTasks(); showNotice('Task status updated.'); }
+    catch (e) { taskError.value = e.response?.data?.message || 'Task status could not be updated.'; }
+}
+
 function editCurrentProject() {
     if (!detail.value) return;
     openEdit(detail.value);
-    if (!owners.value.length && !ownersLoading.value) loadOwners();
+    if (isAdmin.value && !owners.value.length && !ownersLoading.value) loadOwners();
 }
 
 async function deleteFromDialog() {
@@ -107,7 +127,7 @@ function showNotice(message) {
 }
 
 watch(() => route.params.projectId, projectId => {
-    if (projectId) { loadProject(projectId); loadProjectTasks(); getAdminProjectCategories().then(response => { categories.value = response.data || []; }).catch(() => { categories.value = []; }); }
+    if (projectId) { loadProject(projectId); loadProjectTasks(); if (isAdmin.value) getAdminProjectCategories().then(response => { categories.value = response.data || []; }).catch(() => { categories.value = []; }); }
 }, { immediate: true });
 onBeforeUnmount(() => clearTimeout(noticeTimer));
 </script>

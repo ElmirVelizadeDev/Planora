@@ -62,7 +62,6 @@ class UserManagementPolicy
 
     public function restore(User $actor, User $subject): bool
     {
-        return $actor->role === 'admin'
-            || ($subject->role === 'user' && $actor->hasManagementPermission('users.view') && $actor->hasManagementPermission('users.status.manage'));
+        return $actor->role === 'admin' && $subject->role !== 'admin';
     }
 }

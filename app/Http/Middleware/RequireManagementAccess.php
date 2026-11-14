@@ -8,13 +8,13 @@ use Symfony\Component\HttpFoundation\Response;
 
 class RequireManagementAccess
 {
-    public function handle(Request $request, Closure $next): Response
+    public function handle(Request $request, Closure $next, string $requiredPermission = ''): Response
     {
         $user = $request->user();
         $path = (string) $request->route('path', '');
-        $permission = str_starts_with($path, 'activity') ? 'activity.view' : 'users.view';
+        $permission = $requiredPermission ?: (str_starts_with($path, 'activity') ? 'activity.view' : 'users.view');
 
-        if ($user?->hasManagementPermission($permission)) {
+        if ($user?->role === 'admin' || $user?->hasManagementPermission($permission)) {
             return $next($request);
         }
 

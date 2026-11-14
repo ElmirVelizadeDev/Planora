@@ -5,3 +5,131 @@
     --sidebar-collapsed-width: 76px;
     background: var(--color-background);
 }
+
+.admin-layout :deep(.admin-users-search),
+.admin-layout :deep(.admin-projects-search),
+.admin-layout :deep(.admin-tasks-search),
+.admin-layout :deep(.ac-search),
+.admin-layout :deep(.access-search) {
+    border-color: var(--color-border);
+    border-radius: 9px;
+    background-color: var(--color-surface);
+    transition: border-color 140ms ease, background-color 140ms ease, box-shadow 140ms ease;
+}
+
+.admin-layout :deep(.admin-users-search:hover:not(:has(input:disabled))),
+.admin-layout :deep(.admin-projects-search:hover:not(:has(input:disabled))),
+.admin-layout :deep(.admin-tasks-search:hover:not(:has(input:disabled))),
+.admin-layout :deep(.ac-search:hover:not(:has(input:disabled))),
+.admin-layout :deep(.access-search:hover:not(:has(input:disabled))) {
+    border-color: #c9cffc;
+    background-color: #fbfbff;
+}
+
+.admin-layout :deep(.admin-users-search:focus-within),
+.admin-layout :deep(.admin-projects-search:focus-within),
+.admin-layout :deep(.admin-tasks-search:focus-within),
+.admin-layout :deep(.ac-search:focus-within),
+.admin-layout :deep(.access-search:focus-within) {
+    border-color: var(--color-primary);
+    background-color: var(--color-surface);
+    box-shadow: 0 0 0 3px rgb(91 108 250 / 10%);
+}
+
+.admin-layout :deep(.admin-users-search-icon),
+.admin-layout :deep(.admin-projects-search > span:first-child),
+.admin-layout :deep(.admin-tasks-search-icon),
+.admin-layout :deep(.ac-search > span:first-child) {
+    padding-left: 10px;
+    color: var(--color-text-secondary);
+    font-size: 19px;
+    line-height: 1;
+}
+
+.admin-layout :deep(.admin-users-search input),
+.admin-layout :deep(.admin-projects-search input),
+.admin-layout :deep(.admin-tasks-search input),
+.admin-layout :deep(.ac-search input),
+.admin-layout :deep(.access-search input),
+.admin-layout :deep(.al-toolbar .al-actor-search input),
+.admin-layout :deep(.reports-filter-control input),
+.admin-layout :deep(.report-search-filter__control > input) {
+    font-family: var(--font-family-sans);
+    font-size: 11px;
+    font-weight: 450;
+    line-height: 1.4;
+}
+
+.admin-layout :deep(.al-toolbar .al-actor-search input),
+.admin-layout :deep(.reports-filter-control input),
+.admin-layout :deep(.report-search-filter__control > input),
+.admin-layout :deep(.report-table-search input) {
+    border-color: var(--color-border);
+    border-radius: 9px;
+    outline: 0;
+    color: var(--color-text);
+    background-color: var(--color-surface);
+    transition: border-color 140ms ease, background-color 140ms ease, box-shadow 140ms ease;
+}
+
+.admin-layout :deep(.admin-users-search input::placeholder),
+.admin-layout :deep(.admin-projects-search input::placeholder),
+.admin-layout :deep(.admin-tasks-search input::placeholder),
+.admin-layout :deep(.ac-search input::placeholder),
+.admin-layout :deep(.access-search input::placeholder),
+.admin-layout :deep(.al-toolbar .al-actor-search input::placeholder),
+.admin-layout :deep(.reports-filter-control input::placeholder),
+.admin-layout :deep(.report-search-filter__control > input::placeholder),
+.admin-layout :deep(.report-table-search input::placeholder) {
+    color: var(--color-text-secondary);
+    opacity: 1;
+}
+
+.admin-layout :deep(.al-toolbar .al-actor-search input:hover:not(:focus):not(:disabled)),
+.admin-layout :deep(.reports-filter-control input:hover:not(:focus):not(:disabled)),
+.admin-layout :deep(.report-search-filter__control > input:hover:not(:focus):not(:disabled)),
+.admin-layout :deep(.report-table-search input:hover:not(:focus):not(:disabled)) {
+    border-color: #c9cffc;
+    background-color: #fbfbff;
+}
+
+.admin-layout :deep(.al-toolbar .al-actor-search input:focus),
+.admin-layout :deep(.reports-filter-control input:focus),
+.admin-layout :deep(.report-search-filter__control > input:focus),
+.admin-layout :deep(.report-table-search input:focus) {
+    border-color: var(--color-primary);
+    background-color: var(--color-surface);
+    box-shadow: 0 0 0 3px rgb(91 108 250 / 10%);
+}
+
+.admin-layout :deep(select),
+.admin-layout :deep(input[type="date"]) {
+    border-color: var(--color-border);
+    border-radius: 9px;
+    outline: 0;
+    background-color: var(--color-surface);
+    transition: border-color 140ms ease, background-color 140ms ease, box-shadow 140ms ease;
+}
+
+.admin-layout :deep(select:hover:not(:disabled)),
+.admin-layout :deep(input[type="date"]:hover:not(:disabled)) {
+    border-color: #c9cffc;
+    background-color: #fbfbff;
+}
+
+.admin-layout :deep(select:focus),
+.admin-layout :deep(input[type="date"]:focus) {
+    border-color: var(--color-primary);
+    background-color: var(--color-surface);
+    box-shadow: 0 0 0 3px rgb(91 108 250 / 10%);
+}
+
+.admin-layout :deep(select option:hover:not(:checked)) {
+    color: var(--color-text);
+    background: #f5f6ff;
+}
+
+.admin-layout :deep(select option:checked) {
+    color: #4657db;
+    background: #f0f2ff;
+}

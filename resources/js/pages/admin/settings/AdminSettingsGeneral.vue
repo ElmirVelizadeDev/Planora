@@ -33,7 +33,7 @@
                         <label class="settings-field"><span>Time format</span><select v-model="form.values.time_format"><option value="24h">24 hour</option><option value="12h">12 hour</option></select><small v-if="form.validationErrors.time_format">{{ form.validationErrors.time_format[0] }}</small></label>
                     </div>
                 </section>
-                <SettingsSaveBar :dirty="form.dirty" :saving="form.saving" @save="form.save()" @reset="reset" />
+                <SettingsSaveBar :dirty="form.dirty" :saving="form.saving" :confirmation="form.confirmation" @save="openSaveConfirmation" @reset="openResetConfirmation" @confirm="form.confirmConfirmation" @cancel="form.cancelConfirmation" />
             </template>
         </div>
     </AdminSettingsLayout>
@@ -53,8 +53,12 @@ const logoBusy = ref(false);
 const logoError = ref('');
 const timezones = Intl.supportedValuesOf ? Intl.supportedValuesOf('timeZone') : ['UTC', 'Asia/Baku', 'Europe/London', 'America/New_York'];
 
-async function reset() {
-    if (window.confirm('Restore General settings to defaults? This also removes the uploaded workspace logo.')) await form.reset();
+function openSaveConfirmation() {
+    form.openSaveConfirmation('Are you sure you want to save your updated General settings?');
+}
+
+function openResetConfirmation() {
+    form.openResetConfirmation('Are you sure you want to reset General settings to their default values? This will also remove the uploaded workspace logo.');
 }
 
 async function uploadLogo(event) {

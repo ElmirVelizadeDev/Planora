@@ -11,13 +11,14 @@ class IndexTaskRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->role === 'admin';
+        return $this->user()?->can('viewAny', \App\Models\Task::class) ?? false;
     }
 
     public function rules(): array
     {
         return [
             'search' => ['nullable', 'string', 'max:120'],
+            'deleted' => ['nullable', 'boolean'],
             'status' => ['nullable', Rule::enum(TaskStatus::class)],
             'priority' => ['nullable', Rule::enum(TaskPriority::class)],
             'category_id' => ['nullable', 'integer', Rule::exists('categories', 'id')],

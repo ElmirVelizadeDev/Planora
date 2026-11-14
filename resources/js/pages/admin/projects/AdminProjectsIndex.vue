@@ -6,7 +6,7 @@
                 <h1>Projects</h1>
                 <p class="admin-projects-description">Monitor project ownership, schedules and lifecycle across Planora.</p>
             </div>
-            <button class="admin-projects-primary-button" type="button" @click="openCreate">＋ Create project</button>
+            <button v-if="isAdmin" class="admin-projects-primary-button" type="button" @click="openCreate">＋ Create project</button>
         </header>
 
         <AdminProjectStats :statistics="statistics" />
@@ -35,15 +35,18 @@
             <AdminProjectTable
                 v-else
                 :projects="projects"
-                :loading="loading"
+                :loading="loading || statusSaving"
                 :page="page"
                 :last-page="lastPage"
                 :total="total"
                 :range-start="rangeStart"
                 :range-end="rangeEnd"
+                :is-admin="isAdmin"
+                :can-manage-status="canManageStatus"
                 @page-change="goToPage"
                 @edit="openEdit"
                 @delete="openDelete"
+                @status-change="changeProjectStatus"
             />
         </section>
 
@@ -56,14 +59,15 @@
 </template>
 
 <script setup>
-import { onMounted, onBeforeUnmount, ref } from 'vue';
+import { computed, onMounted, onBeforeUnmount, ref } from 'vue';
+import { useAuthStore } from '../../../features/auth/stores/authStore.js';
 import AdminProjectDeleteDialog from '../../../features/projects/admin/components/AdminProjectDeleteDialog.vue';
 import AdminProjectFilters from '../../../features/projects/admin/components/AdminProjectFilters.vue';
 import AdminProjectForm from '../../../features/projects/admin/components/AdminProjectForm.vue';
 import AdminProjectStats from '../../../features/projects/admin/components/AdminProjectStats.vue';
 import AdminProjectTable from '../../../features/projects/admin/components/AdminProjectTable.vue';
 import { useAdminProjects } from '../../../features/projects/admin/composables/useAdminProjects.js';
-import { getAdminProjectCategories } from '../../../features/projects/admin/services/adminProjectApi.js';
+import { getAdminProjectCategories, updateAdminProjectStatus } from '../../../features/projects/admin/services/adminProjectApi.js';
 
 const {
     projects, owners, ownersError, loading, error, searchInput, status, categoryId, page, total, lastPage,
@@ -73,6 +77,10 @@ const {
 } = useAdminProjects();
 const notice = ref('');
 const categories = ref([]);
+const statusSaving = ref(false);
+const auth = useAuthStore();
+const isAdmin = computed(() => auth.hasRole('admin'));
+const canManageStatus = computed(() => isAdmin.value || auth.hasManagementPermission('projects.status.manage'));
 let noticeTimer;
 
 function showNotice(message) {
@@ -89,7 +97,17 @@ async function deleteFromDialog() {
     if (await confirmDelete()) showNotice('Project deleted.');
 }
 
-onMounted(async () => { loadProjects(); loadOwners(); try { categories.value = (await getAdminProjectCategories()).data || []; } catch { categories.value = []; } });
+async function changeProjectStatus({ project, status }) {
+    if (loading.value || statusSaving.value) return;
+    const previousStatus = project.status;
+    project.status = status;
+    statusSaving.value = true;
+    try { await updateAdminProjectStatus(project.id, status); await loadProjects(); showNotice('Project status updated.'); }
+    catch (error) { project.status = previousStatus; showNotice(error.response?.data?.message || 'Project status could not be updated.'); }
+    finally { statusSaving.value = false; }
+}
+
+onMounted(async () => { loadProjects(); if (isAdmin.value) { loadOwners(); try { categories.value = (await getAdminProjectCategories()).data || []; } catch { categories.value = []; } } });
 onBeforeUnmount(() => clearTimeout(noticeTimer));
 </script>
 

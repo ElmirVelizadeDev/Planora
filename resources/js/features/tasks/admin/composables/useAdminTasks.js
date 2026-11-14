@@ -1,10 +1,10 @@
 import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue';
-import { deleteAdminTask, getAdminTasks, getTaskAssignees, getAdminTaskCategories } from '../services/adminTaskApi.js';
+import { deleteAdminTask, restoreAdminTask, getAdminTasks, getTaskAssignees, getAdminTaskCategories, updateAdminTaskStatus } from '../services/adminTaskApi.js';
 
 export function useAdminTasks() {
     const tasks = ref([]), assignees = ref([]), categories = ref([]), loading = ref(false), error = ref('');
     const searchInput = ref(''), search = ref(''), page = ref(1), perPage = ref(10), total = ref(0), lastPage = ref(1), timer = ref(null);
-    const filters = reactive({ status: '', priority: '', assigned_user_id: '', category_id: '', start_date: '', end_date: '' });
+    const filters = reactive({ status: '', priority: '', assigned_user_id: '', category_id: '', start_date: '', end_date: '', deleted: '' });
     const statistics = ref({ total: 0, in_progress: 0, completed: 0, pending: 0, overdue: 0 });
     const hasFilters = computed(() => Boolean(search.value || Object.values(filters).some(Boolean)));
     const rangeStart = computed(() => total.value ? (page.value - 1) * perPage.value + 1 : 0);
@@ -111,6 +111,18 @@ export function useAdminTasks() {
         }
     }
 
+    async function restoreTask(task) {
+        try { await restoreAdminTask(task.id); await loadTasks(); return true; }
+        catch { error.value = 'The task could not be restored. Please try again.'; return false; }
+    }
+
+    async function changeTaskStatus(task, status) {
+        const previous = task.status;
+        task.status = status;
+        try { await updateAdminTaskStatus(task.id, status); await loadTasks(); return true; }
+        catch { task.status = previous; error.value = 'The task status could not be updated.'; return false; }
+    }
+
     onMounted(() => {
         loadTasks();
         loadAssignees();
@@ -121,6 +133,6 @@ export function useAdminTasks() {
     return {
         tasks, assignees, categories, loading, error, searchInput, page, perPage, total, lastPage,
         filters, statistics, hasFilters, rangeStart, rangeEnd, loadTasks, refreshTasks,
-        onSearch, applyFilters, updateFilter, clearFilters, goToPage, changePerPage, removeTask,
+        onSearch, applyFilters, updateFilter, clearFilters, goToPage, changePerPage, removeTask, restoreTask, changeTaskStatus,
     };
 }

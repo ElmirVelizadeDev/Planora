@@ -23,7 +23,7 @@ See [Authentication and Security](AUTHENTICATION_SECURITY.md), [Registration OTP
 
 ## Admin APIs
 
-Admin Project, Task, and Category routes require `auth:sanctum`, active-account middleware, and the `admin` role. User Management routes also allow only the moderator permissions explicitly granted by their policy/request checks.
+Admin Project, Task, Category, Reports, and Settings routes require `auth:sanctum`, active-account middleware, and the `admin` role. Moderators may use only the User and Activity capabilities assigned to their account. The Vue guard and sidebar mirror these capabilities for navigation; Laravel remains authoritative.
 
 | Method | Endpoint | Purpose |
 |---|---|---|
@@ -33,18 +33,24 @@ Admin Project, Task, and Category routes require `auth:sanctum`, active-account 
 | `PATCH` | `/api/v1/admin/users/{user}` | Update a User (Admin only) |
 | `POST` | `/api/v1/admin/users/{user}/password` | Change an account password (Admin only) |
 | `DELETE` | `/api/v1/admin/users/{user}` | Soft-delete a User (Admin only) |
-| `POST` | `/api/v1/admin/users/{userId}/restore` | Restore an authorized deleted User |
+| `POST` | `/api/v1/admin/users/{userId}/restore` | Restore a deleted non-Admin User (Admin only) |
 | `PATCH` | `/api/v1/admin/users/{user}/role` | Change role (Admin only) |
 | `PATCH` | `/api/v1/admin/users/{user}/status` | Change status under User Management authorization |
 | `PUT` | `/api/v1/admin/users/{user}/permissions` | Set moderator permissions (Admin only) |
 | `GET` | `/api/v1/admin/users/activity` | Authorized activity listing |
 | `GET` | `/api/v1/admin/users/roles-permissions` | Role and permission definitions |
+| `GET` | `/api/v1/admin/roles-permissions` | Admin-only fixed role and permission catalog |
+| `GET` | `/api/v1/admin/roles-permissions/moderators` | Admin-only searchable/paginated Moderator directory, role counts, and recent permission changes |
+| `GET` | `/api/v1/admin/roles-permissions/moderators/{user}` | Admin-only Moderator permission details; non-Moderator targets are not found |
+| `PUT` | `/api/v1/admin/roles-permissions/moderators/{user}` | Admin-only permission assignment, validated against the server catalog and audited |
+| `GET` | `/api/v1/admin/dashboard` | Admin overview; Moderator response includes only authorized Users and/or Activity sections |
 | `GET` | `/api/v1/admin/tasks` | Task listing, filters, pagination, and global statistics |
 | `GET` | `/api/v1/admin/tasks/assignees` | Active normal-User assignment choices |
 | `POST` | `/api/v1/admin/tasks` | Create a Task |
 | `GET` | `/api/v1/admin/tasks/{task}` | Read Task details |
 | `PATCH` | `/api/v1/admin/tasks/{task}` | Update Task data and assignment |
 | `DELETE` | `/api/v1/admin/tasks/{task}` | Soft-delete a Task |
+| `POST` | `/api/v1/admin/tasks/{taskId}/restore` | Restore a soft-deleted Task (Admin only) |
 | `GET` | `/api/v1/admin/projects` | Project listing, filters, pagination, and status statistics |
 | `GET` | `/api/v1/admin/projects/owners` | Active normal-User Project owner choices |
 | `POST` | `/api/v1/admin/projects` | Create a Project |
@@ -68,7 +74,7 @@ Reports endpoints are Admin-only. Overview and table requests accept `from`, `to
 
 ## Activity Logs and Audit Trail
 
-Activity Logs are immutable through the application API. All endpoints require an authenticated, active Admin or a Moderator with the `activity.view` permission. Admins can view all events; Moderators see only Users and Authentication events associated with non-Admin accounts. The existing `/api/v1/admin/users/activity` endpoint remains available with its original response contract.
+Activity Logs are immutable through the application API. All endpoints require an authenticated, active Admin or a Moderator with the `activity.view` permission. Admins can view all events; Moderators see only Users and Authentication events associated with non-Admin accounts. Project and Task create/update/status/assignment/delete/restore operations use the shared logger inside their mutation transactions. Permission changes, settings changes, category changes, authentication, and report/log exports are also recorded. The existing `/api/v1/admin/users/activity` endpoint remains available with its original response contract.
 
 | Method | Endpoint | Purpose |
 |---|---|---|

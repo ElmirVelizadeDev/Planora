@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1\Admin\Tasks;
 use App\Http\Requests\Api\V1\Admin\Tasks\IndexTaskRequest;
 use App\Http\Requests\Api\V1\Admin\Tasks\StoreTaskRequest;
 use App\Http\Requests\Api\V1\Admin\Tasks\UpdateTaskRequest;
+use App\Http\Requests\Api\V1\Admin\Tasks\UpdateTaskStatusRequest;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Api\V1\Admin\Tasks\TaskResource;
 use App\Models\Task;
@@ -44,6 +45,7 @@ class TaskController extends Controller
 
     public function show(Task $task): JsonResponse
     {
+        $this->authorize('view', $task);
         $task->load(['owner', 'assignedUser', 'creator', 'category']);
 
         return response()->json(['task' => TaskResource::make($task)->resolve(request())]);
@@ -63,10 +65,24 @@ class TaskController extends Controller
         return response()->json(['task' => TaskResource::make($task)->resolve($request)]);
     }
 
+    public function updateStatus(UpdateTaskStatusRequest $request, Task $task, TaskService $tasks): JsonResponse
+    {
+        $updated = $tasks->update($task, $request->validated(), $request->user());
+
+        return response()->json(['task' => TaskResource::make($updated)->resolve($request)]);
+    }
+
     public function destroy(\Illuminate\Http\Request $request, Task $task, TaskService $tasks): JsonResponse
     {
         $tasks->delete($task, $request->user());
 
         return response()->json(['message' => 'Task deleted.']);
+    }
+
+    public function restore(\Illuminate\Http\Request $request, int $taskId, TaskService $tasks): JsonResponse
+    {
+        $task = $tasks->restore($taskId, $request->user());
+
+        return response()->json(['task' => TaskResource::make($task)->resolve($request)]);
     }
 }

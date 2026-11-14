@@ -8,7 +8,7 @@
                 <div class="ac-detail-color"><CategoryBadge :category="category" size="compact" :show-name="false" />{{ category.color }}</div>
                 <dl class="ac-details"><div><dt>Description</dt><dd>{{ category.description || 'No description provided.' }}</dd></div><div><dt>Status</dt><dd><span class="ac-status" :class="`is-${category.status}`"><i></i>{{ category.status }}</span></dd></div><div><dt>Projects</dt><dd>{{ category.projects_count ?? 0 }}</dd></div><div><dt>Tasks</dt><dd>{{ category.tasks_count ?? 0 }}</dd></div><div><dt>Created</dt><dd>{{ formatCategoryDate(category.created_at) }}</dd></div><div><dt>Last updated</dt><dd>{{ formatCategoryDate(category.updated_at) }}</dd></div><div><dt>Category ID</dt><dd>#{{ category.id }}</dd></div></dl>
                 <CategoryRelatedProjects :projects="category.projects" /><CategoryRelatedTasks :tasks="category.tasks" />
-                <div class="ac-dialog-actions"><button class="ac-secondary" type="button" @click="$emit('close')">Close</button><button v-if="category.status === 'active'" class="ac-primary" type="button" @click="$emit('edit', category)">Edit category</button></div>
+                <div class="ac-dialog-actions"><button class="ac-secondary" type="button" @click="$emit('close')">Close</button><button v-if="canManage && category.status === 'active'" class="ac-primary" type="button" @click="$emit('edit', category)">Edit category</button></div>
             </template>
             <div v-if="loading || error" class="ac-dialog-actions"><button class="ac-secondary" type="button" @click="$emit('close')">Close</button></div>
         </section>
@@ -21,6 +21,6 @@ import { formatCategoryDate } from '../../shared/utils/categoryFormatters.js';
 import CategoryRelatedProjects from './CategoryRelatedProjects.vue';
 import CategoryRelatedTasks from './CategoryRelatedTasks.vue';
 
-defineProps({ category: { type: Object, default: null }, loading: Boolean, error: { type: String, default: '' } });
+defineProps({ category: { type: Object, default: null }, loading: Boolean, error: { type: String, default: '' }, canManage: { type: Boolean, default: true } });
 defineEmits(['close', 'edit']);
 </script>

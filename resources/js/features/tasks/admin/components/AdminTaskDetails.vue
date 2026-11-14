@@ -8,9 +8,11 @@
                 <AdminTaskPriorityBadge :priority="task.priority" context="detail" suffix=" priority" />
             </div>
         </div>
-        <div class="admin-task-header-actions">
-            <RouterLink class="admin-task-primary-button" :to="{ name: 'admin.tasks.edit', params: { taskId: task.id } }">Edit task</RouterLink>
-            <button class="admin-task-danger-button" type="button" @click="$emit('delete')">Delete</button>
+        <div v-if="isAdmin || canManageStatus" class="admin-task-header-actions">
+            <select v-if="canManageStatus" :value="task.status" :disabled="savingStatus" :aria-label="`Change status for ${task.title}`" @change="$emit('status-change', $event.target.value)"><option value="pending">Pending</option><option value="in_progress">In progress</option><option value="completed">Completed</option></select>
+            <span v-if="statusError" role="alert">{{ statusError }}</span>
+            <RouterLink v-if="isAdmin" class="admin-task-primary-button" :to="{ name: 'admin.tasks.edit', params: { taskId: task.id } }">Edit task</RouterLink>
+            <button v-if="isAdmin" class="admin-task-danger-button" type="button" @click="$emit('delete')">Delete</button>
         </div>
     </header>
     <div class="admin-task-grid">
@@ -45,8 +47,9 @@ import AdminTaskStatusBadge from './AdminTaskStatusBadge.vue';
 defineProps({
     task: { type: Object, required: true },
     isOverdue: { type: Boolean, default: false },
+    isAdmin: { type: Boolean, default: true }, canManageStatus: { type: Boolean, default: false }, savingStatus: { type: Boolean, default: false }, statusError: { type: String, default: '' },
 });
-defineEmits(['delete']);
+defineEmits(['delete', 'status-change']);
 
 function formatDate(value) {
     if (!value) return '—';

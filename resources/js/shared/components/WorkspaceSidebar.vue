@@ -49,7 +49,8 @@
                 :aria-label="item.label"
                 @click="closeOnMobile"
             >
-                <span class="workspace-nav-icon" aria-hidden="true">{{ item.icon }}</span>
+                <span v-if="item.icon === 'shield-check'" class="workspace-nav-icon" aria-hidden="true"><svg class="workspace-nav-icon--svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 20 6v5c0 5-3.4 8.5-8 10-4.6-1.5-8-5-8-10V6l8-3Z"/><path d="m8.5 12 2.2 2.2 4.8-5"/></svg></span>
+                <span v-else class="workspace-nav-icon" aria-hidden="true">{{ item.icon }}</span>
                 <span v-if="!collapsed || mobileOpen" class="workspace-nav-label">{{ item.label }}</span>
                 <span v-if="item.badge && (!collapsed || mobileOpen)" class="workspace-nav-badge">{{ item.badge }}</span>
             </component>

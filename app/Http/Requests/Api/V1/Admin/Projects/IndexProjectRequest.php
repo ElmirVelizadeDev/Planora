@@ -7,7 +7,7 @@ use Illuminate\Validation\Rule;
 
 class IndexProjectRequest extends FormRequest
 {
-    public function authorize(): bool { return $this->user()?->role === 'admin'; }
+    public function authorize(): bool { return $this->user()?->can('viewAny', \App\Models\Project::class) ?? false; }
 
     public function rules(): array
     {

@@ -92,6 +92,35 @@ class AdminTaskManagementTest extends TestCase
         $this->getJson('/api/v1/admin/tasks/'.$id)->assertNotFound();
     }
 
+    public function test_task_mutations_are_audited_and_deleted_tasks_can_be_restored(): void
+    {
+        $admin = $this->admin();
+        $owner = User::factory()->create();
+        $assignee = User::factory()->create();
+        $this->actingAs($admin, 'sanctum');
+
+        $created = $this->postJson('/api/v1/admin/tasks', [
+            'title' => 'Audit trail task', 'status' => 'pending', 'priority' => 'medium',
+            'owner_id' => $owner->id, 'assigned_user_id' => $assignee->id,
+        ])->assertCreated()->json('task');
+        $this->assertDatabaseHas('user_activity_logs', ['event' => 'task.created', 'actor_id' => $admin->id, 'subject_id' => $created['id']]);
+
+        $this->patchJson('/api/v1/admin/tasks/'.$created['id'], ['title' => 'Reassigned task', 'assigned_user_id' => null])->assertOk();
+        $this->assertDatabaseHas('user_activity_logs', ['event' => 'task.reassigned', 'subject_id' => $created['id']]);
+        $this->patchJson('/api/v1/admin/tasks/'.$created['id'], ['status' => 'in_progress'])->assertOk();
+        $this->assertDatabaseHas('user_activity_logs', ['event' => 'task.status_changed', 'subject_id' => $created['id']]);
+        $this->patchJson('/api/v1/admin/tasks/'.$created['id'], ['priority' => 'high'])->assertOk();
+        $this->assertDatabaseHas('user_activity_logs', ['event' => 'task.priority_changed', 'subject_id' => $created['id']]);
+
+        $this->deleteJson('/api/v1/admin/tasks/'.$created['id'])->assertOk();
+        $this->assertSoftDeleted('tasks', ['id' => $created['id']]);
+        $this->getJson('/api/v1/admin/tasks?deleted=1')->assertOk()->assertJsonPath('data.0.id', $created['id']);
+        $this->postJson('/api/v1/admin/tasks/'.$created['id'].'/restore')->assertOk()->assertJsonPath('task.id', $created['id']);
+        $this->assertDatabaseHas('user_activity_logs', ['event' => 'task.deleted', 'subject_id' => $created['id']]);
+        $this->assertDatabaseHas('user_activity_logs', ['event' => 'task.restored', 'actor_id' => $admin->id, 'subject_id' => $created['id']]);
+        $this->assertDatabaseHas('tasks', ['id' => $created['id'], 'assigned_user_id' => null, 'status' => 'in_progress']);
+    }
+
     public function test_task_writes_validate_user_relationships_and_enum_values(): void
     {
         $admin = $this->admin();

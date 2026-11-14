@@ -26,6 +26,25 @@ Route::view('/admin/activity-logs/{path?}', 'welcome')
     ->where('path', '.*')
     ->middleware(['auth', 'active', 'auth.session', 'role:admin,moderator', 'can:viewActivity,App\\Models\\User']);
 
+Route::view('/admin/categories/{path?}', 'welcome')
+    ->where('path', '.*')
+    ->middleware(['auth', 'active', 'auth.session', 'role:admin,moderator', 'management.access:categories.view']);
+
+Route::view('/admin/projects/{path?}', 'welcome')
+    ->where('path', '.*')
+    ->middleware(['auth', 'active', 'auth.session', 'role:admin,moderator', 'management.access:projects.view']);
+
+Route::view('/admin/tasks/{path?}', 'welcome')
+    ->where('path', '.*')
+    ->middleware(['auth', 'active', 'auth.session', 'role:admin,moderator', 'management.access:tasks.view']);
+
+Route::view('/admin/reports/{path?}', 'welcome')
+    ->where('path', '.*')
+    ->middleware(['auth', 'active', 'auth.session', 'role:admin,moderator', 'management.access:reports.view']);
+
+Route::view('/admin/dashboard', 'welcome')
+    ->middleware(['auth', 'active', 'auth.session', 'role:admin,moderator', 'dashboard.access']);
+
 Route::view('/admin/{path?}', 'welcome')
     ->where('path', '^(?!users(?:/|$)).*')
     ->middleware(['auth', 'active', 'auth.session', 'role:admin']);

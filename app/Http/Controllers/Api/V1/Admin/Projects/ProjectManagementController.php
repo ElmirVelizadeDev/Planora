@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Admin\Projects\IndexProjectRequest;
 use App\Http\Requests\Api\V1\Admin\Projects\StoreProjectRequest;
 use App\Http\Requests\Api\V1\Admin\Projects\UpdateProjectRequest;
+use App\Http\Requests\Api\V1\Admin\Projects\UpdateProjectStatusRequest;
 use App\Http\Resources\Api\V1\Shared\Projects\ProjectResource;
 use App\Models\Project;
 use App\Models\User;
@@ -31,6 +32,7 @@ class ProjectManagementController extends Controller
 
     public function show(Project $project): JsonResponse
     {
+        $this->authorize('view', $project);
         $project->load(['owner:id,name,email,profile_photo', 'category'])->loadCount('tasks');
 
         return response()->json(['project' => ProjectResource::make($project)->resolve(request())]);
@@ -44,6 +46,13 @@ class ProjectManagementController extends Controller
     public function update(UpdateProjectRequest $request, Project $project, ProjectService $projects): JsonResponse
     {
         return response()->json(['project' => ProjectResource::make($projects->update($project, $request->validated(), $request->user()))->resolve($request)]);
+    }
+
+    public function updateStatus(UpdateProjectStatusRequest $request, Project $project, ProjectService $projects): JsonResponse
+    {
+        $updated = $projects->update($project, $request->validated(), $request->user());
+
+        return response()->json(['project' => ProjectResource::make($updated)->resolve($request)]);
     }
 
     public function destroy(\Illuminate\Http\Request $request, Project $project, ProjectService $projects): JsonResponse

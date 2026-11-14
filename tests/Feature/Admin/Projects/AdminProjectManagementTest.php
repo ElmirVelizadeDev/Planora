@@ -49,11 +49,14 @@ class AdminProjectManagementTest extends TestCase
         $created = $this->postJson('/api/v1/admin/projects', ['name' => 'Launch', 'status' => 'planned', 'owner_id' => $owner->id, 'start_date' => '2026-11-01', 'due_date' => '2026-11-30'])
             ->assertCreated()->assertJsonPath('project.name', 'Launch')->assertJsonPath('project.owner.id', $owner->id);
         $id = $created->json('project.id');
+        $this->assertDatabaseHas('user_activity_logs', ['event' => 'project.created', 'actor_id' => $admin->id, 'subject_id' => $id]);
         $this->patchJson('/api/v1/admin/projects/'.$id, ['status' => 'active', 'name' => 'Launch phase 1'])
             ->assertOk()->assertJsonPath('project.status', 'active')->assertJsonPath('project.name', 'Launch phase 1');
+        $this->assertDatabaseHas('user_activity_logs', ['event' => 'project.status_changed', 'actor_id' => $admin->id, 'subject_id' => $id]);
         $this->postJson('/api/v1/admin/projects', ['name' => '', 'status' => 'blocked', 'due_date' => '2026-01-01', 'start_date' => '2026-02-01'])
             ->assertUnprocessable()->assertJsonValidationErrors(['name', 'status', 'due_date']);
         $this->deleteJson('/api/v1/admin/projects/'.$id)->assertOk();
+        $this->assertDatabaseHas('user_activity_logs', ['event' => 'project.deleted', 'actor_id' => $admin->id, 'subject_id' => $id]);
         $this->assertDatabaseMissing('projects', ['id' => $id]);
     }
 }

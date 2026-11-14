@@ -9,7 +9,7 @@
                     <td data-label="Projects">{{ category.projects_count ?? 0 }}</td><td data-label="Tasks">{{ category.tasks_count ?? 0 }}</td>
                     <td data-label="Status"><span class="ac-status" :class="`is-${category.status}`"><i></i>{{ category.status }}</span></td>
                     <td data-label="Created">{{ formatCategoryDate(category.created_at) }}</td>
-                    <td data-label="Actions"><div class="ac-actions"><button type="button" @click="$emit('view', category)">View</button><button type="button" :disabled="category.status === 'archived'" @click="$emit('edit', category)">Edit</button><button v-if="category.status === 'active'" class="is-danger" type="button" @click="$emit('archive', category)">Archive</button><button v-else type="button" @click="$emit('restore', category)">Restore</button></div></td>
+                    <td data-label="Actions"><div class="ac-actions"><button type="button" @click="$emit('view', category)">View</button><template v-if="canManage"><button type="button" :disabled="category.status === 'archived'" @click="$emit('edit', category)">Edit</button><button v-if="category.status === 'active'" class="is-danger" type="button" @click="$emit('archive', category)">Archive</button><button v-else type="button" @click="$emit('restore', category)">Restore</button></template></div></td>
                 </tr>
             </tbody>
         </table>
@@ -20,6 +20,6 @@
 import CategoryBadge from '../../shared/components/CategoryBadge.vue';
 import { formatCategoryDate } from '../../shared/utils/categoryFormatters.js';
 
-defineProps({ categories: { type: Array, default: () => [] }, direction: { type: String, default: 'asc' } });
+defineProps({ categories: { type: Array, default: () => [] }, direction: { type: String, default: 'asc' }, canManage: { type: Boolean, default: true } });
 defineEmits(['sort', 'view', 'edit', 'archive', 'restore']);
 </script>

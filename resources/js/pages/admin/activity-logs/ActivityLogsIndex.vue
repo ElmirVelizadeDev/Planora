@@ -2,7 +2,7 @@
     <main class="activity-logs" :aria-busy="logs.loading">
         <header class="al-header">
             <div><p class="al-eyebrow">WORKSPACE AUDIT</p><h1>Activity Logs</h1><p>Monitor and review important actions performed across your Planora workspace.</p><small v-if="logs.updatedAt.value">Updated {{ formatDateTime(logs.updatedAt.value) }} · {{ logs.total.value.toLocaleString() }} matching activities</small></div>
-            <div class="al-actions"><button type="button" class="al-button al-button--secondary" :disabled="logs.loading.value" @click="logs.load()">↻ <span>Refresh</span></button><button class="al-button al-button--primary" type="button" :disabled="logs.loading.value || exporting || !logs.total.value" @click="exportCsv">⇩ <span>{{ exporting ? 'Preparing CSV…' : 'Export CSV' }}</span></button></div>
+            <div class="al-actions"><button type="button" class="al-button al-button--secondary" :disabled="logs.loading.value" :aria-busy="logs.loading.value" @click="refreshLogs"><svg :class="{ 'is-spinning': logs.loading.value }" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7v5h-5M4 17v-5h5"/><path d="M5.6 9A7 7 0 0 1 18 6l2 6M4 12l2 6a7 7 0 0 0 12.4-3"/></svg><span>{{ logs.loading.value ? 'Refreshing…' : 'Refresh' }}</span></button><button class="al-button al-button--primary" type="button" :disabled="logs.loading.value || exporting || !logs.total.value" :aria-busy="exporting" @click="exportCsv"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4M4 17v3h16v-3"/></svg><span>{{ exporting ? 'Preparing CSV…' : 'Export CSV' }}</span></button></div>
         </header>
 
         <section class="al-stats" aria-label="Activity statistics">
@@ -86,6 +86,10 @@ function presetRange(id) {
 function setPreset(id) { Object.assign(logs.filters, presetRange(id)); logs.applyFilters(); }
 function scheduleSearch() { clearTimeout(searchTimer); searchTimer = setTimeout(() => { logs.filters.search = search.value.trim(); logs.applyFilters(); }, 300); }
 function clearFilters() { clearTimeout(searchTimer); search.value = ''; actorSearch.value = ''; logs.clearFilters(); logs.loadFilters(); }
+function refreshLogs() {
+    if (logs.loading.value) return;
+    return logs.load();
+}
 async function exportCsv() {
     clearTimeout(searchTimer);
     const nextSearch = search.value.trim();

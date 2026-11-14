@@ -18,6 +18,7 @@ use App\Http\Controllers\Api\V1\Admin\Reports\AdminReportController;
 use App\Http\Controllers\Api\V1\Admin\ActivityLogs\ActivityLogsController;
 use App\Http\Controllers\Api\V1\Admin\Settings\AdminSettingsController;
 use App\Http\Controllers\Api\V1\Settings\SettingsBrandingController;
+use App\Http\Controllers\Api\V1\Dashboard\AdminDashboardController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/settings/branding', [SettingsBrandingController::class, 'show'])->name('settings.branding');
@@ -41,6 +42,17 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
     Route::get('/user', [CurrentUserController::class, 'show'])->name('user');
 });
 
+Route::get('/admin/dashboard', [AdminDashboardController::class, 'show'])
+    ->middleware(['auth:sanctum', 'active', 'role:admin,moderator'])->name('admin.dashboard');
+
+Route::prefix('admin/roles-permissions')->name('admin.roles-permissions.')
+    ->middleware(['auth:sanctum', 'active', 'role:admin'])->group(function () {
+        Route::get('/', [UserRolePermissionsController::class, 'index'])->name('index');
+        Route::get('/moderators', [UserRolePermissionsController::class, 'moderators'])->name('moderators.index');
+        Route::get('/moderators/{user}', [UserRolePermissionsController::class, 'showModerator'])->name('moderators.show');
+        Route::put('/moderators/{user}', [UserRoleController::class, 'updatePermissions'])->name('moderators.permissions.update');
+    });
+
 Route::prefix('admin/users')->name('admin.users.')->middleware(['auth:sanctum', 'active', 'role:admin,moderator'])->group(function () {
     Route::get('/', [UserManagementController::class, 'index'])->middleware('can:viewAny,App\\Models\\User')->name('index');
     Route::get('/activity', [UserActivityController::class, 'index'])->middleware('can:viewActivity,App\\Models\\User')->name('activity.index');
@@ -56,42 +68,45 @@ Route::prefix('admin/users')->name('admin.users.')->middleware(['auth:sanctum', 
     Route::put('/{user}/permissions', [UserRoleController::class, 'updatePermissions'])->middleware('role:admin')->name('permissions.update');
 });
 
-Route::prefix('admin/tasks')->name('admin.tasks.')->middleware(['auth:sanctum', 'active', 'role:admin'])->group(function () {
-    Route::get('/', [TaskController::class, 'index'])->name('index');
-    Route::get('/assignees', [TaskController::class, 'assignees'])->name('assignees');
-    Route::post('/', [TaskController::class, 'store'])->name('store');
-    Route::get('/{task}', [TaskController::class, 'show'])->name('show');
-    Route::patch('/{task}', [TaskController::class, 'update'])->name('update');
-    Route::delete('/{task}', [TaskController::class, 'destroy'])->name('destroy');
+Route::prefix('admin/tasks')->name('admin.tasks.')->middleware(['auth:sanctum', 'active', 'role:admin,moderator'])->group(function () {
+    Route::get('/', [TaskController::class, 'index'])->middleware(['management.access:tasks.view', 'can:viewAny,App\\Models\\Task'])->name('index');
+    Route::get('/assignees', [TaskController::class, 'assignees'])->middleware('role:admin')->name('assignees');
+    Route::post('/', [TaskController::class, 'store'])->middleware('role:admin')->name('store');
+    Route::post('/{taskId}/restore', [TaskController::class, 'restore'])->whereNumber('taskId')->middleware('role:admin')->name('restore');
+    Route::get('/{task}', [TaskController::class, 'show'])->middleware('can:view,task')->name('show');
+    Route::patch('/{task}/status', [TaskController::class, 'updateStatus'])->middleware(['management.access:tasks.status.manage', 'can:manageStatus,task'])->name('status.update');
+    Route::patch('/{task}', [TaskController::class, 'update'])->middleware('role:admin')->name('update');
+    Route::delete('/{task}', [TaskController::class, 'destroy'])->middleware('role:admin')->name('destroy');
 });
 
-Route::prefix('admin/projects')->name('admin.projects.')->middleware(['auth:sanctum', 'active', 'role:admin'])->group(function () {
-    Route::get('/', [ProjectManagementController::class, 'index'])->name('index');
-    Route::get('/owners', [ProjectManagementController::class, 'owners'])->name('owners');
-    Route::get('/{project}/tasks', [ProjectTaskManagementController::class, 'index'])->whereNumber('project')->name('tasks.index');
-    Route::post('/{project}/tasks', [ProjectTaskManagementController::class, 'store'])->whereNumber('project')->name('tasks.store');
-    Route::get('/{project}', [ProjectManagementController::class, 'show'])->whereNumber('project')->name('show');
-    Route::post('/', [ProjectManagementController::class, 'store'])->name('store');
-    Route::patch('/{project}', [ProjectManagementController::class, 'update'])->name('update');
-    Route::delete('/{project}', [ProjectManagementController::class, 'destroy'])->name('destroy');
+Route::prefix('admin/projects')->name('admin.projects.')->middleware(['auth:sanctum', 'active', 'role:admin,moderator'])->group(function () {
+    Route::get('/', [ProjectManagementController::class, 'index'])->middleware(['management.access:projects.view', 'can:viewAny,App\\Models\\Project'])->name('index');
+    Route::get('/owners', [ProjectManagementController::class, 'owners'])->middleware('role:admin')->name('owners');
+    Route::get('/{project}/tasks', [ProjectTaskManagementController::class, 'index'])->whereNumber('project')->middleware(['management.access:projects.view', 'can:view,project'])->name('tasks.index');
+    Route::post('/{project}/tasks', [ProjectTaskManagementController::class, 'store'])->whereNumber('project')->middleware('role:admin')->name('tasks.store');
+    Route::get('/{project}', [ProjectManagementController::class, 'show'])->whereNumber('project')->middleware('can:view,project')->name('show');
+    Route::post('/', [ProjectManagementController::class, 'store'])->middleware('role:admin')->name('store');
+    Route::patch('/{project}/status', [ProjectManagementController::class, 'updateStatus'])->middleware(['management.access:projects.status.manage', 'can:manageStatus,project'])->name('status.update');
+    Route::patch('/{project}', [ProjectManagementController::class, 'update'])->middleware('role:admin')->name('update');
+    Route::delete('/{project}', [ProjectManagementController::class, 'destroy'])->middleware('role:admin')->name('destroy');
 });
 
-Route::prefix('admin/categories')->name('admin.categories.')->middleware(['auth:sanctum', 'active', 'role:admin'])->group(function () {
-    Route::get('/', [CategoryController::class, 'index'])->name('index');
+Route::prefix('admin/categories')->name('admin.categories.')->middleware(['auth:sanctum', 'active', 'role:admin,moderator'])->group(function () {
+    Route::get('/', [CategoryController::class, 'index'])->middleware(['management.access:categories.view', 'can:viewAny,App\\Models\\Category'])->name('index');
     Route::post('/', [CategoryController::class, 'store'])->name('store');
-    Route::post('/{category}/restore', [CategoryController::class, 'restore'])->whereNumber('category')->name('restore');
-    Route::get('/{category}', [CategoryController::class, 'show'])->whereNumber('category')->name('show');
-    Route::patch('/{category}', [CategoryController::class, 'update'])->whereNumber('category')->name('update');
-    Route::delete('/{category}', [CategoryController::class, 'destroy'])->whereNumber('category')->name('destroy');
+    Route::post('/{category}/restore', [CategoryController::class, 'restore'])->whereNumber('category')->middleware('role:admin')->name('restore');
+    Route::get('/{category}', [CategoryController::class, 'show'])->whereNumber('category')->middleware('management.access:categories.view')->name('show');
+    Route::patch('/{category}', [CategoryController::class, 'update'])->whereNumber('category')->middleware('role:admin')->name('update');
+    Route::delete('/{category}', [CategoryController::class, 'destroy'])->whereNumber('category')->middleware('role:admin')->name('destroy');
 });
 
-Route::prefix('admin/reports')->name('admin.reports.')->middleware(['auth:sanctum', 'active', 'role:admin'])->group(function () {
-    Route::get('/', [AdminReportController::class, 'overview'])->name('overview');
-    Route::get('/filters', [AdminReportController::class, 'filterOptions'])->name('filters');
+Route::prefix('admin/reports')->name('admin.reports.')->middleware(['auth:sanctum', 'active', 'role:admin,moderator'])->group(function () {
+    Route::get('/', [AdminReportController::class, 'overview'])->middleware('management.access:reports.view')->name('overview');
+    Route::get('/filters', [AdminReportController::class, 'filterOptions'])->middleware('management.access:reports.view')->name('filters');
     Route::get('/tables/{table}', [AdminReportController::class, 'table'])
         ->where('table', 'registrations|projects|tasks|overdue|upcoming|categories|unused_categories|assignees')
-        ->name('tables.show');
-    Route::get('/export', [AdminReportController::class, 'export'])->name('export');
+        ->middleware('management.access:reports.view')->name('tables.show');
+    Route::get('/export', [AdminReportController::class, 'export'])->middleware('role:admin')->name('export');
 });
 
 Route::prefix('admin/activity-logs')->name('admin.activity-logs.')->middleware([

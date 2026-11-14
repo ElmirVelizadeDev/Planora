@@ -30,7 +30,7 @@
                         <label class="settings-field"><span>Resend cooldown (seconds)</span><input v-model.number="form.values.otp_resend_cooldown_seconds" type="number" min="30" max="600"><small v-if="form.validationErrors.otp_resend_cooldown_seconds">{{ form.validationErrors.otp_resend_cooldown_seconds[0] }}</small></label>
                     </div>
                 </section>
-                <SettingsSaveBar :dirty="form.dirty" :saving="form.saving" @save="save" @reset="reset" />
+                <SettingsSaveBar :dirty="form.dirty" :saving="form.saving" :confirmation="form.confirmation" @save="openSaveConfirmation" @reset="openResetConfirmation" @confirm="form.confirmConfirmation" @cancel="form.cancelConfirmation" />
             </template>
         </div>
     </AdminSettingsLayout>
@@ -51,11 +51,11 @@ const passwordRules = [
     { key: 'require_special_character', title: 'Require a special character', description: 'At least one non-alphanumeric character is required.' },
 ];
 
-async function save() {
-    if (window.confirm('Apply this security policy to future sign-in, registration and verification requests?')) await form.save();
+function openSaveConfirmation() {
+    form.openSaveConfirmation('Are you sure you want to save these changes? The updated security policy will apply to future sign-in, registration and verification requests.');
 }
-async function reset() {
-    if (window.confirm('Restore Security settings to the protected defaults?')) await form.reset();
+function openResetConfirmation() {
+    form.openResetConfirmation('Are you sure you want to reset Security settings to their default values? This will replace the current security configuration.');
 }
 onMounted(form.load);
 </script>

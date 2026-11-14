@@ -16,7 +16,8 @@ class TaskService
 
     public function paginate(array $filters): LengthAwarePaginator
     {
-        $query = Task::query()->with(['owner', 'assignedUser', 'creator', 'category']);
+        $query = ! empty($filters['deleted']) ? Task::onlyTrashed() : Task::query();
+        $query->with(['owner', 'assignedUser', 'creator', 'category']);
 
         if (! empty($filters['search'])) {
             $term = trim($filters['search']);
@@ -118,6 +119,18 @@ class TaskService
             $locked = Task::query()->lockForUpdate()->findOrFail($task->id);
             $this->activityLogger->record('task.deleted', 'Task moved to soft-deleted recovery.', $locked, $actor);
             $locked->delete();
+        });
+    }
+
+    public function restore(int $taskId, User $actor): Task
+    {
+        return DB::transaction(function () use ($taskId, $actor): Task {
+            $task = Task::withTrashed()->lockForUpdate()->findOrFail($taskId);
+            abort_unless($task->trashed(), 409, 'This task is not in deleted recovery.');
+            $task->restore();
+            $this->activityLogger->record('task.restored', 'Task restored from deleted recovery.', $task, $actor);
+
+            return $task->fresh()->load(['owner', 'assignedUser', 'creator', 'category']);
         });
     }
 

@@ -9,9 +9,12 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\Validation\Validator;
+use App\Http\Requests\Api\V1\Admin\Users\Concerns\ValidatesModeratorPermissionDependencies;
 
 class StoreManagedUserRequest extends FormRequest
 {
+    use ValidatesModeratorPermissionDependencies;
+
     public function authorize(): bool
     {
         return $this->user()?->role === 'admin';
@@ -31,7 +34,7 @@ class StoreManagedUserRequest extends FormRequest
             'role' => ['required', Rule::in(User::ROLES)],
             'status' => ['required', Rule::in(['active', 'inactive'])],
             'moderator_permissions' => ['nullable', 'array'],
-            'moderator_permissions.*' => ['string', Rule::in(array_keys(config('user_management.moderator_permissions')))],
+            'moderator_permissions.*' => ['string', 'distinct', Rule::in(array_keys(config('user_management.moderator_permissions')))],
         ];
     }
 
@@ -52,10 +55,10 @@ class StoreManagedUserRequest extends FormRequest
                 $validator->errors()->add('name', 'The full name must be 50 characters or fewer.');
             }
             $permissions = $this->input('moderator_permissions', []);
-            if (! is_array($permissions)) return;
-            if (in_array('users.status.manage', $permissions, true) && ! in_array('users.view', $permissions, true)) {
-                $validator->errors()->add('moderator_permissions', 'Account status management also requires user visibility permission.');
+            if ($this->input('role') !== 'moderator' && is_array($permissions) && $permissions !== []) {
+                $validator->errors()->add('moderator_permissions', 'Permissions can only be assigned when the account role is Moderator.');
             }
+            $this->validateModeratorPermissionDependencies($validator, 'moderator_permissions');
         });
     }
 }

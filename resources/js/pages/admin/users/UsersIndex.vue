@@ -6,9 +6,7 @@
                 <h1>Users</h1>
                 <p class="admin-users-description">Manage accounts, access and activity across Planora.</p>
             </div>
-            <RouterLink v-if="isAdmin" class="admin-users-primary-button" :to="{ name: 'admin.users.create' }">
-                <span aria-hidden="true">＋</span> Add new user
-            </RouterLink>
+            <RouterLink v-if="isAdmin" class="admin-users-primary-button" :to="{ name: 'admin.users.create' }" aria-label="Add new user">＋ Add new user</RouterLink>
         </header>
 
         <section class="admin-users-stat-grid" aria-label="User statistics">

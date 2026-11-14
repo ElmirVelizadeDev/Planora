@@ -7,7 +7,7 @@ This note describes the current authentication and authorization boundaries impl
 - The default Laravel `web` guard uses the session driver and Eloquent User provider. The first-party Vue SPA uses Sanctum stateful session authentication, credentials, CSRF cookies, and the shared Axios client.
 - Login requires a valid account with an allowed role, active status, and verified email. Successful login regenerates the session; logout invalidates it.
 - The current-user API uses `auth:sanctum` and active-account middleware. APIs that change data apply their own role, policy, request, and record-scope checks.
-- Admin Vue routes require the `admin` role; User routes require `user`. Moderator permissions exist for selected User Management APIs, but the Admin Vue layout does not admit moderators.
+- Admin Vue routes are permission-aware for the limited Moderator destinations (Dashboard, Users, Activity Logs); all other Admin destinations require Admin. Laravel APIs independently enforce the corresponding role and policy checks.
 
 ## Registration and one-time codes
 

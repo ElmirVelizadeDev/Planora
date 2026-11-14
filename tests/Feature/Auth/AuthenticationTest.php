@@ -782,10 +782,13 @@ class AuthenticationTest extends TestCase
         $this->actingAs($user, 'web')->get('/admin/dashboard')->assertRedirect('/dashboard');
 
         $moderator = User::factory()->create(['role' => 'moderator', 'moderator_permissions' => ['users.view']]);
-        $this->actingAs($moderator, 'web')->get('/admin/dashboard')->assertRedirect('/admin/users');
+        $this->actingAs($moderator, 'web')->get('/admin/dashboard')->assertOk();
         $this->actingAs($moderator, 'web')->get('/admin/users')->assertOk();
 
         $restrictedModerator = User::factory()->create(['role' => 'moderator']);
+        $this->actingAs($restrictedModerator, 'web')->get('/admin/dashboard')->assertForbidden();
+        $activityOnlyModerator = User::factory()->create(['role' => 'moderator', 'moderator_permissions' => ['activity.view']]);
+        $this->actingAs($activityOnlyModerator, 'web')->get('/admin')->assertRedirect('/admin/activity-logs');
         $this->actingAs($restrictedModerator, 'web')->get('/admin/users')->assertForbidden();
 
         $admin = User::factory()->create(['role' => 'admin']);

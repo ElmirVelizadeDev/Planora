@@ -17,9 +17,10 @@ This document maps active Vue route groups and their implementation boundaries. 
 | User workspace | `/dashboard`, `/tasks`, `/tasks/:taskId`, `/projects`, `/projects/:projectId` | Dashboard task summary, owned/assigned Task workflows, and Projects owned by the current User. Project Tasks are further scoped by Task ownership/assignment. |
 | User Categories | `/categories`, `/categories/:categoryId` | Read-only active Category catalog with search, sorting, pagination, accessible usage counts, and User-scoped related Projects/Tasks. Create/edit paths redirect to the catalog. |
 | Other User pages | `/calendar`, `/tags`, `/notifications`, `/profile`, `/settings`, `/statistics`, `/productivity` | Routes and UI exist; several workflows remain partial or scaffolded. |
-| Admin workspace | `/admin/dashboard`, `/admin/users`, `/admin/tasks`, `/admin/projects` | Database-backed dashboard, account, Task, and Project management workflows. |
+| Admin workspace | `/admin/dashboard`, `/admin/users`, `/admin/tasks`, `/admin/projects` | Database-backed operational dashboard, account, Task, and Project management workflows. Task recovery is available from the deleted-task filter. |
 | Admin Categories | `/admin/categories`, `/admin/categories/create`, `/admin/categories/:categoryId`, `/admin/categories/:categoryId/edit` | Database-backed list, detail, create, edit, archive, and restore. Category management is Admin-only. |
-| Other Admin pages | `/admin/roles`, `/admin/tags`, `/admin/reports`, `/admin/analytics`, `/admin/notifications`, `/admin/activity-logs`, `/admin/settings` | Several destinations remain partial or scaffolded. |
+| Admin reporting and audit | `/admin/reports`, `/admin/activity-logs` | Unified Reports & Analytics, plus searchable/exportable activity and management audit history. |
+| Admin access and settings | `/admin/roles-permissions`, `/admin/settings` | Fixed role overview with per-Moderator permission assignment; General, Security, and Email settings sections. |
 | Errors | `/403`, `/419`, `/429`, `/500`, `/503`, unknown-path fallback | Dedicated error pages are registered. |
 
 ## Feature structure
@@ -34,4 +35,4 @@ This document maps active Vue route groups and their implementation boundaries. 
 
 `resources/css/app.css` is the single global entry and imports tokens, reset, then typography. Layout styles live under `resources/css/layouts/`; reusable styles live under `resources/css/components/`; Categories styles are feature-owned under `resources/css/features/categories/{admin,shared,user}/`; other page styles remain under `resources/css/pages/`. Vue SFC `style src` imports associate page/component styles with their lazy-loaded consumers. The Admin and User Category styles remain separate; the shared Category badge has one stylesheet source.
 
-The User and Admin route groups use separate layouts and role metadata. The Admin layout currently admits only Admins; limited moderator User Management API permissions do not provide moderator access to the Admin SPA. Protected APIs enforce access independently of the route guard. For API and data scope details, see [API Documentation](docs/API_DOCUMENTATION.md) and [Database Design](docs/DATABASE_DESIGN.md).
+User and Admin route groups use separate layouts. Moderators can reach only Dashboard, Users, and Activity Logs when their individual permissions allow it; other Admin pages remain Admin-only. Obsolete Admin Analytics, Roles, Permissions, Tags, and Notifications URLs redirect to their canonical Admin destinations. User-side Tags and Notifications routes are unchanged. For API and data scope details, see [API Documentation](docs/API_DOCUMENTATION.md) and [Database Design](docs/DATABASE_DESIGN.md).

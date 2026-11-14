@@ -12,7 +12,7 @@
                     <svg :class="{ 'is-spinning': loading }" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7v5h-5M4 17v-5h5"/><path d="M5.6 9A7 7 0 0 1 18 6l2 6M4 12l2 6a7 7 0 0 0 12.4-3"/></svg>
                     {{ loading ? 'Refreshing…' : 'Refresh' }}
                 </button>
-                <button class="reports-button reports-button--primary" type="button" :disabled="!report || exporting || loading || Boolean(rangeError)" :aria-busy="exporting" @click="exportCsv">
+                <button v-if="isAdmin" class="reports-button reports-button--primary" type="button" :disabled="!report || exporting || loading || Boolean(rangeError)" :aria-busy="exporting" @click="exportCsv">
                     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4M4 17v3h16v-3"/></svg>
                     {{ exporting ? 'Preparing CSV…' : 'Export CSV' }}
                 </button>
@@ -40,7 +40,7 @@
             <a href="#reports-overview">Overview</a><a href="#reports-users">Users</a><a href="#reports-projects">Projects</a><a href="#reports-tasks">Tasks</a><a href="#reports-categories">Categories</a>
         </nav>
 
-        <p v-if="exportError" class="reports-feedback is-error" role="alert">{{ exportError }}</p>
+        <p v-if="isAdmin && exportError" class="reports-feedback is-error" role="alert">{{ exportError }}</p>
         <p v-if="loading && report" class="reports-feedback reports-refresh-state" role="status">Refreshing report data… Your selected filters are preserved.</p>
         <section v-if="loading && !report" class="reports-loading" aria-label="Loading reports" role="status">
             <div class="reports-loading-kpis"><span v-for="index in 10" :key="`kpi-${index}`" class="reports-skeleton"></span></div>
@@ -151,6 +151,7 @@
 
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { useAuthStore } from '../../../features/auth/stores/authStore.js';
 import ReportBreakdownChart from '../../../features/reports/admin/components/ReportBreakdownChart.vue';
 import ReportKpiCard from '../../../features/reports/admin/components/ReportKpiCard.vue';
 import ReportSearchFilter from '../../../features/reports/admin/components/ReportSearchFilter.vue';
@@ -159,6 +160,8 @@ import ReportTrendChart from '../../../features/reports/admin/components/ReportT
 import { useAdminReports } from '../../../features/reports/admin/composables/useAdminReports.js';
 
 const { report, loading, exporting, error, exportError, generatedAt, filters, options, optionLoading, optionErrors, load, searchOptions, exportCsv } = useAdminReports();
+const auth = useAuthStore();
+const isAdmin = computed(() => auth.hasRole('admin'));
 const preset = ref('last_30_days');
 const today = localDate(new Date());
 let filterTimer;

@@ -5,9 +5,12 @@ namespace App\Http\Requests\Api\V1\Admin\Users;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
+use App\Http\Requests\Api\V1\Admin\Users\Concerns\ValidatesModeratorPermissionDependencies;
 
 class UpdateModeratorPermissionsRequest extends FormRequest
 {
+    use ValidatesModeratorPermissionDependencies;
+
     public function authorize(): bool
     {
         return $this->user()?->can('changePermissions', $this->route('user')) ?? false;
@@ -24,11 +27,7 @@ class UpdateModeratorPermissionsRequest extends FormRequest
     public function withValidator(Validator $validator): void
     {
         $validator->after(function (Validator $validator) {
-            $permissions = $this->input('permissions', []);
-            if (! is_array($permissions)) return;
-            if (in_array('users.status.manage', $permissions, true) && ! in_array('users.view', $permissions, true)) {
-                $validator->errors()->add('permissions', 'Account status management also requires user visibility permission.');
-            }
+            $this->validateModeratorPermissionDependencies($validator, 'permissions');
         });
     }
 }

@@ -24,6 +24,14 @@ export async function updateAdminTask(taskId, payload) {
     return (await api.patch(`/admin/tasks/${taskId}`, payload)).data;
 }
 
+export async function updateAdminTaskStatus(taskId, status) {
+    return (await api.patch(`/admin/tasks/${taskId}/status`, { status })).data;
+}
+
 export async function deleteAdminTask(taskId) {
     return (await api.delete(`/admin/tasks/${taskId}`)).data;
+}
+
+export async function restoreAdminTask(taskId) {
+    return (await api.post(`/admin/tasks/${taskId}/restore`)).data;
 }

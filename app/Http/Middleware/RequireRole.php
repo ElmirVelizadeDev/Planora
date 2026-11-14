@@ -25,7 +25,13 @@ class RequireRole
 
             return match ($actualRole) {
                 'admin' => redirect('/admin/dashboard'),
-                'moderator' => redirect('/admin/users'),
+                'moderator' => $user?->hasManagementPermission('users.view')
+                    ? redirect('/admin/users')
+                    : ($user?->hasManagementPermission('categories.view') ? redirect('/admin/categories')
+                        : ($user?->hasManagementPermission('projects.view') ? redirect('/admin/projects')
+                            : ($user?->hasManagementPermission('tasks.view') ? redirect('/admin/tasks')
+                                : ($user?->hasManagementPermission('reports.view') ? redirect('/admin/reports')
+                                    : ($user?->hasManagementPermission('activity.view') ? redirect('/admin/activity-logs') : redirect('/403')))))),
                 'user' => redirect('/dashboard'),
                 default => redirect('/403'),
             };

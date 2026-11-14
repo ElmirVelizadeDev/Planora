@@ -3,7 +3,7 @@
         <RouterLink class="admin-task-back" :to="{ name: 'admin.tasks.index' }"><span aria-hidden="true">←</span> Back to tasks</RouterLink>
         <div v-if="error" class="admin-task-feedback is-error" role="alert"><span>{{ error }}</span><button type="button" @click="loadTask">Try again</button></div>
         <div v-else-if="loading" class="admin-task-loading" role="status"><span class="admin-task-spinner" aria-hidden="true"></span>Loading task…</div>
-        <AdminTaskDetails v-else-if="task" :task="task" :is-overdue="isOverdue" @delete="deleteTask" />
+        <AdminTaskDetails v-else-if="task" :task="task" :is-overdue="isOverdue" :is-admin="isAdmin" :can-manage-status="canManageStatus" :saving-status="savingStatus" :status-error="statusError" @delete="deleteTask" @status-change="changeStatus" />
         <AdminTaskDeleteDialog
             v-if="deleteDialogOpen && task"
             :task="task"
@@ -21,9 +21,12 @@ import { computed, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import AdminTaskDeleteDialog from '../../../features/tasks/admin/components/AdminTaskDeleteDialog.vue';
 import AdminTaskDetails from '../../../features/tasks/admin/components/AdminTaskDetails.vue';
-import { deleteAdminTask, getAdminTask } from '../../../features/tasks/admin/services/adminTaskApi.js';
+import { deleteAdminTask, getAdminTask, updateAdminTaskStatus } from '../../../features/tasks/admin/services/adminTaskApi.js';
+import { useAuthStore } from '../../../features/auth/stores/authStore.js';
 
 const route = useRoute(), router = useRouter(), task = ref(null), loading = ref(false), error = ref('');
+const auth = useAuthStore(), isAdmin = computed(() => auth.hasRole('admin')), canManageStatus = computed(() => isAdmin.value || auth.hasManagementPermission('tasks.status.manage'));
+const savingStatus = ref(false), statusError = ref('');
 const deleteDialogOpen = ref(false), deleteSaving = ref(false), deleteError = ref('');
 const isOverdue = computed(() => task.value?.status !== 'completed' && task.value?.due_date && new Date(task.value.due_date) < new Date(new Date().toDateString()));
 
@@ -38,6 +41,14 @@ async function loadTask() {
     } finally {
         loading.value = false;
     }
+}
+
+async function changeStatus(status) {
+    if (!task.value || savingStatus.value) return;
+    savingStatus.value = true; statusError.value = '';
+    try { await updateAdminTaskStatus(task.value.id, status); task.value.status = status; }
+    catch (e) { statusError.value = e.response?.data?.message || 'Task status could not be updated.'; }
+    finally { savingStatus.value = false; }
 }
 
 function deleteTask() {
