@@ -65,7 +65,7 @@
             <section id="reports-users" class="reports-section" aria-labelledby="reports-users-title">
                 <header class="reports-section-heading"><div><p>ACCOUNTS</p><h2 id="reports-users-title">User analytics</h2><span>Registration activity follows the selected period; status and role charts show the current account mix.</span></div></header>
                 <div class="reports-chart-grid reports-chart-grid--two">
-                    <ReportTrendChart title="User registrations" description="New accounts by day" :series="report.user_analytics.registration_trend" color="#5B6CFA" />
+                    <ReportTrendChart title="User registrations" description="New accounts by day" :series="report.user_analytics.registration_trend" />
                     <ReportBreakdownChart title="Current user status" description="Status of all accounts in the active scope" :items="report.user_analytics.status_distribution" />
                     <ReportBreakdownChart title="Current role mix" description="Roles across all accounts in the active scope" :items="report.user_analytics.role_distribution" />
                     <ReportTableCard title="Recent registrations" description="Latest accounts created in the selected period" table="registrations" :filters="filters" :rows="report.user_analytics.recent_registrations.data" :pagination="report.user_analytics.recent_registrations.meta" :columns="userColumns" empty-message="No registrations in this period.">

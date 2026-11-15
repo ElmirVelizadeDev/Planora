@@ -12,11 +12,17 @@ Route::view('/privacy-policy', 'welcome')->name('privacy-policy');
 Route::view('/forgot-password', 'welcome');
 Route::view('/reset-password', 'welcome');
 Route::view('/verify-email', 'welcome');
+Route::view('/401', 'welcome');
 Route::view('/403', 'welcome');
+Route::view('/404', 'welcome');
 Route::view('/419', 'welcome');
 Route::view('/429', 'welcome');
 Route::view('/500', 'welcome');
 Route::view('/503', 'welcome');
+
+Route::view('/profile/{path?}', 'welcome')
+    ->where('path', '.*')
+    ->middleware(['auth', 'active', 'auth.session', 'role:user,moderator,admin']);
 
 Route::view('/admin/users/{path?}', 'welcome')
     ->where('path', '.*')
@@ -44,6 +50,9 @@ Route::view('/admin/reports/{path?}', 'welcome')
 
 Route::view('/admin/dashboard', 'welcome')
     ->middleware(['auth', 'active', 'auth.session', 'role:admin,moderator', 'dashboard.access']);
+
+Route::view('/admin/system-maintenance', 'welcome')
+    ->middleware(['auth', 'active', 'auth.session', 'role:admin']);
 
 Route::view('/admin/{path?}', 'welcome')
     ->where('path', '^(?!users(?:/|$)).*')

@@ -13,6 +13,7 @@
 
 <script setup>
 import { computed } from 'vue';
+import { useAppearancePreferences } from '@/features/appearance/composables/appearancePreferences';
 
 const props = defineProps({
     title: { type: String, required: true },
@@ -20,7 +21,8 @@ const props = defineProps({
     items: { type: Array, default: () => [] },
     showZeroItems: { type: Boolean, default: false },
 });
-const palette = ['#5B6CFA', '#2F9B78', '#E5A23B', '#8D70D6', '#E16D78', '#3C9DB5'];
+const appearance = useAppearancePreferences();
+const palette = computed(() => [appearance.preferences.accent, '#2F9B78', '#E5A23B', '#8D70D6', '#E16D78', '#3C9DB5']);
 const total = computed(() => props.items.reduce((sum, item) => sum + (Number(item.value) || 0), 0));
 const max = computed(() => Math.max(1, ...props.items.map((item) => Number(item.value) || 0)));
 function format(value) { return new Intl.NumberFormat().format(Number(value) || 0); }

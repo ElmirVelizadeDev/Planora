@@ -1,0 +1,1 @@
+@include('errors.page', ['code' => 419, 'title' => 'Your session has expired', 'description' => 'Refresh the page to start a new secure session. Any unsaved changes may need to be entered again.', 'login' => true])

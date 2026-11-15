@@ -1,0 +1,1 @@
+@include('errors.page', ['code' => 404, 'title' => 'We could not find that page', 'description' => 'The page may have moved, or the address may be incorrect. Return to Planora and continue from there.'])

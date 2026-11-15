@@ -3,18 +3,19 @@
 namespace App\Services\Api\V1\Admin;
 
 use App\Models\User;
+use App\Services\Api\V1\Shared\UserAvatarStorage;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
-use RuntimeException;
 use Throwable;
 
 class UserManagementService
 {
-    public function __construct(private readonly UserActivityLogger $activityLogger)
-    {
+    public function __construct(
+        private readonly UserActivityLogger $activityLogger,
+        private readonly UserAvatarStorage $avatars,
+    ) {
     }
 
     public function create(User $actor, array $data): User
@@ -36,7 +37,7 @@ class UserManagementService
                 $user->status = $data['status'];
                 $user->moderator_permissions = $data['role'] === 'moderator' ? ($data['moderator_permissions'] ?? []) : null;
                 if ($avatar instanceof UploadedFile) {
-                    $storedAvatar = $this->storeAvatar($avatar);
+                    $storedAvatar = $this->avatars->store($avatar);
                     $user->profile_photo = $storedAvatar;
                 }
                 if ($data['status'] !== 'active') {
@@ -53,7 +54,7 @@ class UserManagementService
                 return $user->fresh('statusChangedBy:id,name');
             });
         } catch (Throwable $exception) {
-            if ($storedAvatar) Storage::disk('public')->delete($storedAvatar);
+            if ($storedAvatar) $this->avatars->delete($storedAvatar);
             throw $exception;
         }
     }
@@ -70,7 +71,7 @@ class UserManagementService
             $updated = DB::transaction(function () use ($actor, $user, $data, $avatar, $removeAvatar, &$storedAvatar) {
                 $user = User::query()->lockForUpdate()->findOrFail($user->id);
                 if ($avatar instanceof UploadedFile) {
-                    $storedAvatar = $this->storeAvatar($avatar);
+                    $storedAvatar = $this->avatars->store($avatar);
                     $data['profile_photo'] = $storedAvatar;
                 } elseif ($removeAvatar) {
                     $data['profile_photo'] = null;
@@ -81,7 +82,10 @@ class UserManagementService
                 if ($changed !== []) {
                     $user->save();
                     $event = in_array('profile_photo', $changed, true) ? 'user.avatar_changed' : 'user.profile_updated';
-                    $this->activityLogger->record($event, 'Administrator updated account information.', $user, $actor, [
+                    $description = $actor->is($user)
+                        ? 'Account owner updated personal information.'
+                        : 'Administrator updated account information.';
+                    $this->activityLogger->record($event, $description, $user, $actor, [
                         'fields' => $changed,
                         'avatar_removed' => $removeAvatar,
                         'avatar_replaced' => $avatar instanceof UploadedFile,
@@ -91,12 +95,12 @@ class UserManagementService
                 return $user->fresh('statusChangedBy:id,name');
             });
         } catch (Throwable $exception) {
-            if ($storedAvatar) Storage::disk('public')->delete($storedAvatar);
+            if ($storedAvatar) $this->avatars->delete($storedAvatar);
             throw $exception;
         }
 
         if (($storedAvatar || $removeAvatar) && $oldAvatar !== $updated->profile_photo) {
-            $this->deleteManagedAvatar($oldAvatar);
+            $this->avatars->deleteIfManaged($oldAvatar);
         }
 
         return $updated;
@@ -244,20 +248,4 @@ class UserManagementService
             ->get(['id']);
     }
 
-    private function storeAvatar(UploadedFile $avatar): string
-    {
-        $path = $avatar->storePublicly('user-avatars', 'public');
-        if (! is_string($path) || $path === '') {
-            throw new RuntimeException('The avatar could not be stored.');
-        }
-
-        return $path;
-    }
-
-    private function deleteManagedAvatar(?string $path): void
-    {
-        if ($path && str_starts_with($path, 'user-avatars/')) {
-            Storage::disk('public')->delete($path);
-        }
-    }
 }

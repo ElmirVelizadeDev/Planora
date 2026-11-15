@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\V1\Admin\Users\UserManagementController;
 use App\Http\Controllers\Api\V1\Admin\Users\UserRoleController;
 use App\Http\Controllers\Api\V1\Admin\Users\UserRolePermissionsController;
 use App\Http\Controllers\Api\V1\User\Profile\CurrentUserController;
+use App\Http\Controllers\Api\V1\User\Profile\CurrentUserProfileController;
 use App\Http\Controllers\Api\V1\Auth\PasswordController;
 use App\Http\Controllers\Api\V1\Admin\Tasks\TaskController;
 use App\Http\Controllers\Api\V1\User\Tasks\UserTaskController;
@@ -17,6 +18,7 @@ use App\Http\Controllers\Api\V1\Admin\Projects\ProjectTaskManagementController;
 use App\Http\Controllers\Api\V1\Admin\Reports\AdminReportController;
 use App\Http\Controllers\Api\V1\Admin\ActivityLogs\ActivityLogsController;
 use App\Http\Controllers\Api\V1\Admin\Settings\AdminSettingsController;
+use App\Http\Controllers\Api\V1\Admin\SystemMaintenance\SystemMaintenanceController;
 use App\Http\Controllers\Api\V1\Settings\SettingsBrandingController;
 use App\Http\Controllers\Api\V1\Dashboard\AdminDashboardController;
 use Illuminate\Support\Facades\Route;
@@ -39,8 +41,21 @@ Route::middleware(['auth:sanctum'])->group(function () {
 });
 
 Route::middleware(['auth:sanctum', 'active'])->group(function () {
-    Route::get('/user', [CurrentUserController::class, 'show'])->name('user');
+    Route::get('/user', [CurrentUserController::class, 'show'])->middleware('maintenance.bootstrap')->name('user');
+    Route::get('/user/overview', [CurrentUserController::class, 'overview'])->name('user.overview');
+    Route::patch('/user/profile', [CurrentUserProfileController::class, 'update'])->name('user.profile.update');
+    Route::post('/user/avatar', [CurrentUserProfileController::class, 'updateAvatar'])->name('user.avatar.update');
+    Route::delete('/user/avatar', [CurrentUserProfileController::class, 'removeAvatar'])->name('user.avatar.remove');
+    Route::put('/user/password', [CurrentUserProfileController::class, 'changePassword'])
+        ->middleware('throttle:6,1')->name('user.password.update');
 });
+
+Route::prefix('admin/system-maintenance')->name('admin.system-maintenance.')
+    ->middleware(['auth:sanctum', 'active', 'role:admin'])->group(function () {
+        Route::get('/', [SystemMaintenanceController::class, 'show'])->name('show');
+        Route::post('/enable', [SystemMaintenanceController::class, 'enable'])->middleware('throttle:6,1')->name('enable');
+        Route::post('/disable', [SystemMaintenanceController::class, 'disable'])->middleware('throttle:6,1')->name('disable');
+    });
 
 Route::get('/admin/dashboard', [AdminDashboardController::class, 'show'])
     ->middleware(['auth:sanctum', 'active', 'role:admin,moderator'])->name('admin.dashboard');

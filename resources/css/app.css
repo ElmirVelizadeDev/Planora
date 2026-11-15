@@ -1,3 +1,36 @@
 @import './tokens/index.css';
 @import './base/reset.css';
 @import './base/typography.css';
+
+html, body, #app { color: var(--color-text); background: var(--color-background); }
+::selection { color: var(--color-text); background: var(--color-accent-subtle); }
+
+:root[data-theme="dark"] input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not(:focus):not(:disabled),
+:root[data-theme="dark"] select:not(:focus):not(:disabled),
+:root[data-theme="dark"] textarea:not(:focus):not(:disabled) {
+    color: var(--color-text);
+    border-color: var(--color-input-border);
+    background-color: var(--color-input-background);
+}
+:root[data-theme="dark"] input::placeholder,
+:root[data-theme="dark"] textarea::placeholder { color: var(--color-input-placeholder); }
+:root[data-theme="dark"] input:disabled,
+:root[data-theme="dark"] select:disabled,
+:root[data-theme="dark"] textarea:disabled { color: var(--color-text-disabled); border-color: var(--color-border); background-color: var(--color-surface-secondary); }
+:root[data-theme="dark"] input[type="checkbox"],
+:root[data-theme="dark"] input[type="radio"],
+:root[data-theme="dark"] input[type="range"] { accent-color: var(--color-accent); }
+:root[data-theme="dark"] ::-webkit-scrollbar { width: 10px; height: 10px; }
+:root[data-theme="dark"] ::-webkit-scrollbar-track { background: var(--color-background); }
+:root[data-theme="dark"] ::-webkit-scrollbar-thumb { border: 2px solid var(--color-background); border-radius: 9px; background: var(--color-border); }
+:root[data-theme="dark"] ::-webkit-scrollbar-thumb:hover { background: var(--color-text-muted); }
+
+.workspace-layout :is(.appearance-button--primary, .al-button--primary, .admin-projects-primary-button, .admin-project-detail-primary, .settings-button--primary, .reports-button--primary, .user-tasks-primary-button, .user-task-submit, .admin-tasks-primary-button, .admin-task-form-submit, .admin-task-primary-button, .admin-user-create-submit, .admin-users-primary-button) { color: var(--color-accent-foreground); }
+.workspace-layout.is-compact .workspace-sidebar.is-user .workspace-nav-link,
+.workspace-layout.is-compact .workspace-sidebar.is-admin .workspace-nav-link { min-height: var(--density-nav-item-height, 37px); }
+.workspace-layout.is-compact .workspace-content { padding-top: clamp(18px, 2.6vw, 34px); padding-bottom: clamp(18px, 2.6vw, 34px); }
+.workspace-layout.is-compact table tbody td { height: var(--density-table-row-height, 44px); padding-top: 6px; padding-bottom: 6px; }
+.workspace-layout.is-compact .profile-card { padding: var(--density-card-padding, 16px); }
+.workspace-layout.is-compact .profile-overview { padding: var(--density-card-padding, 16px); }
+.workspace-layout.is-compact .profile-page__grid { gap: var(--density-form-gap, 12px); }
+.workspace-layout.is-compact .profile-form { gap: var(--density-form-gap, 12px); }

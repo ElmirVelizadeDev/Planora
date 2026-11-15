@@ -1,0 +1,1 @@
+@include('errors.page', ['code' => 403, 'title' => 'This area is restricted', 'description' => 'Your account does not have permission to open this area. Contact your workspace administrator if you think this is a mistake.'])

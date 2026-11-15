@@ -81,8 +81,8 @@
 
 .user-categories-search input:focus, .user-categories-sort select:focus {
     outline: 0;
-    border-color: var(--color-primary);
-    box-shadow: 0 0 0 3px rgb(91 108 250 / 10%);
+    border-color: var(--color-accent-border);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 10%, transparent);
 }
 
 .user-categories-sort {
@@ -114,8 +114,8 @@
 }
 
 .user-categories-sort-direction:hover {
-    border-color: rgb(91 108 250 / 45%);
-    color: var(--color-primary);
+    border-color: color-mix(in srgb, var(--color-accent) 45%, transparent);
+    color: var(--color-accent-text);
 }
 
 .user-categories-sort-direction:disabled {
@@ -142,8 +142,8 @@
 }
 
 .user-categories-refresh:hover, .user-categories-pagination button:not(:disabled):hover {
-    border-color: rgb(91 108 250 / 45%);
-    background: #fcfcff;
+    border-color: color-mix(in srgb, var(--color-accent) 45%, transparent);
+    background: var(--color-surface-hover);
 }
 
 .user-categories-refresh svg {
@@ -194,7 +194,7 @@
 }
 
 .user-category-card:hover {
-    border-color: rgb(91 108 250 / 42%);
+    border-color: color-mix(in srgb, var(--color-accent) 42%, transparent);
     box-shadow: 0 6px 18px rgb(32 40 58 / 5%);
     transform: translateY(-1px);
 }
@@ -226,12 +226,12 @@
 }
 
 .user-category-open {
-    color: #9ba4b5;
+    color: var(--color-text-muted);
     font-size: 14px;
 }
 
 .user-category-card:hover .user-category-open {
-    color: var(--color-primary);
+    color: var(--color-accent-text);
 }
 
 .user-categories-empty, .user-categories-error {
@@ -248,8 +248,8 @@
     place-items: center;
     margin: 0 auto 12px;
     border-radius: 12px;
-    color: var(--color-primary);
-    background: rgb(91 108 250 / 9%);
+    color: var(--color-accent-text);
+    background: color-mix(in srgb, var(--color-accent) 9%, transparent);
     font-size: 17px;
 }
 
@@ -268,12 +268,12 @@
     align-items: center;
     justify-content: center;
     gap: var(--space-2);
-    color: #a9535a;
+    color: var(--color-danger);
 }
 
 .user-categories-error button {
     border: 0;
-    color: #a9535a;
+    color: var(--color-danger);
     background: none;
     font: inherit;
     font-weight: 650;
@@ -293,7 +293,7 @@
 .user-category-skeleton i, .user-category-skeleton b, .user-category-skeleton span {
     display: block;
     border-radius: 7px;
-    background: linear-gradient(90deg,#f1f3f8,#f8f9fc,#f1f3f8);
+    background: linear-gradient(90deg,var(--color-surface-secondary),var(--color-surface-secondary),var(--color-surface-secondary));
     background-size: 200% 100%;
     animation: user-category-shimmer 1.2s ease infinite;
 }

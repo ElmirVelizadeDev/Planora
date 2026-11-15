@@ -1,5 +1,5 @@
 <template>
-    <div class="workspace-layout admin-layout" :class="{ 'is-collapsed': sidebarCollapsed }">
+    <div class="workspace-layout admin-layout" :class="[{ 'is-collapsed': sidebarCollapsed }, `is-${appearance.preferences.density}`]">
         <AdminSidebar
             :collapsed="sidebarCollapsed"
             :mobile-open="mobileSidebarOpen"
@@ -21,7 +21,12 @@ import AppHeader from '../shared/components/layout/AppHeader.vue';
 import WorkspaceFooter from '../shared/components/WorkspaceFooter.vue';
 import AdminSidebar from '../shared/components/AdminSidebar.vue';
 import { useWorkspaceSidebar } from '../shared/composables/useWorkspaceSidebar.js';
+import { useAuthStore } from '../features/auth/stores/authStore.js';
+import { useAppearancePreferences } from '../features/appearance/composables/appearancePreferences.js';
 
+const auth = useAuthStore();
+const appearance = useAppearancePreferences();
+appearance.load(auth.user?.id);
 const { sidebarCollapsed, mobileSidebarOpen, toggleSidebar } = useWorkspaceSidebar();
 </script>
 

@@ -1,6 +1,7 @@
 import { computed, ref } from 'vue';
 import { defineStore } from 'pinia';
 import { getCurrentUser, login as loginRequest, logout as logoutRequest, register as registerRequest, resendRegistrationCode as resendRegistrationCodeRequest, verifyRegistration as verifyRegistrationRequest } from '../services/authApi.js';
+import { resetAppearanceSession } from '../../appearance/composables/appearancePreferences.js';
 
 export const useAuthStore = defineStore('auth', () => {
     const user = ref(null);
@@ -82,6 +83,7 @@ export const useAuthStore = defineStore('auth', () => {
     function clearUser() {
         user.value = null;
         initialized.value = true;
+        resetAppearanceSession();
     }
 
     return { user, initialized, loading, isAuthenticated, roles, fetchCurrentUser, login, register, verifyRegistration, resendRegistrationCode, logout, hasRole, hasManagementPermission, clearUser };

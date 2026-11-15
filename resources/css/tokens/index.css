@@ -1,10 +1,50 @@
 :root {
+    color-scheme: light;
     --color-background: #f5f7fb;
+    --color-background-secondary: var(--color-surface-secondary);
     --color-surface: #ffffff;
-    --color-primary: #5b6cfa;
+    --color-surface-secondary: #fafbfe;
+    --color-surface-elevated: #ffffff;
+    --color-surface-hover: #f4f6fb;
+    --color-input-background: var(--color-surface);
+    --color-input-border: var(--color-border-subtle);
+    --color-input-placeholder: #8490a5;
+    --color-accent: #5b6cfa;
+    --color-accent-hover: color-mix(in srgb, var(--color-accent) 92%, white);
+    --color-accent-active: color-mix(in srgb, var(--color-accent) 84%, white);
+    --color-accent-subtle: color-mix(in srgb, var(--color-accent) 9%, white);
+    --color-accent-border: color-mix(in srgb, var(--color-accent) 42%, var(--color-border-subtle));
+    --color-accent-foreground: #ffffff;
+    --color-accent-text: #4858e3;
+    --color-accent-profile-hover: color-mix(in srgb, var(--color-accent) 78%, black);
+    --color-accent-shadow: color-mix(in srgb, var(--color-accent) 18%, transparent);
+    --color-focus-ring: color-mix(in srgb, var(--color-accent) 30%, transparent);
+    --color-selected-background: var(--color-accent-subtle);
+
+    /* Compatibility aliases for feature styles that still use the original token names. */
+    --color-primary: var(--color-accent);
+    --color-primary-foreground: var(--color-accent-foreground);
     --color-text: #20283a;
     --color-text-secondary: #8490a5;
+    --color-text-muted: #929bad;
+    --color-text-disabled: #a0a8b6;
     --color-border: #e6eaf2;
+    --color-border-subtle: #e6eaf2;
+    --color-overlay: rgb(11 18 32 / 65%);
+    --color-success: #328366;
+    --color-success-subtle: #eaf7f1;
+    --color-warning: #a97722;
+    --color-warning-subtle: #fbf4e8;
+    --color-danger: #a9535a;
+    --color-danger-action: #b95760;
+    --color-danger-action-hover: #a84952;
+    --color-danger-subtle: #fbefef;
+    --color-danger-border: rgb(185 87 96 / 30%);
+    --color-info: #5262c7;
+    --color-info-subtle: #f0f2ff;
+    --color-neutral: #748096;
+    --color-neutral-subtle: #f1f3f7;
+    --color-neutral-border: var(--color-border-subtle);
 
     --font-family-sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     --font-size-body: 14px;
@@ -18,7 +58,46 @@
     --space-6: 24px;
     --space-8: 32px;
     --space-10: 40px;
+    --density-card-padding: 22px;
+    --density-form-gap: 20px;
+    --density-table-row-height: 56px;
+    --density-nav-item-height: 43px;
 
     --shadow-soft: 0 8px 24px rgb(32 40 58 / 4%);
     --radius-card: 16px;
+}
+
+:root[data-theme="dark"] {
+    color-scheme: dark;
+    --color-background: #101522;
+    --color-background-secondary: #151d2d;
+    --color-surface: #182235;
+    --color-surface-secondary: #202d42;
+    --color-surface-elevated: #1e2a3d;
+    --color-surface-hover: #25334a;
+    --color-input-background: #151f30;
+    --color-input-border: #34435a;
+    --color-input-placeholder: #8493a8;
+    --color-text: #f1f5f9;
+    --color-text-secondary: #c0cad8;
+    --color-text-muted: #91a0b5;
+    --color-text-disabled: #66758a;
+    --color-border: #2c3a50;
+    --color-border-subtle: #253247;
+    --color-overlay: rgb(4 8 15 / 72%);
+    --color-success: #69d6a6;
+    --color-success-subtle: #15392f;
+    --color-warning: #f2c66d;
+    --color-warning-subtle: #453515;
+    --color-danger: #f28b92;
+    --color-danger-action: #c54b56;
+    --color-danger-action-hover: #a93843;
+    --color-danger-subtle: #48282e;
+    --color-danger-border: #71383e;
+    --color-info: #a8b8ff;
+    --color-info-subtle: #273451;
+    --color-neutral: #b3c0d2;
+    --color-neutral-subtle: #283447;
+    --color-neutral-border: #3a4960;
+    --shadow-soft: 0 12px 28px rgb(0 0 0 / 22%), 0 1px 3px rgb(0 0 0 / 16%);
 }

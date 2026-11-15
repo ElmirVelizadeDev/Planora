@@ -7,6 +7,8 @@ This note describes the current authentication and authorization boundaries impl
 - The default Laravel `web` guard uses the session driver and Eloquent User provider. The first-party Vue SPA uses Sanctum stateful session authentication, credentials, CSRF cookies, and the shared Axios client.
 - Login requires a valid account with an allowed role, active status, and verified email. Successful login regenerates the session; logout invalidates it.
 - The current-user API uses `auth:sanctum` and active-account middleware. APIs that change data apply their own role, policy, request, and record-scope checks.
+- My Profile mutations operate on the authenticated account without accepting target IDs. The profile request prohibits email, role, status, permissions, and password fields; avatar uploads are image/MIME/dimension/size validated. Password changes require the current password and configured password policy, rotate the remember token, revoke personal access tokens, and update the current session's password hash so other stateful sessions become invalid.
+- Email remains read-only in My Profile until an authenticated email-change verification flow exists. Account deletion stays Admin-managed under the existing soft-delete and last-active-administrator protections.
 - Admin Vue routes are permission-aware for the limited Moderator destinations (Dashboard, Users, Activity Logs); all other Admin destinations require Admin. Laravel APIs independently enforce the corresponding role and policy checks.
 
 ## Registration and one-time codes

@@ -1,5 +1,6 @@
 import { useAuthStore } from '../features/auth/stores/authStore.js';
 import { moderatorCanAccessAdminRoute, moderatorLandingRoute } from '../features/auth/managementAccess.js';
+import { initializeAppearancePreferences, resetAppearanceSession } from '../features/appearance/composables/appearancePreferences.js';
 
 export function installRouteGuards(router) {
     router.beforeEach(async (to) => {
@@ -11,6 +12,9 @@ export function installRouteGuards(router) {
         if (!auth.initialized || (to.meta.requiresAuth && !user)) {
             user = await auth.fetchCurrentUser();
         }
+
+        if (user) initializeAppearancePreferences(user.id);
+        else if (auth.initialized) resetAppearanceSession();
 
         if (to.meta.guestOnly && user) {
             if (auth.hasRole('admin')) return { name: 'admin.dashboard' };

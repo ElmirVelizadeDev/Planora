@@ -5,7 +5,7 @@
                 <tbody>
                     <tr v-for="project in projects" :key="project.id">
                         <td data-label="Project"><RouterLink class="admin-projects-project-copy" :to="{ name: 'admin.projects.show', params: { projectId: project.id } }"><strong :title="project.name">{{ project.name }}</strong><span :title="project.description || ''">{{ project.description || 'No description' }}</span></RouterLink></td>
-                        <td data-label="Owner"><div v-if="project.owner" class="admin-projects-owner"><span>{{ initials(project.owner.name) }}</span><div><strong>{{ project.owner.name }}</strong><small>{{ project.owner.email }}</small></div></div><span v-else class="admin-projects-muted">Unassigned</span></td>
+                        <td data-label="Owner"><div v-if="project.owner" class="admin-projects-owner"><UserAvatar class="admin-projects-owner-avatar user-avatar--plain" :name="project.owner.name" :image-src="project.owner.avatar || ''" /><div><strong>{{ project.owner.name }}</strong><small>{{ project.owner.email }}</small></div></div><span v-else class="admin-projects-muted">Unassigned</span></td>
                         <td data-label="Category">{{ project.category?.name || '—' }}</td>
                         <td data-label="Status"><AdminStatusSelect v-if="canManageStatus" :model-value="project.status" :options="ADMIN_PROJECT_STATUSES" :disabled="loading" :aria-label="`Change status for ${project.name}`" @update:model-value="$emit('status-change', { project, status: $event })" /><AdminProjectStatusBadge v-else :status="project.status" /></td>
                         <td data-label="Start date"><time v-if="project.start_date" :datetime="project.start_date">{{ formatDate(project.start_date) }}</time><span v-else class="admin-projects-muted">—</span></td>
@@ -21,6 +21,7 @@
 
 <script setup>
 import AdminProjectStatusBadge from './AdminProjectStatusBadge.vue';
+import UserAvatar from '../../../../shared/components/UserAvatar.vue';
 import AdminStatusSelect from '../../../../shared/components/AdminStatusSelect.vue';
 import { ADMIN_PROJECT_STATUSES } from '../composables/useAdminProjects.js';
 

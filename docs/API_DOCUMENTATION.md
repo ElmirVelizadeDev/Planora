@@ -18,6 +18,12 @@ Protected routes require an authenticated active account and the role or policy 
 | `POST` | `/api/v1/auth/password/reset` | Public, reset password using verified recovery session |
 | `POST` | `/api/v1/auth/logout` | Authenticated session logout |
 | `GET` | `/api/v1/user` | Authenticated active account profile |
+| `PATCH` | `/api/v1/user/profile` | Update the authenticated account's first name, last name, or phone; email and privileges are not editable here |
+| `POST` | `/api/v1/user/avatar` | Upload or replace the authenticated account's profile photo |
+| `DELETE` | `/api/v1/user/avatar` | Remove the authenticated account's profile photo |
+| `PUT` | `/api/v1/user/password` | Change the authenticated account's password after current-password verification; throttled |
+
+These account endpoints accept no user ID and operate only on the authenticated active account. Password changes revoke Sanctum personal access tokens, rotate the remember token, and invalidate other stateful sessions through the stored password hash. Email remains read-only because authenticated email changes do not currently have a verification workflow. Self-service account deletion is not available; account lifecycle remains Admin-managed.
 
 See [Authentication and Security](AUTHENTICATION_SECURITY.md), [Registration OTP lifecycle](REGISTRATION_OTP.md), and [Local mail testing](LOCAL_MAIL_TESTING.md) for the authentication flow and development tooling.
 

@@ -3,7 +3,7 @@
     min-width: 0;
     align-items: center;
     gap: 10px;
-    color: var(--color-text, #20283a);
+    color: var(--color-text, var(--color-text));
 }
 
 .category-badge > i {
@@ -23,7 +23,7 @@
     flex: 0 0 auto;
     place-items: center;
     border-radius: 12px;
-    background: color-mix(in srgb,var(--category-color) 11%,white);
+    background: color-mix(in srgb,var(--category-color) 11%,var(--color-surface));
 }
 
 .category-badge.is-card > i,.category-badge.is-detail > i {

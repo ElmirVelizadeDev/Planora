@@ -178,23 +178,25 @@ onBeforeUnmount(closeMenu);
 <style>
 .admin-status-select { display: inline-flex; max-width: 100%; vertical-align: middle; }
 .admin-status-select__trigger { display: inline-flex; width: 138px; max-width: 100%; min-height: 32px; align-items: center; gap: 8px; padding: 0 9px; border: 1px solid var(--color-border); border-radius: 9px; color: var(--color-text); background: var(--color-surface); font: inherit; font-size: 11px; font-weight: 600; text-align: left; cursor: pointer; transition: border-color 140ms ease, background 140ms ease, box-shadow 140ms ease; }
-.admin-status-select__trigger:hover:not(:disabled) { border-color: #c9cffc; background: #fbfbff; }
-.admin-status-select__trigger:focus-visible { outline: 0; border-color: var(--color-primary); box-shadow: 0 0 0 3px rgb(91 108 250 / 10%); }
+.admin-status-select__trigger:hover:not(:disabled) { border-color: var(--color-accent-border); background: var(--color-accent-subtle); }
+.admin-status-select__trigger:focus-visible { outline: 0; border-color: var(--color-accent-border); box-shadow: 0 0 0 3px var(--color-focus-ring); }
 .admin-status-select__trigger:disabled { cursor: wait; opacity: .58; }
 .admin-status-select__value { min-width: 0; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .admin-status-select__dot { width: 7px; height: 7px; flex: 0 0 7px; border-radius: 50%; background: #8993a5; }
 .admin-status-select__chevron { width: 13px; height: 13px; flex: 0 0 13px; fill: none; stroke: #8490a5; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.6; transition: transform 140ms ease; }
 .admin-status-select__trigger[aria-expanded="true"] .admin-status-select__chevron { transform: rotate(180deg); }
-.admin-status-select__trigger.is-active .admin-status-select__dot, .admin-status-select__option.is-active .admin-status-select__dot, .admin-status-select__trigger.is-in_progress .admin-status-select__dot, .admin-status-select__option.is-in_progress .admin-status-select__dot { background: #5b6cfa; }
+.admin-status-select__trigger.is-active .admin-status-select__dot, .admin-status-select__option.is-active .admin-status-select__dot { background: var(--color-accent); }
+.admin-status-select__trigger.is-in_progress .admin-status-select__dot, .admin-status-select__option.is-in_progress .admin-status-select__dot { background: #5b6cfa; }
 .admin-status-select__trigger.is-on_hold .admin-status-select__dot, .admin-status-select__option.is-on_hold .admin-status-select__dot { background: #b98736; }
-.admin-status-select__trigger.is-completed .admin-status-select__dot, .admin-status-select__option.is-completed .admin-status-select__dot { background: #328366; }
+.admin-status-select__trigger.is-completed .admin-status-select__dot, .admin-status-select__option.is-completed .admin-status-select__dot { background: var(--color-success-subtle); }
 .admin-status-select__menu { position: fixed; z-index: 1200; overflow: auto; padding: 5px; border: 1px solid var(--color-border); border-radius: 9px; color: var(--color-text); background: var(--color-surface); box-shadow: 0 10px 24px rgb(32 40 58 / 12%); transform-origin: top center; overscroll-behavior: contain; }
 .admin-status-select__menu.is-above { transform-origin: bottom center; }
 .admin-status-select__option { display: flex; min-height: 34px; align-items: center; gap: 9px; padding: 0 9px; border-radius: 7px; color: var(--color-text); font-size: 11px; font-weight: 550; cursor: pointer; transition: background 140ms ease, color 140ms ease; }
-.admin-status-select__option:hover, .admin-status-select__option.is-active { background: #f5f6ff; }
-.admin-status-select__option.is-selected { color: #4657db; background: #f0f2ff; font-weight: 650; }
-.admin-status-select__option.is-on_hold.is-selected { color: #8a6a2a; background: #fbf5e8; }
-.admin-status-select__option.is-completed.is-selected { color: #328366; background: #eaf7f1; }
+.admin-status-select__option:hover { background: var(--color-accent-subtle); }
+.admin-status-select__option.is-active { background: var(--color-info-subtle); }
+.admin-status-select__option.is-selected { color: var(--color-accent-text); background: var(--color-selected-background); font-weight: 650; }
+.admin-status-select__option.is-on_hold.is-selected { color: var(--color-warning); background: var(--color-warning-subtle); }
+.admin-status-select__option.is-completed.is-selected { color: var(--color-success); background: var(--color-success-subtle); }
 .admin-status-select__check { width: 14px; height: 14px; margin-left: auto; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.8; }
 .admin-status-menu-enter-active, .admin-status-menu-leave-active { transition: opacity 140ms ease, transform 140ms ease; }
 .admin-status-menu-enter-from, .admin-status-menu-leave-to { opacity: 0; transform: translateY(-3px) scale(.99); }

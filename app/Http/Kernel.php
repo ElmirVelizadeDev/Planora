@@ -58,6 +58,7 @@ class Kernel extends HttpKernel
         'active' => \App\Http\Middleware\EnsureActiveAccount::class,
         'management.access' => \App\Http\Middleware\RequireManagementAccess::class,
         'dashboard.access' => \App\Http\Middleware\RequireDashboardAccess::class,
+        'maintenance.bootstrap' => \App\Http\Middleware\EnsureAdminMaintenanceBootstrap::class,
         'auth.basic' => \Illuminate\Auth\Middleware\AuthenticateWithBasicAuth::class,
         'auth.session' => \Illuminate\Session\Middleware\AuthenticateSession::class,
         'cache.headers' => \Illuminate\Http\Middleware\SetCacheHeaders::class,

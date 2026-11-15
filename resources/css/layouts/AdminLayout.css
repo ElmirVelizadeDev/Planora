@@ -22,8 +22,8 @@
 .admin-layout :deep(.admin-tasks-search:hover:not(:has(input:disabled))),
 .admin-layout :deep(.ac-search:hover:not(:has(input:disabled))),
 .admin-layout :deep(.access-search:hover:not(:has(input:disabled))) {
-    border-color: #c9cffc;
-    background-color: #fbfbff;
+    border-color: var(--color-border-subtle);
+    background-color: var(--color-surface-hover);
 }
 
 .admin-layout :deep(.admin-users-search:focus-within),
@@ -31,9 +31,9 @@
 .admin-layout :deep(.admin-tasks-search:focus-within),
 .admin-layout :deep(.ac-search:focus-within),
 .admin-layout :deep(.access-search:focus-within) {
-    border-color: var(--color-primary);
+    border-color: var(--color-accent-border);
     background-color: var(--color-surface);
-    box-shadow: 0 0 0 3px rgb(91 108 250 / 10%);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 10%, transparent);
 }
 
 .admin-layout :deep(.admin-users-search-icon),
@@ -89,17 +89,17 @@
 .admin-layout :deep(.reports-filter-control input:hover:not(:focus):not(:disabled)),
 .admin-layout :deep(.report-search-filter__control > input:hover:not(:focus):not(:disabled)),
 .admin-layout :deep(.report-table-search input:hover:not(:focus):not(:disabled)) {
-    border-color: #c9cffc;
-    background-color: #fbfbff;
+    border-color: var(--color-border-subtle);
+    background-color: var(--color-surface-hover);
 }
 
 .admin-layout :deep(.al-toolbar .al-actor-search input:focus),
 .admin-layout :deep(.reports-filter-control input:focus),
 .admin-layout :deep(.report-search-filter__control > input:focus),
 .admin-layout :deep(.report-table-search input:focus) {
-    border-color: var(--color-primary);
+    border-color: var(--color-accent-border);
     background-color: var(--color-surface);
-    box-shadow: 0 0 0 3px rgb(91 108 250 / 10%);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 10%, transparent);
 }
 
 .admin-layout :deep(select),
@@ -113,23 +113,23 @@
 
 .admin-layout :deep(select:hover:not(:disabled)),
 .admin-layout :deep(input[type="date"]:hover:not(:disabled)) {
-    border-color: #c9cffc;
-    background-color: #fbfbff;
+    border-color: var(--color-border-subtle);
+    background-color: var(--color-surface-hover);
 }
 
 .admin-layout :deep(select:focus),
 .admin-layout :deep(input[type="date"]:focus) {
-    border-color: var(--color-primary);
+    border-color: var(--color-accent-border);
     background-color: var(--color-surface);
-    box-shadow: 0 0 0 3px rgb(91 108 250 / 10%);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 10%, transparent);
 }
 
 .admin-layout :deep(select option:hover:not(:checked)) {
     color: var(--color-text);
-    background: #f5f6ff;
+    background: var(--color-accent-subtle);
 }
 
 .admin-layout :deep(select option:checked) {
-    color: #4657db;
-    background: #f0f2ff;
+    color: var(--color-accent-text);
+    background: var(--color-accent-subtle);
 }

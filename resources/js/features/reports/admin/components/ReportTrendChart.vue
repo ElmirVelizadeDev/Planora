@@ -20,8 +20,10 @@ const props = defineProps({
     description: { type: String, required: true },
     seriesLabel: { type: String, default: 'Created' },
     series: { type: Array, default: () => [] },
-    color: { type: String, default: '#5B6CFA' },
 });
+import { useAppearancePreferences } from '@/features/appearance/composables/appearancePreferences';
+const appearance = useAppearancePreferences();
+const color = computed(() => appearance.preferences.accent);
 const hasData = computed(() => props.series.some((point) => Number(point.value) > 0));
 const max = computed(() => Math.max(1, ...props.series.map((point) => Number(point.value) || 0)));
 const min = computed(() => Math.min(0, ...props.series.map((point) => Number(point.value) || 0)));

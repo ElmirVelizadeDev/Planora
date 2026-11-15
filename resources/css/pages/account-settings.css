@@ -1,0 +1,81 @@
+.account-settings-layout { display: grid; grid-template-columns: minmax(190px, 225px) minmax(0, 1fr); align-items: start; gap: 18px; }
+.account-settings-navigation { position: sticky; top: 92px; display: grid; gap: 5px; min-width: 0; padding: 13px 10px 10px; border: 1px solid var(--color-border-subtle); border-radius: 15px; background: var(--color-surface); box-shadow: var(--shadow-soft); }
+.account-settings-navigation > p { margin: 2px 9px 7px; color: var(--color-text-muted); font-size: 9px; font-weight: 750; letter-spacing: .12em; }
+.account-settings-navigation > a { display: flex; min-height: 40px; align-items: center; gap: 10px; padding: 0 10px; border: 1px solid transparent; border-radius: 9px; color: var(--color-text-secondary); font-size: 11px; font-weight: 600; text-decoration: none; transition: color 140ms ease, background 140ms ease, border-color 140ms ease; }
+.account-settings-navigation > a:hover { color: var(--color-text); background: var(--color-surface-secondary); }
+.account-settings-navigation > a.is-active { border-color: var(--color-accent-border); color: var(--color-accent-text); background: var(--color-selected-background); }
+.account-settings-navigation > a:focus-visible { outline: 3px solid var(--color-focus-ring); outline-offset: 2px; }
+.account-settings-navigation > a svg { width: 16px; height: 16px; flex: 0 0 16px; fill: none; stroke: currentColor; stroke-width: 1.55; stroke-linecap: round; stroke-linejoin: round; }
+.account-settings-navigation > a circle { fill: none; }
+.account-settings-navigation__account { display: flex; min-width: 0; align-items: center; gap: 9px; margin-top: 9px; padding: 12px 5px 3px; border-top: 1px solid var(--color-border-subtle); }
+.account-settings-navigation__account .user-avatar { width: 32px; height: 32px; flex: 0 0 32px; font-size: 11px; }
+.account-settings-navigation__account > span:last-child { display: grid; min-width: 0; gap: 3px; }
+.account-settings-navigation__account strong,.account-settings-navigation__account small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.account-settings-navigation__account strong { color: var(--color-text); font-size: 10px; font-weight: 650; }
+.account-settings-navigation__account small { color: var(--color-text-muted); font-size: 9px; }
+.account-settings-content { display: grid; min-width: 0; gap: 20px; }
+.account-settings-section { display: grid; min-width: 0; gap: 12px; scroll-margin-top: 96px; }
+.account-settings-section-heading { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; padding: 2px 2px 0; }
+.account-settings-section-heading h2 { margin: 0; color: var(--color-text); font-size: 17px; font-weight: 720; letter-spacing: -.025em; }
+.account-settings-section-heading p { margin: 5px 0 0; color: var(--color-text-secondary); font-size: 11px; line-height: 1.5; }
+.account-settings-section .profile-overview { margin-bottom: 0; }
+.account-preferences-card { display: grid; gap: 12px; padding: 22px; border: 1px solid var(--color-border-subtle); border-radius: 15px; background: var(--color-surface); box-shadow: var(--shadow-soft); }
+.account-preferences-card__title { display: flex; align-items: center; gap: 11px; }
+.account-preferences-icon { display: grid; width: 36px; height: 36px; flex: 0 0 36px; place-items: center; border: 1px solid var(--color-accent-border); border-radius: 10px; color: var(--color-accent-text); background: var(--color-accent-subtle); font-size: 18px; }
+.account-preferences-icon svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.55; stroke-linecap: round; stroke-linejoin: round; }
+.account-preferences-icon svg circle { fill: none; }
+.account-preferences-card__title h3 { margin: 0; color: var(--color-text); font-size: 13px; font-weight: 680; }
+.account-preferences-card__title p { margin: 4px 0 0; color: var(--color-text-secondary); font-size: 10px; }
+.account-preferences-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); margin: 0; border-top: 1px solid var(--color-border-subtle); }
+.account-preferences-list > div { display: flex; min-width: 0; min-height: 42px; align-items: center; justify-content: space-between; gap: 10px; padding: 0 8px; border-bottom: 1px solid var(--color-border-subtle); }
+.account-preferences-list dt { color: var(--color-text-secondary); font-size: 10px; }
+.account-preferences-list dd { display: inline-flex; min-width: 0; align-items: center; gap: 6px; margin: 0; color: var(--color-text); font-size: 10px; font-weight: 650; text-align: right; }
+.account-settings-accent-dot { width: 10px; height: 10px; flex: 0 0 10px; border: 1px solid var(--color-border); border-radius: 50%; }
+.account-preferences-link { justify-self: start; min-height: 37px; }
+.account-settings-page .profile-page__header { margin-bottom: 20px; }
+
+/* Keep the shared profile controls aligned with the account theme tokens on this page. */
+.account-settings-page .profile-role-badge { border-color: var(--color-accent-border); color: var(--color-accent-text); background: var(--color-accent-subtle); }
+.account-settings-page .profile-status-badge.is-active i { background: var(--color-success); }
+.account-settings-page .profile-status-badge.is-suspended,
+.account-settings-page .profile-status-badge.is-banned { border-color: var(--color-danger-border); color: var(--color-danger); }
+.account-settings-page .profile-status-badge.is-suspended i,
+.account-settings-page .profile-status-badge.is-banned i { background: var(--color-danger); }
+.account-settings-page .profile-verification:not(.is-verified) { color: var(--color-warning); }
+.account-settings-page .profile-verification:not(.is-verified) i { background: var(--color-warning); }
+.account-settings-page .profile-verification.is-verified i { background: var(--color-success); }
+.account-settings-page .profile-field input { border-color: var(--color-input-border); background: var(--color-input-background); }
+.account-settings-page .profile-field input::placeholder { color: var(--color-input-placeholder); }
+.account-settings-page .profile-field input:focus { border-color: var(--color-accent-border); box-shadow: 0 0 0 3px var(--color-focus-ring); }
+.account-settings-page .profile-field input:disabled,
+.account-settings-page .profile-field input:read-only { color: var(--color-text-secondary); background: var(--color-surface-secondary); }
+.account-settings-page .profile-field input[aria-invalid="true"] { border-color: var(--color-danger-border); }
+.account-settings-page .profile-field input[aria-invalid="true"]:focus { border-color: var(--color-danger); box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-danger) 24%, transparent); }
+.account-settings-page .profile-field-error { color: var(--color-danger); }
+.account-settings-page .profile-password-guidance span.is-valid,
+.account-settings-page .profile-password-guidance span.is-valid i { color: var(--color-success); }
+.account-settings-page .profile-message--success { border-color: var(--color-border-subtle); color: var(--color-success); background: var(--color-success-subtle); }
+.account-settings-page .profile-message--success > span { color: var(--color-surface); background: var(--color-success); }
+.account-settings-page .profile-message--error { border-color: var(--color-danger-border); color: var(--color-danger); background: var(--color-danger-subtle); }
+.account-settings-page .profile-message--error > span { color: var(--color-surface); background: var(--color-danger); }
+
+@media (max-width: 820px) {
+    .account-settings-layout { grid-template-columns: minmax(0, 1fr); }
+    .account-settings-navigation { position: static; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: center; }
+    .account-settings-navigation > p { grid-column: 1 / -1; }
+    .account-settings-navigation__account { display: none; }
+}
+
+@media (max-width: 520px) {
+    .account-settings-navigation { grid-template-columns: minmax(0, 1fr); padding: 9px; }
+    .account-settings-navigation > p { margin-bottom: 2px; }
+    .account-settings-navigation > a { min-height: 42px; }
+    .account-settings-content { gap: 17px; }
+    .account-settings-section-heading h2 { font-size: 15px; }
+    .account-preferences-card { padding: 17px; }
+    .account-preferences-list { grid-template-columns: minmax(0, 1fr); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .account-settings-navigation > a { transition: none; }
+}

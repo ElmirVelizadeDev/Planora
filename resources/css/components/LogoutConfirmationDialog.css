@@ -28,23 +28,25 @@
     margin: 0 auto 15px;
     place-items: center;
     border-radius: 14px;
-    color: var(--color-primary);
-    background: #f0f2ff;
+    color: var(--color-accent-text);
+    background: var(--color-accent-subtle);
 }
 
 .logout-dialog-icon svg { width: 21px; height: 21px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.7; }
 .logout-dialog h2 { margin: 0; color: var(--color-text); font-size: 19px; font-weight: 700; letter-spacing: -.025em; }
 .logout-dialog > p:not(.logout-dialog-error) { max-width: 320px; margin: 8px auto 0; color: var(--color-text-secondary); font-size: 12px; line-height: 1.6; }
-.logout-dialog .logout-dialog-error { margin: 14px 0 0; color: var(--color-danger, #a33131); font-size: 12px; line-height: 1.5; }
+.logout-dialog .logout-dialog-error { margin: 14px 0 0; color: var(--color-danger, var(--color-danger)); font-size: 12px; line-height: 1.5; }
 .logout-dialog-actions { display: flex; justify-content: center; gap: 10px; margin-top: 23px; }
 .logout-dialog-actions button { display: inline-flex; min-width: 116px; min-height: 42px; align-items: center; justify-content: center; gap: 8px; padding: 0 15px; border: 1px solid transparent; border-radius: 10px; font: inherit; font-size: 12px; font-weight: 650; cursor: pointer; transition: background 140ms ease, border-color 140ms ease, color 140ms ease, box-shadow 140ms ease, opacity 140ms ease; }
-.logout-dialog-actions button:focus-visible { outline: 3px solid rgb(91 108 250 / 28%); outline-offset: 2px; }
+.logout-dialog-actions button:focus-visible { outline: 3px solid var(--color-focus-ring); outline-offset: 2px; }
 .logout-dialog-actions button:disabled { cursor: wait; opacity: .65; }
 .logout-dialog-cancel { border-color: var(--color-border) !important; color: var(--color-text); background: var(--color-surface); }
 .logout-dialog-cancel:hover:not(:disabled) { background: var(--color-background); }
-.logout-dialog-confirm { color: #fff; background: var(--color-primary); box-shadow: 0 4px 10px rgb(91 108 250 / 16%); }
-.logout-dialog-confirm:hover:not(:disabled) { background: #4d5de6; box-shadow: 0 6px 14px rgb(91 108 250 / 22%); }
-.logout-dialog-spinner { width: 13px; height: 13px; border: 2px solid rgb(255 255 255 / 45%); border-top-color: #fff; border-radius: 50%; animation: logout-dialog-spin 700ms linear infinite; }
+.logout-dialog-confirm { color: var(--color-accent-foreground); background: var(--color-accent); box-shadow: 0 4px 10px var(--color-accent-shadow); }
+.logout-dialog-confirm:hover:not(:disabled) { background: var(--color-accent-hover); box-shadow: 0 6px 14px var(--color-accent-shadow); }
+.logout-dialog-confirm.is-danger { color: #fff; background: var(--color-danger-action); box-shadow: 0 4px 10px rgb(183 82 88 / 16%); }
+.logout-dialog-confirm.is-danger:hover:not(:disabled) { background: var(--color-danger-action-hover); box-shadow: 0 6px 14px rgb(183 82 88 / 22%); }
+.logout-dialog-spinner { width: 13px; height: 13px; border: 2px solid rgb(255 255 255 / 45%); border-top-color: var(--color-border-subtle); border-radius: 50%; animation: logout-dialog-spin 700ms linear infinite; }
 .logout-dialog-enter-active,
 .logout-dialog-leave-active { transition: opacity 160ms ease; }
 .logout-dialog-enter-active .logout-dialog,

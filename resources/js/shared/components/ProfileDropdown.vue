@@ -22,13 +22,22 @@
                 <span>{{ email }}</span>
                 <span>{{ roleLabel }}</span>
             </div>
-            <RouterLink v-if="variant === 'user'" :to="{ name: 'profile.show' }" role="menuitem" @click="open = false">My Profile</RouterLink>
-            <span v-else-if="variant === 'admin'" class="header-menu-unavailable" role="menuitem" aria-disabled="true">My Profile · unavailable</span>
-            <RouterLink v-if="variant !== 'limited'" :to="settingsRoute" role="menuitem" @click="open = false">Account Settings</RouterLink>
-            <span class="header-menu-unavailable" role="menuitem" aria-disabled="true">Appearance · not available</span>
+            <RouterLink v-if="variant !== 'limited'" class="profile-menu-item" :to="{ name: 'profile.show' }" role="menuitem" @click="open = false">
+                <svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="6.2" r="3.1"/><path d="M3.8 17c.4-3 2.6-4.8 6.2-4.8s5.8 1.8 6.2 4.8"/></svg>
+                <span>My Profile</span>
+            </RouterLink>
+            <RouterLink class="profile-menu-item" :to="{ name: 'account.settings' }" role="menuitem" @click="open = false">
+                <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2.8v1.4m0 11.6v1.4M2.8 10h1.4m11.6 0h1.4M4.9 4.9l1 1m8.2 8.2 1 1m0-9.2-1 1m-8.2 8.2-1 1"/><circle cx="10" cy="10" r="3.2"/></svg>
+                <span>Account Settings</span>
+            </RouterLink>
+            <RouterLink v-if="variant !== 'limited'" class="profile-menu-item" :to="{ name: 'settings.appearance' }" role="menuitem" @click="open = false">
+                <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2.8a7.2 7.2 0 1 0 0 14.4h1.1a1.7 1.7 0 0 0 1.1-3c-.5-.4-.2-1.3.5-1.3h1.1a3.4 3.4 0 0 0 3.4-3.4c0-3.7-3.2-6.7-7.2-6.7Z"/><circle cx="6.5" cy="9" r=".8"/><circle cx="9.3" cy="6.4" r=".8"/><circle cx="13" cy="7" r=".8"/></svg>
+                <span>Appearance</span>
+            </RouterLink>
             <div class="header-menu-divider" role="separator" />
-            <button class="header-logout-button" type="button" aria-haspopup="dialog" role="menuitem" @click="requestLogout">
-                Logout
+            <button class="header-logout-button profile-menu-item" type="button" aria-haspopup="dialog" role="menuitem" @click="logout">
+                <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M8.2 4H4.8v12h3.4M11 6.5l3.5 3.5-3.5 3.5M7 10h7.2"/></svg>
+                <span>Logout</span>
             </button>
         </div>
     </div>
@@ -49,11 +58,14 @@ const { isOpen: logoutDialogOpen, requestLogout } = useLogoutConfirmation();
 const displayName = computed(() => auth.user?.name || 'Your account');
 const email = computed(() => auth.user?.email || '');
 const roleLabel = computed(() => (auth.user?.role || auth.roles?.[0] || '').replace(/[_-]+/g, ' ').replace(/\b\w/g, (letter) => letter.toUpperCase()));
-const settingsRoute = computed(() => ({ name: props.variant === 'admin' ? 'admin.settings.index' : 'settings.account' }));
 
 function onOutside(event) {
     if (logoutDialogOpen.value) return;
     if (!menu.value?.contains(event.target)) open.value = false;
+}
+function logout(event) {
+    open.value = false;
+    requestLogout(event);
 }
 onMounted(() => document.addEventListener('pointerdown', onOutside));
 onBeforeUnmount(() => document.removeEventListener('pointerdown', onOutside));

@@ -61,7 +61,7 @@
                     <header class="dashboard-card-heading"><div><h2>Recent registrations</h2><p>Newest accounts on Planora</p></div><RouterLink :to="{ name: 'admin.users.index' }">Manage users</RouterLink></header>
                     <ul v-if="data.users?.recent_registrations?.length" class="dashboard-registration-list">
                         <li v-for="user in data.users.recent_registrations" :key="user.id" class="dashboard-registration-row">
-                            <span class="dashboard-avatar" aria-hidden="true">{{ initials(user.name) }}</span>
+                            <UserAvatar class="dashboard-avatar user-avatar--plain" :name="user.name" :image-src="user.avatar || ''" />
                             <span class="dashboard-registration-copy"><strong>{{ user.name }}</strong><small>{{ user.email }}</small></span>
                             <span class="dashboard-user-status" :class="`is-${user.status}`">{{ label(user.status) }}</span>
                             <time>{{ date(user.created_at) }}</time>
@@ -84,6 +84,7 @@
 </template>
 
 <script setup>
+import UserAvatar from '../../shared/components/UserAvatar.vue';
 import { computed, onMounted, ref } from 'vue';
 import { useAuthStore } from '../../features/auth/stores/authStore.js';
 import { getAdminDashboard } from '../../features/dashboard/services/dashboardApi.js';

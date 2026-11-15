@@ -1,8 +1,11 @@
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
+import { useAppearancePreferences } from '../../features/appearance/composables/appearancePreferences.js';
 
 export function useWorkspaceSidebar() {
-    const sidebarCollapsed = ref(false);
+    const { preferences } = useAppearancePreferences();
+    const sidebarCollapsed = ref(preferences.sidebar === 'collapsed');
     const mobileSidebarOpen = ref(false);
+    watch(() => preferences.sidebar, (value) => { sidebarCollapsed.value = value === 'collapsed'; });
 
     function toggleSidebar() {
         if (window.matchMedia('(max-width: 820px)').matches) {

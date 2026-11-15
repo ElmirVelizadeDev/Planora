@@ -66,8 +66,7 @@
                             <tr v-for="user in users" :key="user.id">
                                 <td data-label="User">
                                     <div class="admin-users-identity">
-                                        <img v-if="user.avatar" class="admin-users-avatar" :src="user.avatar" :alt="''" loading="lazy">
-                                        <span v-else class="admin-users-avatar" aria-hidden="true">{{ initials(user.name) }}</span>
+                                        <UserAvatar class="admin-users-avatar user-avatar--plain" :name="user.name" :image-src="user.avatar || ''" />
                                         <span class="admin-users-user-copy"><strong>{{ user.name }}</strong><span>{{ user.email }}</span></span>
                                     </div>
                                 </td>
@@ -112,8 +111,7 @@
                     </template>
                     <template v-else>
                         <div class="admin-users-view-identity">
-                            <img v-if="dialog.user.avatar" class="admin-users-view-avatar" :src="dialog.user.avatar" alt="">
-                            <span v-else class="admin-users-view-avatar" aria-hidden="true">{{ initials(dialog.user.name) }}</span>
+                            <UserAvatar class="admin-users-view-avatar user-avatar--plain" :name="dialog.user.name" :image-src="dialog.user.avatar || ''" />
                             <div><h2 :id="dialogTitleId">{{ dialog.user.name || 'Unnamed user' }}</h2><p>{{ dialog.user.email || 'No email address' }}</p></div>
                             <span class="admin-users-status" :class="`is-${dialog.user.status || 'inactive'}`"><i></i>{{ statusLabel(dialog.user.status) }}</span>
                         </div>
@@ -222,8 +220,7 @@
                     <p class="admin-users-dialog-eyebrow is-danger">Remove account</p>
                     <h2 :id="dialogTitleId">Delete this user?</h2>
                     <div class="admin-users-delete-identity">
-                        <img v-if="dialog.user.avatar" class="admin-users-view-avatar" :src="dialog.user.avatar" alt="">
-                        <span v-else class="admin-users-view-avatar" aria-hidden="true">{{ initials(dialog.user.name) }}</span>
+                        <UserAvatar class="admin-users-view-avatar user-avatar--plain" :name="dialog.user.name" :image-src="dialog.user.avatar || ''" />
                         <div><strong>{{ dialog.user.name || 'Unnamed user' }}</strong><span>{{ dialog.user.email || 'No email address' }}</span></div>
                     </div>
                     <div class="admin-users-delete-warning" role="note">
@@ -244,6 +241,7 @@
 </template>
 
 <script setup>
+import UserAvatar from '../../../shared/components/UserAvatar.vue';
 import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue';
 import { useAuthStore } from '../../../features/auth/stores/authStore.js';
 import api from '../../../shared/services/api.js';

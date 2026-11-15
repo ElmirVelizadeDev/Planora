@@ -5,7 +5,7 @@
                 <tbody>
                     <tr v-for="task in tasks" :key="task.id">
                         <td data-label="Task"><RouterLink class="admin-tasks-task-copy" :to="{ name: 'admin.tasks.show', params: { taskId: task.id } }"><strong>{{ task.title }}</strong><span>{{ task.description || `Task #${task.id}` }}</span></RouterLink></td>
-                        <td data-label="Assigned user"><div class="admin-tasks-identity"><img v-if="task.assigned_user?.avatar" :src="task.assigned_user.avatar" alt="" class="admin-tasks-avatar"><span v-else class="admin-tasks-avatar" aria-hidden="true">{{ initials(task.assigned_user?.name) }}</span><span class="admin-tasks-user-copy"><strong>{{ task.assigned_user?.name || 'Unassigned' }}</strong><span>{{ task.assigned_user?.email || '—' }}</span></span></div></td>
+                        <td data-label="Assigned user"><div class="admin-tasks-identity"><UserAvatar class="admin-tasks-avatar user-avatar--plain" :name="task.assigned_user?.name || 'Unassigned'" :image-src="task.assigned_user?.avatar || ''" /><span class="admin-tasks-user-copy"><strong>{{ task.assigned_user?.name || 'Unassigned' }}</strong><span>{{ task.assigned_user?.email || '—' }}</span></span></div></td>
                         <td data-label="Category">{{ task.category?.name || '—' }}</td>
                         <td data-label="Priority"><AdminTaskPriorityBadge :priority="task.priority" /></td>
                         <td data-label="Status"><AdminStatusSelect v-if="canManageStatus && !deletedView" :model-value="task.status" :options="ADMIN_TASK_STATUSES" :disabled="loading" :aria-label="`Change status for ${task.title}`" @update:model-value="$emit('status-change', { task, status: $event })" /><AdminTaskStatusBadge v-else :status="task.status" /></td>
@@ -23,6 +23,7 @@
 import AdminTaskPriorityBadge from './AdminTaskPriorityBadge.vue';
 import AdminTaskStatusBadge from './AdminTaskStatusBadge.vue';
 import AdminStatusSelect from '../../../../shared/components/AdminStatusSelect.vue';
+import UserAvatar from '../../../../shared/components/UserAvatar.vue';
 
 const ADMIN_TASK_STATUSES = [
     { value: 'pending', label: 'Pending' },

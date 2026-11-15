@@ -72,7 +72,7 @@ const sections = [
         id: 'how-we-use-your-information',
         title: 'How We Use Your Information',
         paragraphs: [
-            'The application uses account information to create and verify accounts, authenticate users, maintain a signed-in session, support password recovery, show account details, and apply account roles and status. Operational activity records are also created for events such as sign-in, registration, and administrator account changes.',
+            'The application uses account information to create and verify accounts, authenticate users, maintain a signed-in session, support password recovery, show account details, and apply account roles and status. Operational activity records are also created for events such as sign-in, registration, account profile changes, password changes, and administrator account changes.',
             'Registration currently requires one checkbox stating agreement to the Terms & Conditions and acknowledgment that the Privacy Policy has been read. The server validates that checkbox before beginning registration; the project does not store a separate Privacy Policy acceptance timestamp or record.',
             'The project does not configure an advertising or analytics integration in the reviewed application code. This does not describe any separate tools that an operator may add to a deployed environment.',
         ],
@@ -82,7 +82,7 @@ const sections = [
         title: 'Account Information',
         paragraphs: [
             'Passwords are stored using Laravel’s password-hashing mechanism rather than as readable password text. The application uses verified email status when controlling sign-in. Account roles, status, and management permissions determine which protected areas and administrative actions are available.',
-            'Profile and account screens in this project are not all connected to working self-service APIs. The information an account can currently change may therefore differ from fields supported by the database or administrator tools.',
+            'The shared My Profile page lets an account owner update their first and last name, phone number, profile photo, and password. Email changes are not available there because authenticated email changes do not yet have a verification workflow. Account deletion remains administrator-managed under the application’s account-lifecycle protections.',
         ],
     },
     {
@@ -98,7 +98,7 @@ const sections = [
         title: 'Data Storage and Security',
         paragraphs: [
             'Account records and operational data are stored using the database configured for the deployment. Passwords are hashed, and temporary authentication codes and recovery credentials are managed through dedicated records with expiry and attempt information. The application uses session-based authentication, CSRF protections, and role checks in its current code.',
-            'Administrator-managed profile photos are written to the configured public file-storage disk and may be served through a public storage URL. The actual database, storage provider, server location, transport configuration, backups, and other infrastructure controls depend on deployment and are not established by this repository. No security certification or absolute security guarantee is claimed here.',
+            'Profile photos uploaded by account owners or administrators are written to the configured public file-storage disk and may be served through a public storage URL. The actual database, storage provider, server location, transport configuration, backups, and other infrastructure controls depend on deployment and are not established by this repository. No security certification or absolute security guarantee is claimed here.',
         ],
     },
     {

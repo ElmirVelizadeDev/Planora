@@ -9,10 +9,10 @@
 .auth-remember-control { position: relative; display: inline-flex; min-height: 28px; align-items: center; gap: 8px; color: var(--color-text-secondary); cursor: pointer; font-size: 11px; font-weight: 500; user-select: none; }
 .auth-remember-control input { position: absolute; width: 18px; height: 18px; margin: 0; opacity: 0; }
 .auth-remember-check { display: grid; width: 17px; height: 17px; flex: 0 0 17px; place-items: center; border: 1px solid var(--color-border); border-radius: 5px; background: var(--color-surface); transition: border-color 140ms ease, background-color 140ms ease, box-shadow 140ms ease; }
-.auth-remember-control:hover .auth-remember-check { border-color: var(--color-primary); }
-.auth-remember-control input:checked + .auth-remember-check { border-color: var(--color-primary); background: var(--color-primary); }
-.auth-remember-control input:checked + .auth-remember-check::after { width: 8px; height: 5px; margin-top: -2px; border-bottom: 1.5px solid white; border-left: 1.5px solid white; content: ''; transform: rotate(-45deg); }
-.auth-remember-control input:focus-visible + .auth-remember-check { outline: 3px solid rgb(91 108 250 / 24%); outline-offset: 2px; }
+.auth-remember-control:hover .auth-remember-check { border-color: var(--color-accent-border); }
+.auth-remember-control input:checked + .auth-remember-check { border-color: var(--color-accent-border); background: var(--color-accent); }
+.auth-remember-control input:checked + .auth-remember-check::after { width: 8px; height: 5px; margin-top: -2px; border-bottom: 1.5px solid var(--color-border-subtle); border-left: 1.5px solid var(--color-border-subtle); content: ''; transform: rotate(-45deg); }
+.auth-remember-control input:focus-visible + .auth-remember-check { outline: 3px solid color-mix(in srgb, var(--color-accent) 24%, transparent); outline-offset: 2px; }
 .auth-remember-control input:checked ~ span:last-child { color: var(--color-text); }
 @media (max-width: 540px) {
     .page-login .auth-card { padding: 22px; }

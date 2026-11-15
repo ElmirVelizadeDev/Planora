@@ -32,7 +32,17 @@ class DashboardDataService
                 'total' => (int) $counts->total, 'active' => (int) $counts->active, 'inactive' => (int) $counts->inactive,
                 'suspended' => (int) $counts->suspended, 'banned' => (int) $counts->banned,
                 'moderators' => $admin ? User::query()->where('role', 'moderator')->count() : (int) $counts->moderators,
-                'recent_registrations' => (clone $users)->latest('created_at')->limit(5)->get(['id', 'name', 'email', 'role', 'status', 'created_at']),
+                'recent_registrations' => (clone $users)->latest('created_at')->limit(5)
+                    ->get(['id', 'name', 'email', 'role', 'status', 'created_at', 'profile_photo'])
+                    ->map(fn (User $user) => [
+                        'id' => $user->id,
+                        'name' => $user->name,
+                        'email' => $user->email,
+                        'role' => $user->role,
+                        'status' => $user->status,
+                        'created_at' => $user->created_at,
+                        'avatar' => $user->avatar_url,
+                    ]),
             ];
         }
 

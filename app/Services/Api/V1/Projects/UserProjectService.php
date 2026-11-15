@@ -4,9 +4,24 @@ namespace App\Services\Api\V1\Projects;
 
 use App\Models\Project;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\DB;
 
 class UserProjectService
 {
+    public function statisticsFor(int $userId): array
+    {
+        $counts = Project::query()
+            ->where('owner_id', $userId)
+            ->select('status', DB::raw('count(*) as aggregate'))
+            ->groupBy('status')
+            ->pluck('aggregate', 'status');
+
+        return [
+            'total' => (int) $counts->sum(),
+            'completed' => (int) ($counts['completed'] ?? 0),
+        ];
+    }
+
     public function paginateFor(int $userId, array $filters): LengthAwarePaginator
     {
         $query = Project::query()->where('owner_id', $userId)->with(['owner:id,name,email,profile_photo', 'category']);

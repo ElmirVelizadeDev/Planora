@@ -60,6 +60,9 @@ onBeforeUnmount(() => window.removeEventListener('planora:settings-updated', upd
 const pageContext = computed(() => {
     const name = String(route.name || '');
 
+    if (name === 'account.settings') return 'Account Settings';
+    if (name.startsWith('profile.')) return 'Your account';
+
     if (props.variant === 'admin') {
         if (name === 'admin.dashboard') return 'Dashboard';
         if (name.startsWith('admin.users.')) return 'Users';
@@ -70,6 +73,7 @@ const pageContext = computed(() => {
         if (name.startsWith('admin.activity-logs.')) return 'Activity Logs';
         if (name.startsWith('admin.settings.')) return 'Settings';
         if (name === 'admin.roles-permissions.index') return 'Roles & Permissions';
+        if (name === 'admin.system-maintenance') return 'System Maintenance';
 
         return 'Administration';
     }
@@ -81,8 +85,6 @@ const pageContext = computed(() => {
     if (name.startsWith('categories.')) return 'Categories';
     if (name.startsWith('productivity')) return 'Reports';
     if (name.startsWith('settings.')) return 'Settings';
-    if (name.startsWith('profile.')) return 'Your account';
-
     return 'Your workspace';
 });
 </script>

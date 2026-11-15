@@ -8,6 +8,7 @@ use App\Models\Task;
 use App\Models\User;
 use App\Models\UserActivityLog;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class RolesPermissionsTest extends TestCase
@@ -79,12 +80,18 @@ class RolesPermissionsTest extends TestCase
     {
         $admin = $this->account('admin');
         $owner = $this->account('user');
+        $owner->profile_photo = 'avatars/recent-registration.webp';
+        $owner->created_at = now()->addMinute();
+        $owner->save();
         Project::create(['name' => 'Current project', 'status' => 'active', 'owner_id' => $owner->id]);
         Task::create(['title' => 'Past due task', 'status' => 'pending', 'priority' => 'high', 'due_date' => today()->subDay()->toDateString(), 'owner_id' => $owner->id, 'created_by' => $admin->id]);
 
         $this->actingAs($admin, 'sanctum')->getJson('/api/v1/admin/dashboard')
             ->assertOk()->assertJsonPath('data.sections.projects', true)
-            ->assertJsonPath('data.projects.active', 1)->assertJsonPath('data.tasks.overdue', 1);
+            ->assertJsonPath('data.projects.active', 1)->assertJsonPath('data.tasks.overdue', 1)
+            ->assertJsonPath('data.users.recent_registrations.0.id', $owner->id)
+            ->assertJsonPath('data.users.recent_registrations.0.avatar', Storage::disk('public')->url('avatars/recent-registration.webp'))
+            ->assertJsonMissingPath('data.users.recent_registrations.0.profile_photo');
 
         $userPermissionModerator = $this->account('moderator', ['users.view']);
         $this->actingAs($userPermissionModerator, 'sanctum')->getJson('/api/v1/admin/dashboard')

@@ -68,7 +68,7 @@
 }
 
 .user-category-back:hover {
-    color: var(--color-primary);
+    color: var(--color-accent-text);
 }
 
 .user-category-detail-header {
@@ -175,7 +175,7 @@
 }
 
 .user-category-usage a {
-    color: var(--color-primary);
+    color: var(--color-accent-text);
     font-weight: 600;
     text-decoration: none;
 }

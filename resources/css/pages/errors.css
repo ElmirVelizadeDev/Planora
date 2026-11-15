@@ -1,0 +1,70 @@
+.planora-error-page {
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    padding: clamp(20px, 5vw, 56px);
+    color: var(--color-text);
+    background: var(--color-background);
+    font-family: var(--font-family-sans);
+}
+
+.planora-error-card {
+    width: min(100%, 680px);
+    overflow: hidden;
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-card);
+    background: var(--color-surface);
+    box-shadow: var(--shadow-soft);
+}
+
+.planora-error-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    margin: 30px 36px 0;
+    color: var(--color-text);
+    font-size: 16px;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.planora-error-mark {
+    display: grid;
+    width: 34px;
+    height: 34px;
+    place-items: center;
+    border-radius: 10px;
+    color: var(--color-accent-foreground);
+    background: var(--color-accent);
+    font-size: 17px;
+}
+
+.planora-error-content { padding: 38px 36px 42px; }
+.planora-error-code { color: var(--color-accent-text); font-size: 13px; font-weight: 700; letter-spacing: .1em; }
+.planora-error-content h1 { margin: 12px 0 10px; color: var(--color-text); font-size: clamp(26px, 5vw, 34px); line-height: 1.2; letter-spacing: -.025em; }
+.planora-error-description, .planora-error-note { max-width: 530px; margin: 0; color: var(--color-text-secondary); font-size: 15px; line-height: 1.7; }
+.planora-error-note { margin-top: 12px; font-size: 13px; }
+.planora-error-action-error { margin: 18px 0 0; color: var(--color-danger); font-size: 13px; }
+.planora-error-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 28px; }
+.planora-error-button { min-height: 42px; display: inline-flex; align-items: center; justify-content: center; padding: 0 16px; border: 1px solid transparent; border-radius: 10px; font: inherit; font-size: 14px; font-weight: 600; text-decoration: none; cursor: pointer; transition: background-color .16s ease, border-color .16s ease, color .16s ease; }
+.planora-error-button:focus-visible, .planora-error-signout:focus-visible, .planora-error-brand:focus-visible { outline: 3px solid var(--color-focus-ring); outline-offset: 2px; }
+.planora-error-button--primary { color: var(--color-accent-foreground); background: var(--color-accent); }
+.planora-error-button--primary:hover { background: var(--color-accent-hover); }
+.planora-error-button--primary:active { background: var(--color-accent-active); }
+.planora-error-button--secondary { color: var(--color-text); border-color: var(--color-border); background: var(--color-surface); }
+.planora-error-button--secondary:hover { background: var(--color-surface-hover); }
+.planora-error-signout { border: 0; padding: 8px; color: var(--color-text-secondary); background: transparent; font: inherit; font-size: 13px; cursor: pointer; }
+.planora-error-signout:hover { color: var(--color-text); }
+.planora-error-signout:disabled { opacity: .6; cursor: wait; }
+.planora-error-footer { display: flex; justify-content: space-between; gap: 12px; padding: 17px 36px; border-top: 1px solid var(--color-border-subtle); color: var(--color-text-muted); font-size: 12px; }
+.planora-error-page.is-warning .planora-error-code { color: var(--color-warning); }
+.planora-error-page.is-danger .planora-error-code { color: var(--color-danger); }
+
+@media (max-width: 520px) {
+    .planora-error-page { padding: 16px; }
+    .planora-error-brand { margin: 24px 22px 0; }
+    .planora-error-content { padding: 30px 22px; }
+    .planora-error-actions { align-items: stretch; }
+    .planora-error-button { flex: 1 1 100%; }
+    .planora-error-footer { padding: 15px 22px; }
+}

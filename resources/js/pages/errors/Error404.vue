@@ -1,3 +1,4 @@
-<template>
-    <main class="page-error404" />
-</template>
+<template><AppErrorPage :code="404" /></template>
+<script setup>
+import AppErrorPage from './AppErrorPage.vue';
+</script>
