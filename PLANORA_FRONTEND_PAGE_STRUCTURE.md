@@ -1,4 +1,4 @@
-# Planora Frontend Page Structure
+# Planora frontend page structure
 
 This document maps active Vue route groups and their implementation boundaries. Routes are declared in `resources/js/router/routes.js`; API and server-side authorization remain authoritative.
 
@@ -14,16 +14,21 @@ This document maps active Vue route groups and their implementation boundaries. 
 
 | Area | Route examples | Current implementation |
 |---|---|---|
-| Public and Auth | `/`, `/login`, `/register`, `/verify-email`, `/forgot-password`, `/reset-password`, `/terms-and-conditions`, `/privacy-policy` | Public pages, session authentication, registration verification, and password recovery. See [Registration OTP](docs/REGISTRATION_OTP.md) and [Authentication Security](docs/AUTHENTICATION_SECURITY.md). |
+| Public and Auth | `/`, `/login`, `/register`, `/verify-email`, `/forgot-password`, `/reset-password`, `/terms-and-conditions`, `/privacy-policy` | Public pages, session authentication, registration verification, and password recovery. See [registration OTP lifecycle](docs/REGISTRATION_OTP.md) and [authentication and security](docs/AUTHENTICATION_SECURITY.md). |
 | User workspace | `/dashboard`, `/tasks`, `/tasks/:taskId`, `/projects`, `/projects/:projectId` | Dashboard task summary, owned/assigned Task workflows, and Projects owned by the current User. Project Tasks are further scoped by Task ownership/assignment. |
 | User Categories | `/categories`, `/categories/:categoryId` | Read-only active Category catalog with search, sorting, pagination, accessible usage counts, and User-scoped related Projects/Tasks. Create/edit paths redirect to the catalog. |
-| Other User pages | `/calendar`, `/tags`, `/notifications`, `/settings`, `/statistics`, `/productivity` | Routes and UI exist; several workflows remain partial or scaffolded. |
+| User notifications | `/notifications` | Persisted notification history for active Users, with unread filtering, pagination, read actions, and authorized task navigation. |
+| Other User pages | `/calendar`, `/tags`, `/settings`, `/statistics`, `/productivity` | Routes exist; Calendar, Tags, and several productivity/settings screens remain partial or scaffolded. |
+| Appearance | `/settings/appearance` | Authenticated appearance preferences; public navigation also provides persistent guest light/dark theme selection. |
 | Shared account profile | `/profile` | Shared profile, personal information, avatar, account details, and password management experience for User, Moderator, and Admin. Email and account deletion remain Admin-managed under existing verification and account-lifecycle rules. |
-| Admin workspace | `/admin/dashboard`, `/admin/users`, `/admin/tasks`, `/admin/projects` | Database-backed operational dashboard, account, Task, and Project management workflows. Task recovery is available from the deleted-task filter. |
-| Admin Categories | `/admin/categories`, `/admin/categories/create`, `/admin/categories/:categoryId`, `/admin/categories/:categoryId/edit` | Database-backed list, detail, create, edit, archive, and restore. Category management is Admin-only. |
-| Admin reporting and audit | `/admin/reports`, `/admin/activity-logs` | Unified Reports & Analytics, plus searchable/exportable activity and management audit history. |
-| Admin access and settings | `/admin/roles-permissions`, `/admin/settings` | Fixed role overview with per-Moderator permission assignment; General, Security, and Email settings sections. |
+| Admin workspace | `/admin/dashboard`, `/admin/users`, `/admin/tasks`, `/admin/projects` | Database-backed operational dashboard and account, Task, and Project workflows. Moderators receive only individually permitted views and status actions. Task recovery is available to Admins from the deleted-task filter. |
+| Admin Categories | `/admin/categories`, `/admin/categories/create`, `/admin/categories/:categoryId`, `/admin/categories/:categoryId/edit` | Database-backed list and detail; Moderators with `categories.view` are read-only. Create, edit, archive, and restore are Admin-only. |
+| Admin reporting and audit | `/admin/reports`, `/admin/activity-logs` | Reports & Analytics is readable by Admins and Moderators with `reports.view`; CSV export is Admin-only. Activity history is searchable and exportable, with Moderator records restricted by permission and account scope. |
+| Admin access and settings | `/admin/roles-permissions`, `/admin/settings`, `/admin/system-maintenance` | Fixed role overview with per-Moderator permission assignment; General, Security, Email, and scoped maintenance controls. |
+| Admin notifications | `/admin/notifications` | Persisted notification history for active Admins, with unread filtering, pagination, read actions, and authorized task navigation. |
 | Errors | `/403`, `/419`, `/429`, `/500`, `/503`, unknown-path fallback | Dedicated error pages are registered. |
+
+The administrator sign-in page is rendered at the server-configured web entry path and selected by a Blade shell marker. It is intentionally not registered in Vue Router.
 
 ## Feature structure
 
@@ -38,4 +43,4 @@ This document maps active Vue route groups and their implementation boundaries. 
 
 `resources/css/app.css` is the single global entry and imports tokens, reset, then typography. Layout styles live under `resources/css/layouts/`; reusable styles live under `resources/css/components/`; Categories styles are feature-owned under `resources/css/features/categories/{admin,shared,user}/`; other page styles remain under `resources/css/pages/`. Vue SFC `style src` imports associate page/component styles with their lazy-loaded consumers. The Admin and User Category styles remain separate; the shared Category badge has one stylesheet source.
 
-User and Admin route groups use separate layouts. Moderators can reach only Dashboard, Users, and Activity Logs when their individual permissions allow it; other Admin pages remain Admin-only. Obsolete Admin Analytics, Roles, Permissions, Tags, and Notifications URLs redirect to their canonical Admin destinations. User-side Tags and Notifications routes are unchanged. For API and data scope details, see [API Documentation](docs/API_DOCUMENTATION.md) and [Database Design](docs/DATABASE_DESIGN.md).
+User and Admin route groups use separate layouts. Moderators can use `AdminLayout` only on routes enabled by their individually assigned permissions: `users.view`, `activity.view`, `categories.view`, `projects.view`, `tasks.view`, or `reports.view`. The dashboard's Users, Activity, Categories, Projects, Tasks, and Reports section flags follow those grants; aggregate data is returned for the first five sections, while Reports uses its separate API. `users.status.manage`, `projects.status.manage`, and `tasks.status.manage` additionally allow only their respective status changes and require the matching view permission. A Moderator role does not grant every permission. Other Admin operations, including Settings, role assignment, create/edit/archive/restore actions, and report CSV export, remain Admin-only. Obsolete Admin Analytics, Roles, Permissions, and Tags URLs redirect to canonical destinations; `/admin/notifications` is an Admin-only notification history page. User-side Tags remain scaffolded, while User notifications use the persisted notification workflow. For API and data scope details, see [API documentation](docs/API_DOCUMENTATION.md) and [database design](docs/DATABASE_DESIGN.md).

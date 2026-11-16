@@ -4,13 +4,13 @@ Local authentication flows do not require SMTP or a real email provider. The app
 
 After starting registration, run:
 
-```text
+```sh
 php artisan auth:local-otp registration person@example.test
 ```
 
 After requesting password recovery, run:
 
-```text
+```sh
 php artisan auth:local-otp recovery person@example.test
 ```
 

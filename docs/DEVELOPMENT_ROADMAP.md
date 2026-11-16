@@ -1,8 +1,8 @@
-# Development Roadmap
+# Development roadmap
 
 This document records implementation boundaries visible in the current repository. It is a scope guide, not a release schedule.
 
-## Implemented foundation
+## Completed
 
 - Session/Sanctum authentication, registration verification, password recovery, active-account checks, and role-aware routing.
 - Admin account management, user activity APIs, and Admin/User Task workflows.
@@ -11,12 +11,18 @@ This document records implementation boundaries visible in the current repositor
 - Consolidated Admin Roles & Permissions management for the fixed per-Moderator permission catalog, with Admin-only assignment and audit events.
 - Role-aware Admin Dashboard aggregates, unified Reports & Analytics, searchable Activity Logs, and General/Security/Email settings.
 - Admin Task soft-delete recovery with an audited restore flow; Project deletion remains permanent and detaches linked Tasks.
-- Local-only idempotent demo seeders for Categories, Projects, linked Project Tasks, and standalone Tasks. The account seeder is invoked unconditionally by `DatabaseSeeder`; do not use `db:seed` or `migrate --seed` outside a disposable local database. See [Seeder Notes](../database/seeders/README.md).
+- Server-configured administrator entry, independently enforced maintenance scopes, and persisted User/Admin notifications for task and administrative events.
+- Account appearance preferences and guest light/dark theme persistence.
+- Local-only idempotent demo seeders for Categories, Projects, linked Project Tasks, and standalone Tasks. The account seeder is invoked unconditionally by `DatabaseSeeder`; do not use `db:seed` or `migrate --seed` outside a disposable local database. See [seeder notes](../database/seeders/README.md).
 
-## Remaining incomplete areas
+## In Progress
 
-- Complete remaining persistent workflows for User Calendar, Tags, Notifications, and related productivity routes as product scope requires.
+No work is currently confirmed as in progress in the repository.
+
+## Planned
+
+- Complete the remaining User Calendar, Tags, and productivity workflows as product scope requires. Notifications have persisted APIs and history views; notification-preference settings and other scaffolded screens should not be mistaken for delivered workflows.
 - Add additional Moderator module permissions only when business purpose, object-level rules, backend authorization, UI behavior, and tests are defined together.
 - Expand automated coverage and browser verification for the current feature set.
 
-Do not treat a route, placeholder component, or unverified external mail configuration as a finished workflow. Current APIs and schema are listed in [API Documentation](API_DOCUMENTATION.md) and [Database Design](DATABASE_DESIGN.md).
+Do not treat a route, placeholder component, or unverified external mail configuration as a finished workflow. Current APIs and schema are listed in [API documentation](API_DOCUMENTATION.md) and [database design](DATABASE_DESIGN.md).

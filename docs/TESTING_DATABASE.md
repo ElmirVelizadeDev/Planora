@@ -1,4 +1,4 @@
-# Isolated MySQL Test Database
+# Isolated MySQL test database
 
 PHPUnit feature tests use MySQL. The test bootstrap refuses to start unless the active driver is `mysql` and the database name contains a standalone `test` or `testing` segment (at the beginning/end or separated by `_` or `-`). This prevents accidentally running the suite against the normal development database. Do not disable or bypass the check.
 

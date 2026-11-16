@@ -1,6 +1,6 @@
-# Database Design
+# Database design
 
-Laravel database settings come from the environment; `.env.example` selects MySQL. Schema changes are tracked in `database/migrations/`. Feature tests use an isolated MySQL database described in [Testing Database](TESTING_DATABASE.md).
+Laravel database settings come from the environment; `.env.example` selects MySQL. Schema changes are tracked in `database/migrations/`. Feature tests use an isolated MySQL database described in [Testing database](TESTING_DATABASE.md).
 
 ## Core tables
 
@@ -14,11 +14,12 @@ Laravel database settings come from the environment; `.env.example` selects MySQ
 | `pending_registrations` | Temporary registration details and password hash retained until verification or expiry. |
 | `email_verification_otps` | Registration OTP hash, expiry, attempt count, and resend timestamp. Plaintext codes are not stored. |
 | `password_reset_otps` | Password-recovery OTP hash, expiry, verification, attempt, and recovery-token state. |
+| `user_notifications` | Recipient-owned task and administrative notifications, optional related-record references, unique deduplication keys, and read timestamps. |
 | `password_reset_tokens` | Legacy Laravel password-reset token table; current recovery uses `password_reset_otps`. |
 | `personal_access_tokens` | Sanctum token storage; the first-party SPA uses stateful sessions. |
 | `failed_jobs` | Laravel failed queue records. |
 
-## Project, Task, and Category relationships
+## Project, task, and category relationships
 
 ```mermaid
 erDiagram
@@ -40,14 +41,20 @@ erDiagram
 - User Project queries are restricted to Projects owned by the authenticated User. User-visible Tasks are restricted to Tasks owned by or assigned to that User; category detail counts and related records apply the same scopes.
 - Admin category usage counts are global. Project counts include related Projects; Task counts follow the Task model's normal soft-delete scope.
 
+## Notification and maintenance state
+
+`user_notifications` has a cascading `recipient_id` foreign key, event type and display copy, nullable `related_type`/`related_id`, a unique SHA-256 deduplication key, nullable `read_at`, and timestamps. Its indexes support unread/recipient queries, recipient ordering, and related-record lookup. The related-record ID is not a foreign key; a notification can remain in history after a Task is deleted, but it no longer has a Task destination.
+
+Planora maintenance scope state is not stored in MySQL. `MaintenanceScopeStore` reads and writes `storage/framework/planora-maintenance-scopes.json` under shared or exclusive file locks. The file is ignored by Git. Laravel's native global maintenance state uses Laravel's configured maintenance driver and is separate from this scope file.
+
 ## Migrations and demo data
 
 The Project schema is created by `2026_11_11_000001_create_projects_table.php`; the nullable Task-to-Project relationship is added by `2026_11_11_000002_add_project_id_to_tasks_table.php`. Categories are created by `2026_11_12_000001_create_categories_table.php`; nullable Category foreign keys on Projects and Tasks are added by `2026_11_13_000001_add_category_id_to_projects_and_tasks_tables.php`. Earlier migrations create account, authentication, activity, and Task tables.
 
-`DatabaseSeeder` always invokes `PlanoraUsersSeeder`; it invokes Category, Project, and User Task demo seeders only under `APP_ENV=local`. The three demo seeders are individually guarded for local use. Because the account seeder is not guarded, do not run `db:seed` or `migrate --seed` outside a disposable local database. See [Seeder Notes](../database/seeders/README.md).
+`DatabaseSeeder` always invokes `PlanoraUsersSeeder`; it invokes Category, Project, and User Task demo seeders only under `APP_ENV=local`. The three demo seeders are individually guarded for local use. Because the account seeder is not guarded, do not run `db:seed` or `migrate --seed` outside a disposable local database. See [seeder notes](../database/seeders/README.md).
 
 The ten CategorySeeder names are inserted only when no case-insensitive active or archived name match exists. Existing Categories are not updated. Project and Task demo seeders create marked records for active normal Users; they preserve an existing non-null category association, including an archived Category, and only fill an absent association from a matching active Category. They do not rewrite unrelated records.
 
 The Activity Logs audit-trail migration extends the existing `user_activity_logs` table rather than introducing a duplicate log table. New fields are nullable where necessary so historical rows remain valid. Actor and legacy subject foreign keys use null-on-delete, while safe name/role snapshots, subject labels, and event metadata retain useful history. Activity rows are not soft-deleted or editable through application endpoints. Search/filter indexes cover module, event, status, actor, target, and creation time.
 
-Subtask, tag, calendar-event, and notification tables are not defined by the current migrations; their routes or components do not imply persisted workflows.
+The notification table is created by `2026_11_15_000001_create_user_notifications_table.php`; `2026_11_15_000002_add_notification_recipient_order_index.php` adds its recipient-order index. Subtask, tag, and calendar-event tables are not defined by the current migrations; their routes or components do not imply persisted workflows.

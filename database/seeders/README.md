@@ -1,8 +1,10 @@
-# Local Demo Seeders
+# Local demo seeders
 
-## Important environment warning
+## Seeder safety
 
-`DatabaseSeeder` invokes `PlanoraUsersSeeder` before checking the environment. That account seeder is not environment-guarded and uses a built-in development credential for newly created fixture accounts. Do not run `php artisan db:seed` or `php artisan migrate --seed` in production or against a database containing non-disposable data. Use these instructions only after confirming `.env` targets an isolated local development database.
+> **Warning:** `DatabaseSeeder` invokes `PlanoraUsersSeeder` before checking the environment. That account seeder is not environment-guarded and uses a built-in development credential for newly created fixture accounts. Do not run `php artisan db:seed` or `php artisan migrate --seed` in production or against a database containing non-disposable data.
+
+Use these instructions only after confirming `.env` targets an isolated local development database.
 
 ## Category catalog
 
