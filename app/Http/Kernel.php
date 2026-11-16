@@ -7,6 +7,29 @@ use Illuminate\Foundation\Http\Kernel as HttpKernel;
 class Kernel extends HttpKernel
 {
     /**
+     * Start the session before native maintenance checks, authenticate before Planora scope
+     * checks, and verify active status before allowing the administrator workspace exception.
+     *
+     * @var array<int, class-string|string>
+     */
+    protected $middlewarePriority = [
+        \Illuminate\Foundation\Http\Middleware\HandlePrecognitiveRequests::class,
+        \Illuminate\Cookie\Middleware\EncryptCookies::class,
+        \Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse::class,
+        \Illuminate\Session\Middleware\StartSession::class,
+        \Illuminate\View\Middleware\ShareErrorsFromSession::class,
+        \App\Http\Middleware\EnsureAdminMaintenanceBootstrap::class,
+        \Illuminate\Contracts\Auth\Middleware\AuthenticatesRequests::class,
+        \App\Http\Middleware\EnsureActiveAccount::class,
+        \App\Http\Middleware\EnforceMaintenanceScope::class,
+        \Illuminate\Routing\Middleware\ThrottleRequests::class,
+        \Illuminate\Routing\Middleware\ThrottleRequestsWithRedis::class,
+        \Illuminate\Contracts\Session\Middleware\AuthenticatesSessions::class,
+        \Illuminate\Routing\Middleware\SubstituteBindings::class,
+        \Illuminate\Auth\Middleware\Authorize::class,
+    ];
+
+    /**
      * The application's global HTTP middleware stack.
      *
      * These middleware are run during every request to your application.
@@ -59,6 +82,7 @@ class Kernel extends HttpKernel
         'management.access' => \App\Http\Middleware\RequireManagementAccess::class,
         'dashboard.access' => \App\Http\Middleware\RequireDashboardAccess::class,
         'maintenance.bootstrap' => \App\Http\Middleware\EnsureAdminMaintenanceBootstrap::class,
+        'maintenance.scope' => \App\Http\Middleware\EnforceMaintenanceScope::class,
         'auth.basic' => \Illuminate\Auth\Middleware\AuthenticateWithBasicAuth::class,
         'auth.session' => \Illuminate\Session\Middleware\AuthenticateSession::class,
         'cache.headers' => \Illuminate\Http\Middleware\SetCacheHeaders::class,

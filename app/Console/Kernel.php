@@ -15,6 +15,7 @@ class Kernel extends ConsoleKernel
         // $schedule->command('inspire')->hourly();
         $schedule->command('auth:purge-expired-registrations')->everyFiveMinutes();
         $schedule->command('auth:purge-expired-password-recovery-otps')->everyFiveMinutes();
+        $schedule->command('planora:notify-tasks-due-soon')->dailyAt('08:00')->withoutOverlapping();
     }
 
     /**

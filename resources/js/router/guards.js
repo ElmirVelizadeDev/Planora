@@ -1,16 +1,28 @@
 import { useAuthStore } from '../features/auth/stores/authStore.js';
 import { moderatorCanAccessAdminRoute, moderatorLandingRoute } from '../features/auth/managementAccess.js';
 import { initializeAppearancePreferences, resetAppearanceSession } from '../features/appearance/composables/appearancePreferences.js';
+import { getMaintenanceStatus } from '../features/system-maintenance/services/maintenanceStatusApi.js';
 
 export function installRouteGuards(router) {
     router.beforeEach(async (to) => {
-        if (!to.meta.requiresAuth && !to.meta.guestOnly && !to.meta.initializeAuth) return true;
+        if (!to.meta.requiresAuth && !to.meta.guestOnly && !to.meta.initializeAuth
+            && !Array.isArray(to.meta.maintenanceScopes)) return true;
 
         const auth = useAuthStore();
         let user = auth.user;
 
         if (!auth.initialized || (to.meta.requiresAuth && !user)) {
-            user = await auth.fetchCurrentUser();
+            try {
+                user = await auth.fetchCurrentUser();
+            } catch (error) {
+                if (error.response?.status === 503) {
+                    const scope = error.response.data?.scope;
+                    return scope
+                        ? { name: 'error.503', query: { maintenanceScope: scope } }
+                        : { name: 'error.503' };
+                }
+                throw error;
+            }
         }
 
         if (user) initializeAppearancePreferences(user.id);
@@ -38,6 +50,24 @@ export function installRouteGuards(router) {
         if (to.meta.requiresRole && !auth.hasRole(to.meta.requiresRole)) {
             if (to.meta.requiresRole === 'user' && auth.hasRole('admin')) return { name: 'admin.dashboard' };
             return { name: 'error.403' };
+        }
+
+        if (Array.isArray(to.meta.maintenanceScopes) && to.meta.maintenanceScopes.length > 0) {
+            try {
+                const maintenance = await getMaintenanceStatus();
+                const blockedScope = to.meta.maintenanceScopes.find((scope) =>
+                    maintenance.scopes?.[scope]
+                    && !(scope === 'dashboard_workspace' && auth.hasRole('admin')),
+                );
+                if (blockedScope) return { name: 'error.503', query: { maintenanceScope: blockedScope } };
+            } catch (error) {
+                if (error.response?.status === 503) {
+                    const scope = error.response.data?.scope;
+                    return scope
+                        ? { name: 'error.503', query: { maintenanceScope: scope } }
+                        : { name: 'error.503' };
+                }
+            }
         }
 
         return true;

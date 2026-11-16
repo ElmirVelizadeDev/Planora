@@ -13,6 +13,7 @@ use App\Services\Api\V1\Admin\UserActivityLogger;
 use App\Services\Settings\SettingsService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\Response;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -24,25 +25,43 @@ class AuthController extends Controller
 
     public function login(LoginRequest $request, UserActivityLogger $activityLogger): JsonResponse
     {
+        return $this->authenticate($request, $activityLogger);
+    }
+
+    public function adminLoginPage(): Response
+    {
+        return response()->view('welcome', ['appView' => 'admin-auth'])
+            ->header('Cache-Control', 'no-store, private')
+            ->header('Referrer-Policy', 'no-referrer');
+    }
+
+    public function adminLogin(LoginRequest $request, UserActivityLogger $activityLogger): JsonResponse
+    {
+        return $this->authenticate($request, $activityLogger, 'admin');
+    }
+
+    private function authenticate(LoginRequest $request, UserActivityLogger $activityLogger, ?string $requiredRole = null): JsonResponse
+    {
         $guard = Auth::guard('web');
         $guard->setRememberDuration((int) config('session.remember_lifetime', 43200));
-
-        // Remove a prior account's session or recaller before switching identities.
-        if ($guard->check() || $request->cookies->has($guard->getRecallerName())) {
-            $guard->logout();
-            $request->session()->invalidate();
-            $request->session()->regenerateToken();
-        }
 
         $user = \App\Models\User::query()->where('email', $request->validated('email'))->first();
         $passwordHash = $user?->getAuthPassword() ?? (self::$dummyPasswordHash ??= Hash::make(Str::random(48)));
         if (! $user || ! Hash::check($request->validated('password'), $passwordHash)
             || ! in_array($user->role, \App\Models\User::ROLES, true)
+            || ($requiredRole !== null && $user->role !== $requiredRole)
             || $user->status !== 'active'
             || ! $user->email_verified_at) {
             // Record the security outcome without persisting the submitted email or password.
             $activityLogger->record('auth.login_failed', 'A sign-in attempt was rejected.', status: 'failure');
             throw ValidationException::withMessages(['email' => [trans('auth.failed')]]);
+        }
+
+        // Revoke an existing identity only after the replacement credentials are valid.
+        if ($guard->check() || $request->cookies->has($guard->getRecallerName())) {
+            $guard->logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
         }
 
         $guard->login($user, $request->boolean('remember'));
@@ -52,10 +71,17 @@ class AuthController extends Controller
         $request->session()->regenerate();
         $request->session()->put('password_hash_web', $user->getAuthPassword());
 
-        return response()->json([
+        $response = response()->json([
             'user' => UserResource::make($user)->resolve(),
-            'redirect_to' => $this->dashboardForUser($user),
+            'redirect_to' => $requiredRole === 'admin' ? '/admin/dashboard' : $this->dashboardForUser($user),
         ]);
+
+        if ($requiredRole === 'admin') {
+            $response->headers->set('Cache-Control', 'no-store, private');
+            $response->headers->set('Referrer-Policy', 'no-referrer');
+        }
+
+        return $response;
     }
 
     public function register(RegisterRequest $request, RegistrationService $registration, SettingsService $settings): JsonResponse

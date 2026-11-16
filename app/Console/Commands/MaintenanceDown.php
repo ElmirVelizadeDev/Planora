@@ -14,7 +14,7 @@ class MaintenanceDown extends Command
         {--secret= : Explicit Laravel maintenance bypass secret}
         {--with-secret : Generate a random Laravel maintenance bypass secret}';
 
-    protected $description = 'Enable Planora maintenance mode with a branded pre-rendered 503 page';
+    protected $description = 'Enable Laravel global Planora maintenance with a branded pre-rendered 503 page';
 
     public function handle(): int
     {

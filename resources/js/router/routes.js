@@ -4,24 +4,24 @@ const adminPage = (folder, page) => () => import(`../pages/admin/${folder ? `${f
 const errorPage = (page) => () => import(`../pages/errors/${page}.vue`);
 
 export const routes = [
-    { path: '/', name: 'home', component: () => import('../pages/public/Home.vue'), meta: { initializeAuth: true } },
+    { path: '/', name: 'home', component: () => import('../pages/public/Home.vue'), meta: { initializeAuth: true, maintenanceScopes: ['public_website'] } },
     {
         path: '/',
         component: () => import('../layouts/AuthLayout.vue'),
         children: [
-            { path: 'login', name: 'login', component: authPage('Login'), meta: { guestOnly: true } },
-            { path: 'register', name: 'register', component: authPage('Register'), meta: { guestOnly: true } },
-            { path: 'terms-and-conditions', name: 'terms-and-conditions', component: () => import('../pages/public/TermsAndConditions.vue') },
-            { path: 'privacy-policy', name: 'privacy-policy', component: () => import('../pages/public/PrivacyPolicy.vue') },
-            { path: 'forgot-password', name: 'forgot-password', component: authPage('ForgotPassword') },
-            { path: 'reset-password', name: 'reset-password', component: authPage('ResetPassword') },
-            { path: 'verify-email', name: 'verify-email', component: authPage('VerifyEmail'), meta: { guestOnly: true } },
+            { path: 'login', name: 'login', component: authPage('Login'), meta: { guestOnly: true, maintenanceScopes: ['public_website', 'authentication'] } },
+            { path: 'register', name: 'register', component: authPage('Register'), meta: { guestOnly: true, maintenanceScopes: ['public_website', 'authentication'] } },
+            { path: 'terms-and-conditions', name: 'terms-and-conditions', component: () => import('../pages/public/TermsAndConditions.vue'), meta: { maintenanceScopes: ['public_website'] } },
+            { path: 'privacy-policy', name: 'privacy-policy', component: () => import('../pages/public/PrivacyPolicy.vue'), meta: { maintenanceScopes: ['public_website'] } },
+            { path: 'forgot-password', name: 'forgot-password', component: authPage('ForgotPassword'), meta: { maintenanceScopes: ['public_website', 'authentication'] } },
+            { path: 'reset-password', name: 'reset-password', component: authPage('ResetPassword'), meta: { maintenanceScopes: ['public_website', 'authentication'] } },
+            { path: 'verify-email', name: 'verify-email', component: authPage('VerifyEmail'), meta: { guestOnly: true, maintenanceScopes: ['public_website', 'authentication'] } },
         ],
     },
     {
         path: '/settings/appearance',
         component: () => import('../layouts/AppearanceLayout.vue'),
-        meta: { requiresAuth: true },
+        meta: { requiresAuth: true, maintenanceScopes: ['dashboard_workspace'] },
         children: [
             { path: '', name: 'settings.appearance', component: appPage('settings', 'SettingsAppearance') },
         ],
@@ -29,7 +29,7 @@ export const routes = [
     {
         path: '/profile',
         component: () => import('../layouts/ProfileLayout.vue'),
-        meta: { requiresAuth: true },
+        meta: { requiresAuth: true, maintenanceScopes: ['dashboard_workspace'] },
         children: [
             { path: '', name: 'profile.show', component: () => import('../pages/profile/Show.vue') },
             { path: 'edit', name: 'profile.edit', redirect: { name: 'profile.show' } },
@@ -38,7 +38,7 @@ export const routes = [
     {
         path: '/account/settings',
         component: () => import('../layouts/ProfileLayout.vue'),
-        meta: { requiresAuth: true },
+        meta: { requiresAuth: true, maintenanceScopes: ['dashboard_workspace'] },
         children: [
             { path: '', name: 'account.settings', component: () => import('../pages/account/AccountSettings.vue') },
         ],
@@ -46,7 +46,7 @@ export const routes = [
     {
         path: '/',
         component: () => import('../layouts/UserLayout.vue'),
-        meta: { requiresAuth: true, requiresRole: 'user' },
+        meta: { requiresAuth: true, requiresRole: 'user', maintenanceScopes: ['dashboard_workspace'] },
         children: [
             { path: 'dashboard', name: 'dashboard', component: appPage('dashboard', 'Index') },
             { path: 'tasks', name: 'tasks.index', component: appPage('tasks', 'TasksIndex') },
@@ -66,7 +66,6 @@ export const routes = [
             { path: 'tags/create', name: 'tags.create', component: appPage('tags', 'TagsCreate') },
             { path: 'tags/:tagId/edit', name: 'tags.edit', component: appPage('tags', 'TagsEdit') },
             { path: 'notifications', name: 'notifications.index', component: appPage('notifications', 'NotificationsIndex') },
-            { path: 'notifications/:notificationId', name: 'notifications.show', component: appPage('notifications', 'NotificationsShow') },
             { path: 'settings', name: 'settings.index', component: appPage('settings', 'Index') },
             { path: 'settings/account', name: 'settings.account', redirect: { name: 'account.settings' } },
             { path: 'settings/notifications', name: 'settings.notifications', component: appPage('settings', 'SettingsNotifications') },
@@ -79,7 +78,7 @@ export const routes = [
     {
         path: '/admin',
         component: () => import('../layouts/AdminLayout.vue'),
-        meta: { requiresAuth: true },
+        meta: { requiresAuth: true, maintenanceScopes: ['dashboard_workspace'] },
         children: [
             { path: '', redirect: '/admin/dashboard' },
             { path: 'dashboard', name: 'admin.dashboard', component: adminPage('', 'AdminDashboard') },
@@ -103,8 +102,7 @@ export const routes = [
             { path: 'analytics', redirect: { name: 'admin.reports' } },
             { path: 'tags', redirect: { name: 'admin.categories.index' } },
             { path: 'tags/:pathMatch(.*)*', redirect: { name: 'admin.categories.index' } },
-            { path: 'notifications', redirect: { name: 'admin.dashboard' } },
-            { path: 'notifications/:pathMatch(.*)*', redirect: { name: 'admin.dashboard' } },
+            { path: 'notifications', name: 'admin.notifications.index', component: () => import('../pages/admin/notifications/AdminNotificationsIndex.vue'), meta: { requiresRole: 'admin' } },
             { path: 'activity-logs', name: 'admin.activity-logs.index', component: () => import('../pages/admin/activity-logs/ActivityLogsIndex.vue') },
             { path: 'activity-logs/:logId', name: 'admin.activity-logs.show', component: () => import('../pages/admin/activity-logs/ActivityLogsShow.vue') },
             { path: 'settings', name: 'admin.settings.index', component: () => import('../pages/admin/settings/AdminSettingsIndex.vue') },

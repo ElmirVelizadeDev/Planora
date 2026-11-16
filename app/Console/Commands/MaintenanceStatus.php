@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Services\Api\V1\Admin\SystemMaintenance\SystemMaintenanceService;
 use Illuminate\Console\Command;
 
 class MaintenanceStatus extends Command
@@ -12,13 +13,14 @@ class MaintenanceStatus extends Command
 
     public function handle(): int
     {
-        if (app()->isDownForMaintenance()) {
-            $this->components->warn('Planora is in maintenance mode.');
-
-            return self::SUCCESS;
+        $status = app(SystemMaintenanceService::class)->status();
+        $summary = 'Planora: '.str_replace('_', ' ', ucfirst($status['overall'])).'.';
+        if ($status['active']) $this->components->warn($summary);
+        else $this->components->info($summary);
+        $this->line('Laravel global maintenance: '.($status['native_active'] ? 'active' : 'inactive'));
+        foreach ($status['scopes'] as $scope => $enabled) {
+            $this->line(str_replace('_', ' ', ucfirst($scope)).': '.($enabled ? 'active' : 'inactive'));
         }
-
-        $this->components->info('Planora is available.');
 
         return self::SUCCESS;
     }

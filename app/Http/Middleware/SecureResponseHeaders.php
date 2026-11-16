@@ -14,7 +14,8 @@ class SecureResponseHeaders
         $headers = $response->headers;
         $headers->set('X-Content-Type-Options', 'nosniff');
         $headers->set('X-Frame-Options', 'DENY');
-        $headers->set('Referrer-Policy', 'strict-origin-when-cross-origin');
+        $secretAdminEntry = $request->routeIs('admin.secret-entry', 'admin.secret-login');
+        $headers->set('Referrer-Policy', $secretAdminEntry ? 'no-referrer' : 'strict-origin-when-cross-origin');
         $headers->set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
 
         $policy = "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self'";
@@ -28,6 +29,11 @@ class SecureResponseHeaders
         }
 
         if ($request->is('api/v1/auth/*')) {
+            $headers->set('Cache-Control', 'no-store, private');
+            $headers->set('Pragma', 'no-cache');
+        }
+
+        if ($secretAdminEntry) {
             $headers->set('Cache-Control', 'no-store, private');
             $headers->set('Pragma', 'no-cache');
         }

@@ -26,3 +26,15 @@ test('shared error page provides safe retry, back, sign-in, sign-out, and automa
     assert.match(page, /fetch\('\//);
     assert.match(page, /setInterval/);
 });
+
+test('standalone maintenance errors retry the active scope instead of assuming the whole site is down', () => {
+    const blade = source('../../resources/views/errors/page.blade.php');
+    const retryScript = source('../../public/js/error-page.js');
+    const scopeMiddleware = source('../../app/Http/Middleware/EnforceMaintenanceScope.php');
+
+    assert.match(blade, /data-maintenance-scope=/);
+    assert.match(blade, /\/js\/error-page\.js/);
+    assert.match(retryScript, /api\/v1\/maintenance\/status/);
+    assert.match(retryScript, /status\.data\?\.scopes\?\.\[scope\]/);
+    assert.match(scopeMiddleware, /'scope' => \$scope/);
+});

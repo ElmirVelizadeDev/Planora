@@ -4,7 +4,7 @@
             <div>
                 <p class="system-maintenance__eyebrow">ADMINISTRATION / OPERATIONS</p>
                 <h1 id="system-maintenance-title">System Maintenance</h1>
-                <p>Control planned maintenance using Laravel’s application-wide maintenance gate.</p>
+                <p>Pause selected areas independently while keeping the rest of Planora available.</p>
             </div>
             <span class="system-maintenance__scope"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2.5 16 5v4.3c0 3.7-2.5 6.4-6 8.2-3.5-1.8-6-4.5-6-8.2V5l6-2.5Z"/><path d="m7.5 10 1.7 1.7 3.5-3.5"/></svg>Administrator control</span>
         </header>
@@ -19,71 +19,89 @@
                     <svg v-else viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="m8.5 12 2.3 2.3 4.8-4.8"/></svg>
                 </span>
                 <div>
-                    <p class="system-maintenance__eyebrow">CURRENT STATUS</p>
-                    <h2 id="maintenance-status-heading">{{ loading ? 'Checking status…' : !statusKnown ? 'Status unavailable' : status.active ? 'Maintenance is active' : 'Planora is available' }}</h2>
-                    <p>{{ !statusKnown ? 'The live maintenance state could not be confirmed.' : status.active ? 'Ordinary visitors and application requests are receiving a 503 response.' : 'The application is available to authenticated users and visitors.' }}</p>
+                    <p class="system-maintenance__eyebrow">OVERALL STATUS</p>
+                    <h2 id="maintenance-status-heading">{{ loading ? 'Checking status…' : !statusKnown ? 'Status unavailable' : overallLabel }}</h2>
+                    <p>{{ !statusKnown ? 'The live maintenance state could not be confirmed.' : status.native_active ? 'Laravel global maintenance is active and supersedes individual scope settings.' : status.active ? 'Only the enabled areas are paused. Other scopes remain available.' : 'All application areas are available.' }}</p>
                 </div>
             </div>
-            <span class="system-maintenance__status-badge" :class="!statusKnown ? 'is-unknown' : status.active ? 'is-active' : 'is-inactive'" :aria-label="`Maintenance ${!statusKnown ? 'status unknown' : status.active ? 'active' : 'inactive'}`">
-                <span aria-hidden="true"></span>{{ !statusKnown ? (loading ? 'Checking' : 'Unknown') : status.active ? 'Active' : 'Inactive' }}
+            <span class="system-maintenance__status-badge" :class="!statusKnown ? 'is-unknown' : status.active ? 'is-active' : 'is-inactive'">
+                <span aria-hidden="true"></span>{{ !statusKnown ? (loading ? 'Checking' : 'Unknown') : status.active ? 'Maintenance active' : 'Operational' }}
             </span>
         </section>
 
-        <div class="system-maintenance__grid">
-            <section class="system-maintenance__panel system-maintenance__control" aria-labelledby="maintenance-control-heading">
-                <div class="system-maintenance__panel-heading">
-                    <span class="system-maintenance__panel-icon" aria-hidden="true"><svg viewBox="0 0 20 20"><path d="M12.9 3.2a4.1 4.1 0 0 0-5.3 5.3l-4.4 4.4a1.6 1.6 0 0 0 2.3 2.3l4.4-4.4a4.1 4.1 0 0 0 5.3-5.3l-2.3 2.3-2.1-2.1 2.3-2.5Z"/></svg></span>
-                    <div><h2 id="maintenance-control-heading">Maintenance control</h2><p>Enable or restore access for everyone.</p></div>
-                </div>
+        <section v-if="status.native_active" class="system-maintenance__global-warning" role="alert">
+            <div><strong>Global Laravel maintenance is active</strong><p>The CLI maintenance gate affects the entire application, regardless of these scope switches. Disable global maintenance to resume scope-based control.</p></div>
+            <button type="button" :disabled="loading || saving" @click="requestDisableAll">Disable all maintenance</button>
+        </section>
 
-                <template v-if="!status.active">
-                    <label class="system-maintenance__field-label" for="maintenance-message">Visitor message</label>
-                    <textarea id="maintenance-message" v-model="message" rows="3" maxlength="500" :disabled="loading || saving" aria-describedby="maintenance-message-help" />
-                    <p id="maintenance-message-help" class="system-maintenance__field-help">This message appears on the branded 503 maintenance page. {{ message.length }}/500</p>
-
-                    <label class="system-maintenance__field-label" for="maintenance-estimate">Estimated completion <span>Optional</span></label>
-                    <input id="maintenance-estimate" v-model="estimatedAt" type="datetime-local" :min="minimumDateTime" :disabled="loading || saving" />
-                    <p class="system-maintenance__field-help">Shown to visitors when you provide an estimate.</p>
-                    <p v-if="status.estimated_at" class="system-maintenance__configured-estimate">Configured estimate · {{ formatEstimate(status.estimated_at) }}</p>
-                </template>
-                <template v-else>
-                    <div class="system-maintenance__current-copy">
-                        <span>Current visitor message</span>
-                        <p>{{ status.message }}</p>
-                        <span v-if="status.estimated_at" class="system-maintenance__estimate">Estimated completion · {{ formatEstimate(status.estimated_at) }}</span>
-                    </div>
-                    <p v-if="!status.estimated_at" class="system-maintenance__field-help">No completion estimate is configured.</p>
-                </template>
-
-                <button class="system-maintenance__action" :class="status.active ? 'is-disable' : 'is-enable'" type="button" :disabled="loading || saving || !statusKnown || (!status.active && !message.trim())" @click="requestAction">
-                    <svg v-if="status.active" viewBox="0 0 20 20" aria-hidden="true"><path d="M7 4H4v12h3m3-9 4 3-4 3m-3-3h7"/></svg>
-                    <svg v-else viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3.5v13M3.5 10h13"/></svg>
-                    {{ saving ? (pendingAction === 'enable' ? 'Enabling…' : 'Disabling…') : status.active ? 'Disable Maintenance Mode' : 'Enable Maintenance Mode' }}
+        <section class="system-maintenance__panel system-maintenance__preferences" aria-labelledby="scope-preferences-title">
+            <div class="system-maintenance__panel-heading">
+                <span class="system-maintenance__panel-icon" aria-hidden="true"><svg viewBox="0 0 20 20"><path d="M10 3v14M3 10h14"/></svg></span>
+                <div><h2 id="scope-preferences-title">Visitor message</h2><p>Shared across affected areas, with an optional estimated return time.</p></div>
+            </div>
+            <div class="system-maintenance__preferences-grid">
+                <label class="system-maintenance__field">
+                    <span class="system-maintenance__field-label">Maintenance message</span>
+                    <textarea v-model="message" rows="3" maxlength="500" :disabled="loading || saving || status.native_active" aria-describedby="maintenance-message-help" />
+                    <span id="maintenance-message-help" class="system-maintenance__field-help">Shown on the branded 503 page for affected areas. {{ message.length }}/500</span>
+                </label>
+                <label class="system-maintenance__field">
+                    <span class="system-maintenance__field-label">Estimated completion <span>Optional</span></span>
+                    <input v-model="estimatedAt" type="datetime-local" :min="minimumDateTime" :disabled="loading || saving || status.native_active" />
+                    <span class="system-maintenance__field-help">Visitors see this estimate when configured.</span>
+                </label>
+            </div>
+            <div class="system-maintenance__preferences-actions">
+                <span v-if="hasPreferenceChanges" role="status">Unsaved message settings</span>
+                <button class="system-maintenance__save-preferences" type="button" :disabled="!hasPreferenceChanges || loading || saving || status.native_active || !message.trim()" @click="saveVisitorPreferences">
+                    {{ savingPreferences ? 'Saving…' : 'Save message settings' }}
                 </button>
-                <button v-if="loadError" class="system-maintenance__retry" type="button" :disabled="loading" @click="loadStatus(true)">Retry status check</button>
-            </section>
+            </div>
+            <p v-if="status.native_active" class="system-maintenance__field-help">Scope preferences cannot be changed while the native global maintenance gate is active.</p>
+        </section>
 
-            <section class="system-maintenance__panel system-maintenance__impact" aria-labelledby="maintenance-impact-heading">
-                <div class="system-maintenance__panel-heading">
-                    <span class="system-maintenance__panel-icon is-neutral" aria-hidden="true"><svg viewBox="0 0 20 20"><circle cx="10" cy="10" r="7.3"/><path d="M10 9v4m0-6h.01"/></svg></span>
-                    <div><h2 id="maintenance-impact-heading">What to expect</h2><p>Maintenance applies across the application.</p></div>
+        <section class="system-maintenance__scope-list" aria-label="Independent maintenance scopes">
+            <article v-for="scope in scopes" :key="scope.key" class="system-maintenance__scope-card" :class="{ 'is-active': scopeEnabled(scope), 'is-disabled': !statusKnown || loading || saving || status.native_active }">
+                <div class="system-maintenance__scope-card-copy">
+                    <div class="system-maintenance__scope-card-title">
+                        <span class="system-maintenance__scope-dot" :class="scopeEnabled(scope) ? 'is-active' : 'is-inactive'" aria-hidden="true"></span>
+                        <h2>{{ scope.label }}</h2>
+                        <span class="system-maintenance__scope-state" :class="scopeEnabled(scope) ? 'is-active' : 'is-inactive'">{{ scopeEnabled(scope) ? 'Under maintenance' : 'Available' }}</span>
+                    </div>
+                    <p>{{ scope.description }}</p>
+                    <p class="system-maintenance__scope-routes">{{ scope.areas }}</p>
                 </div>
-                <ul class="system-maintenance__impact-list">
-                    <li><span aria-hidden="true"><svg viewBox="0 0 20 20"><path d="m4 10 4 4 8-8"/></svg></span><div><strong>Visitors see a branded service notice</strong><p>The configured message and optional estimate appear with HTTP 503.</p></div></li>
-                    <li><span aria-hidden="true"><svg viewBox="0 0 20 20"><path d="m4 10 4 4 8-8"/></svg></span><div><strong>Workspace and API requests are paused</strong><p>Ordinary accounts cannot use protected pages or application operations while maintenance is active.</p></div></li>
-                    <li><span aria-hidden="true"><svg viewBox="0 0 20 20"><path d="m4 10 4 4 8-8"/></svg></span><div><strong>This control stays available to administrators</strong><p>Use this page to restore access. The server-side Artisan commands remain available as an operational fallback.</p></div></li>
-                </ul>
-                <div class="system-maintenance__notice"><strong>Before enabling</strong><span>Save active work and confirm the deployment or maintenance window is ready. Enabling affects all users immediately.</span></div>
-            </section>
-        </div>
+                <button
+                    class="system-maintenance__scope-toggle"
+                    :class="{ 'is-on': scopeEnabled(scope) }"
+                    type="button"
+                    role="switch"
+                    :aria-checked="scopeEnabled(scope)"
+                    :aria-label="`${scopeEnabled(scope) ? 'Disable' : 'Enable'} ${scope.label} maintenance`"
+                    :disabled="!statusKnown || loading || saving || status.native_active"
+                    @click="requestScopeAction(scope)"
+                >
+                    <span aria-hidden="true"></span><span>{{ scopeEnabled(scope) ? 'Disable' : 'Enable' }}</span>
+                </button>
+            </article>
+        </section>
+
+        <section class="system-maintenance__summary" aria-labelledby="maintenance-summary-title">
+            <div><h2 id="maintenance-summary-title">Maintenance summary</h2><p>{{ summaryText }}</p></div>
+            <ul>
+                <li v-for="scope in scopes" :key="scope.key"><span :class="scopeEnabled(scope) ? 'is-active' : 'is-inactive'" aria-hidden="true"></span>{{ scope.label }}: {{ scopeEnabled(scope) ? 'paused' : 'available' }}</li>
+            </ul>
+        </section>
+
+        <button v-if="loadError" class="system-maintenance__retry" type="button" :disabled="loading" @click="loadStatus(true)">Retry status check</button>
 
         <AppConfirmDialog
             :open="confirmOpen"
-            :title="pendingAction === 'enable' ? 'Enable maintenance mode?' : 'Disable maintenance mode?'"
-            :message="pendingAction === 'enable' ? 'Ordinary visitors and application requests will receive a 503 maintenance response. This control page will remain available to administrators.' : 'Planora will become available to all users and API clients as soon as maintenance mode is disabled.'"
-            :confirm-label="pendingAction === 'enable' ? 'Enable maintenance' : 'Disable maintenance'"
+            :title="confirmationTitle"
+            :message="confirmationMessage"
+            :confirm-label="confirmationLabel"
             :cancel-label="'Keep current state'"
-            :danger="pendingAction === 'enable'"
+            :danger="pendingAction?.enabled || pendingAction?.all"
             @cancel="confirmOpen = false"
             @confirm="confirmAction"
         />
@@ -93,14 +111,21 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import AppConfirmDialog from '../../../shared/components/AppConfirmDialog.vue';
-import { disableSystemMaintenance, enableSystemMaintenance, getSystemMaintenanceStatus } from '../../../features/system-maintenance/admin/services/systemMaintenanceApi.js';
+import { disableSystemMaintenance, getSystemMaintenanceStatus, setMaintenanceScope, updateMaintenancePreferences } from '../../../features/system-maintenance/admin/services/systemMaintenanceApi.js';
+
+const scopes = [
+    { key: 'public_website', route: 'public-website', label: 'Public Website', description: 'Pause public-facing pages while leaving sign-in and workspace access available.', areas: 'Home · Terms · Privacy' },
+    { key: 'authentication', route: 'authentication', label: 'Authentication', description: 'Pause sign-in, registration, password recovery, and verification workflows.', areas: 'Login · Registration · Password recovery · OTP verification' },
+    { key: 'dashboard_workspace', route: 'dashboard-workspace', label: 'Dashboard & Workspace', description: 'Pause User and Moderator workspaces and their APIs. Admin access remains available.', areas: 'Dashboards · Projects · Tasks · Management pages · Workspace APIs' },
+];
 
 const loading = ref(true);
 const statusKnown = ref(false);
 const saving = ref(false);
-const status = ref({ active: false, message: '', estimated_at: null, retry_after: 60 });
+const status = ref({ active: false, native_active: false, overall: 'operational', scopes: {}, effective_scopes: {}, message: '', estimated_at: null, retry_after: 60 });
 const message = ref('');
 const estimatedAt = ref('');
+const savedPreferences = ref({ message: '', estimatedAt: '' });
 const feedback = ref(null);
 const loadError = ref(false);
 const confirmOpen = ref(false);
@@ -112,6 +137,46 @@ const minimumDateTime = computed(() => {
     now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
     return now.toISOString().slice(0, 16);
 });
+const overallLabel = computed(() => ({
+    operational: 'Operational',
+    partially_under_maintenance: 'Partially Under Maintenance',
+    full_maintenance: 'Full Maintenance',
+}[status.value.overall] || 'Status unavailable'));
+const summaryText = computed(() => {
+    if (status.value.native_active) return 'Global Laravel maintenance currently pauses all areas. Individual scope settings are retained but do not override the global gate.';
+    const active = scopes.filter(scopeEnabled);
+    return active.length === 0
+        ? 'No maintenance scopes are enabled.'
+        : `${active.length} of ${scopes.length} areas ${active.length === 1 ? 'is' : 'are'} currently paused.`;
+});
+const hasPreferenceChanges = computed(() => message.value.trim() !== savedPreferences.value.message
+    || estimatedAt.value !== savedPreferences.value.estimatedAt);
+const savingPreferences = computed(() => saving.value && pendingAction.value?.type === 'preferences');
+const confirmationTitle = computed(() => {
+    if (pendingAction.value?.all) return 'Disable all maintenance?';
+    const scope = scopes.find((item) => item.key === pendingAction.value?.scope);
+    return `${pendingAction.value?.enabled ? 'Enable' : 'Disable'} ${scope?.label || 'maintenance'}?`;
+});
+const confirmationMessage = computed(() => {
+    if (pendingAction.value?.all) return 'This will clear all independent scopes and turn off Laravel global maintenance so application access can resume.';
+    const scope = scopes.find((item) => item.key === pendingAction.value?.scope);
+    return pendingAction.value?.enabled
+        ? `${scope?.label} visitors will receive the branded 503 page. Other maintenance scopes will keep their current state.`
+        : `${scope?.label} pages and APIs will become available again. Other maintenance scopes will keep their current state.`;
+});
+const confirmationLabel = computed(() => pendingAction.value?.all
+    ? 'Disable all maintenance'
+    : `${pendingAction.value?.enabled ? 'Enable' : 'Disable'} scope`);
+
+function scopeEnabled(scope) {
+    return Boolean(status.value.effective_scopes?.[scope.key] ?? status.value.scopes?.[scope.key]);
+}
+
+function syncSavedPreferences(nextStatus) {
+    message.value = nextStatus.message || '';
+    estimatedAt.value = toDateTimeLocal(nextStatus.estimated_at);
+    savedPreferences.value = { message: message.value.trim(), estimatedAt: estimatedAt.value };
+}
 
 async function loadStatus(initial = false) {
     if (saving.value) return;
@@ -119,13 +184,12 @@ async function loadStatus(initial = false) {
     if (initial) loading.value = true;
     loadError.value = false;
     try {
-        const wasActive = status.value.active;
+        const wasNative = status.value.native_active;
         status.value = await getSystemMaintenanceStatus();
         statusKnown.value = true;
         if (hadLoadError && feedback.value?.type === 'error') feedback.value = null;
-        if (initial || (wasActive && !status.value.active)) {
-            message.value = status.value.message || '';
-            estimatedAt.value = toDateTimeLocal(status.value.estimated_at);
+        if (initial || wasNative !== status.value.native_active || !hasPreferenceChanges.value) {
+            syncSavedPreferences(status.value);
         }
     } catch (error) {
         loadError.value = true;
@@ -137,15 +201,46 @@ async function loadStatus(initial = false) {
     }
 }
 
-function requestAction() {
-    if (loading.value || saving.value || !statusKnown.value) return;
-    if (!status.value.active && !message.value.trim()) {
-        feedback.value = { type: 'error', message: 'Enter a visitor message before enabling maintenance.' };
+function requestScopeAction(scope) {
+    if (loading.value || saving.value || !statusKnown.value || status.value.native_active) return;
+    const enabled = !scopeEnabled(scope);
+    if (enabled && !message.value.trim()) {
+        feedback.value = { type: 'error', message: 'Enter a visitor message before enabling a scope.' };
         return;
     }
     feedback.value = null;
-    pendingAction.value = status.value.active ? 'disable' : 'enable';
+    pendingAction.value = { scope: scope.key, route: scope.route, enabled };
     confirmOpen.value = true;
+}
+
+function requestDisableAll() {
+    if (loading.value || saving.value) return;
+    feedback.value = null;
+    pendingAction.value = { all: true, enabled: false };
+    confirmOpen.value = true;
+}
+
+async function saveVisitorPreferences() {
+    if (saving.value || !hasPreferenceChanges.value || !message.value.trim() || status.value.native_active) return;
+    saving.value = true;
+    pendingAction.value = { type: 'preferences' };
+    feedback.value = null;
+    try {
+        const result = await updateMaintenancePreferences({
+            message: message.value.trim(),
+            estimated_at: estimatedAt.value ? new Date(estimatedAt.value).toISOString() : null,
+            retry_after: status.value.retry_after || 60,
+        });
+        status.value = result.data;
+        statusKnown.value = true;
+        syncSavedPreferences(result.data);
+        feedback.value = { type: 'success', message: result.message };
+    } catch (error) {
+        feedback.value = { type: 'error', message: error.response?.data?.message || 'Maintenance message settings could not be saved. Please retry.' };
+    } finally {
+        saving.value = false;
+        pendingAction.value = null;
+    }
 }
 
 async function confirmAction() {
@@ -154,20 +249,19 @@ async function confirmAction() {
     saving.value = true;
     feedback.value = null;
     try {
-        let result;
-        if (action === 'enable') {
-            result = await enableSystemMaintenance({
-                message: message.value.trim(),
-                estimated_at: estimatedAt.value ? new Date(estimatedAt.value).toISOString() : null,
-                retry_after: status.value.retry_after || 60,
+        const result = action.all
+            ? await disableSystemMaintenance()
+            : await setMaintenanceScope(action.route, {
+                enabled: action.enabled,
+                ...(action.enabled ? {
+                    message: message.value.trim(),
+                    estimated_at: estimatedAt.value ? new Date(estimatedAt.value).toISOString() : null,
+                    retry_after: status.value.retry_after || 60,
+                } : {}),
             });
-        } else {
-            result = await disableSystemMaintenance();
-        }
         status.value = result.data;
         statusKnown.value = true;
-        message.value = result.data.message || message.value;
-        estimatedAt.value = toDateTimeLocal(result.data.estimated_at);
+        syncSavedPreferences(result.data);
         feedback.value = { type: 'success', message: result.message };
         confirmOpen.value = false;
     } catch (error) {
@@ -176,11 +270,6 @@ async function confirmAction() {
         saving.value = false;
         pendingAction.value = null;
     }
-}
-
-function formatEstimate(value) {
-    const date = new Date(value);
-    return Number.isNaN(date.getTime()) ? value : new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(date);
 }
 
 function toDateTimeLocal(value) {

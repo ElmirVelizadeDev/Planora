@@ -34,6 +34,10 @@
                 <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2.8a7.2 7.2 0 1 0 0 14.4h1.1a1.7 1.7 0 0 0 1.1-3c-.5-.4-.2-1.3.5-1.3h1.1a3.4 3.4 0 0 0 3.4-3.4c0-3.7-3.2-6.7-7.2-6.7Z"/><circle cx="6.5" cy="9" r=".8"/><circle cx="9.3" cy="6.4" r=".8"/><circle cx="13" cy="7" r=".8"/></svg>
                 <span>Appearance</span>
             </RouterLink>
+            <RouterLink v-if="variant === 'admin'" class="profile-menu-item" :to="{ name: 'admin.system-maintenance' }" role="menuitem" @click="open = false">
+                <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M12.9 3.2a4.1 4.1 0 0 0-5.3 5.3l-4.4 4.4a1.6 1.6 0 0 0 2.3 2.3l4.4-4.4a4.1 4.1 0 0 0 5.3-5.3l-2.3 2.3-2.1-2.1 2.3-2.5Z"/><circle cx="5.1" cy="14.9" r=".5"/></svg>
+                <span>System Maintenance</span>
+            </RouterLink>
             <div class="header-menu-divider" role="separator" />
             <button class="header-logout-button profile-menu-item" type="button" aria-haspopup="dialog" role="menuitem" @click="logout">
                 <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M8.2 4H4.8v12h3.4M11 6.5l3.5 3.5-3.5 3.5M7 10h7.2"/></svg>

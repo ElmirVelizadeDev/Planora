@@ -4,12 +4,12 @@
             <div>
                 <p class="admin-users-eyebrow">Administration</p>
                 <h1>Users</h1>
-                <p class="admin-users-description">Manage accounts, access and activity across Planora.</p>
+                <p class="admin-users-description">Manage account access, roles and activity across Planora.</p>
             </div>
             <RouterLink v-if="isAdmin" class="admin-users-primary-button" :to="{ name: 'admin.users.create' }" aria-label="Add new user">＋ Add new user</RouterLink>
         </header>
 
-        <section class="admin-users-stat-grid" aria-label="User statistics">
+        <section v-if="!deletedView" class="admin-users-stat-grid" aria-label="User statistics">
             <article v-for="stat in stats" :key="stat.label" class="admin-users-stat-card">
                 <span class="admin-users-stat-icon" :class="`is-${stat.tone}`" aria-hidden="true">
                     <svg v-if="stat.icon === 'users'" viewBox="0 0 24 24"><path d="M16 20v-1.5a3.5 3.5 0 0 0-3.5-3.5h-5A3.5 3.5 0 0 0 4 18.5V20M10 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm6-7.7a4 4 0 0 1 0 7.4M17 15h.5a3.5 3.5 0 0 1 3.5 3.5V20"/></svg>
@@ -25,10 +25,11 @@
         <section class="admin-users-panel" aria-label="User directory">
             <div class="admin-users-toolbar">
                 <div class="admin-users-panel-heading">
-                    <h2>All users</h2>
-                    <p>Search and manage registered accounts</p>
+                    <h2>{{ deletedView ? 'Deleted users' : 'All users' }}</h2>
+                    <p>{{ deletedView ? 'Restore accounts removed from the directory' : 'Search and manage registered accounts' }}</p>
                 </div>
                 <div class="admin-users-filters">
+                    <button v-if="isAdmin" class="admin-users-secondary-button admin-users-deleted-toggle" type="button" @click="toggleDeletedView">{{ deletedView ? 'Back to users' : 'Deleted users' }}</button>
                     <label class="admin-users-search">
                         <span class="admin-users-search-icon" aria-hidden="true">⌕</span>
                         <span class="sr-only">Search users</span>
@@ -36,6 +37,7 @@
                     </label>
                     <label><span class="sr-only">Filter by role</span><select v-model="filters.role" @change="applyFilters"><option value="">All roles</option><option value="user">User</option><option value="moderator">Moderator</option><option value="admin">Admin</option></select></label>
                     <label><span class="sr-only">Filter by status</span><select v-model="filters.status" @change="applyFilters"><option value="">All statuses</option><option value="active">Active</option><option value="inactive">Inactive</option><option value="suspended">Suspended</option><option value="banned">Banned</option></select></label>
+                    <label><span class="sr-only">Sort users</span><select v-model="sort" aria-label="Sort users" @change="applyFilters"><option value="newest">Newest first</option><option value="oldest">Oldest first</option><option value="name_asc">Name A–Z</option><option value="name_desc">Name Z–A</option></select></label>
                     <label class="admin-users-date-filter"><span class="sr-only">Registered from</span><input v-model="filters.registered_from" type="date" aria-label="Registered from" @change="applyFilters"></label>
                     <label class="admin-users-date-filter"><span class="sr-only">Registered to</span><input v-model="filters.registered_to" type="date" aria-label="Registered to" @change="applyFilters"></label>
                     <button class="admin-users-secondary-button admin-users-refresh-button" type="button" :disabled="loading" :aria-busy="loading" @click="refreshUsers">
@@ -50,13 +52,14 @@
                 <span>{{ error }}</span><button type="button" @click="loadUsers">Try again</button>
             </div>
             <div v-else-if="loading && !users.length" class="admin-users-loading" role="status">
-                <span class="admin-users-spinner" aria-hidden="true"></span> Loading users…
+                <span class="sr-only">Loading users…</span>
+                <span class="admin-users-skeleton-table" aria-hidden="true"><i v-for="row in 5" :key="row"></i></span>
             </div>
             <div v-else-if="!users.length" class="admin-users-empty">
                 <span class="admin-users-empty-icon" aria-hidden="true">♙</span>
-                <h3>{{ hasFilters ? 'No users match these filters' : 'No users yet' }}</h3>
-                <p>{{ hasFilters ? 'Try adjusting your search or clearing the filters.' : 'New accounts will appear here once they are added.' }}</p>
-                <button v-if="hasFilters" type="button" class="admin-users-secondary-button" @click="clearFilters">Clear filters</button>
+                <h3>{{ deletedView ? 'No deleted accounts' : hasFilters ? 'No users match these filters' : 'No users yet' }}</h3>
+                <p>{{ deletedView ? 'Deleted accounts will appear here and can be restored by an administrator.' : hasFilters ? 'Try adjusting your search or clearing the filters.' : 'New accounts will appear here once they are added.' }}</p>
+                <button v-if="hasFilters && !deletedView" type="button" class="admin-users-secondary-button" @click="clearFilters">Clear filters</button>
             </div>
             <template v-else>
                 <div class="admin-users-table-wrap" :class="{ 'is-loading': loading }">
@@ -75,12 +78,18 @@
                                 <td data-label="Registered"><time :datetime="user.created_at">{{ formatDate(user.created_at) }}</time></td>
                                 <td data-label="Last active"><time v-if="user.last_login_at" :datetime="user.last_login_at">{{ formatRelativeDate(user.last_login_at) }}</time><span v-else class="admin-users-muted">Never</span></td>
                                 <td data-label="Actions">
-                                    <div class="admin-users-actions">
-                                        <button type="button" :aria-label="`View ${user.name}`" title="View user" @click="openViewDialog(user)">View</button>
-                                        <button v-if="isAdmin" type="button" :aria-label="`Edit ${user.name}`" title="Edit user" @click="openEditDialog(user)">Edit</button>
-                                        <button v-if="isAdmin || (canManageStatus && user.role === 'user')" type="button" :disabled="Boolean(statusActionDisabledReason(user))" :aria-label="`Change status for ${user.name}`" :title="statusActionDisabledReason(user) || 'Change status'" @click="openStatusDialog(user)">Status</button>
-                                        <button v-if="isAdmin" class="is-danger" type="button" :disabled="Boolean(deleteActionDisabledReason(user))" :aria-label="`Delete ${user.name}`" :title="deleteActionDisabledReason(user) || 'Delete user'" @click="openDeleteDialog(user)">Delete</button>
-                                    </div>
+                                    <details class="admin-users-actions">
+                                        <summary :aria-label="`Actions for ${user.name}`" :title="`Actions for ${user.name}`"><span aria-hidden="true">···</span></summary>
+                                        <div class="admin-users-action-menu" role="group" :aria-label="`Manage ${user.name}`">
+                                            <template v-if="deletedView"><button type="button" @click="openRestoreDialog(user)">Restore user</button></template>
+                                            <template v-else>
+                                                <button type="button" @click="openViewDialog(user)">View profile</button>
+                                                <button v-if="isAdmin" type="button" @click="openEditDialog(user)">Edit user</button>
+                                                <button v-if="isAdmin || (canManageStatus && user.role === 'user')" type="button" :disabled="Boolean(statusActionDisabledReason(user))" :title="statusActionDisabledReason(user)" @click="openStatusDialog(user)">Change status</button>
+                                                <button v-if="isAdmin" class="is-danger" type="button" :disabled="Boolean(deleteActionDisabledReason(user))" :title="deleteActionDisabledReason(user)" @click="openDeleteDialog(user)">Delete user</button>
+                                            </template>
+                                        </div>
+                                    </details>
                                 </td>
                             </tr>
                         </tbody>
@@ -98,7 +107,7 @@
         </section>
 
         <div v-if="dialog.user" class="admin-users-modal-backdrop" @click.self="closeDialog" @keydown.esc="closeDialog">
-            <section class="admin-users-dialog" role="dialog" aria-modal="true" tabindex="-1" :aria-labelledby="dialogTitleId" @keydown.esc="closeDialog">
+            <section class="admin-users-dialog" :class="`is-${dialog.type}`" role="dialog" aria-modal="true" tabindex="-1" :aria-labelledby="dialogTitleId" @keydown.esc="closeDialog">
                 <template v-if="dialog.type === 'view'">
                     <p class="admin-users-dialog-eyebrow">User account</p>
                     <template v-if="dialog.loading">
@@ -216,7 +225,7 @@
                     <label class="admin-users-confirm-check"><input v-model="dialog.confirmed" type="checkbox"> <span>I confirm changing this account’s status to <strong>{{ statusLabel(dialog.status) }}</strong>.</span></label>
                     <div class="admin-users-dialog-actions"><button class="admin-users-secondary-button" type="button" :disabled="dialog.saving" @click="closeDialog">Cancel</button><button class="admin-users-primary-button" type="button" :disabled="dialog.saving || !dialog.confirmed" @click="confirmStatus">{{ dialog.saving ? 'Updating…' : 'Confirm status change' }}</button></div>
                 </template>
-                <template v-else>
+                <template v-else-if="dialog.type === 'delete'">
                     <p class="admin-users-dialog-eyebrow is-danger">Remove account</p>
                     <h2 :id="dialogTitleId">Delete this user?</h2>
                     <div class="admin-users-delete-identity">
@@ -234,6 +243,13 @@
                     <p v-if="dialog.error" class="admin-users-dialog-state is-error" role="alert">{{ dialog.error }}</p>
                     <div class="admin-users-dialog-actions"><button class="admin-users-secondary-button" type="button" :disabled="dialog.saving" @click="closeDialog">Cancel</button><button class="admin-users-danger-button" type="button" :disabled="dialog.saving || dialog.deleteConfirmation !== 'DELETE'" @click="confirmDelete"><span v-if="dialog.saving" class="admin-users-danger-spinner" aria-hidden="true"></span>{{ dialog.saving ? 'Deleting…' : 'Delete user' }}</button></div>
                 </template>
+                <template v-else>
+                    <p class="admin-users-dialog-eyebrow">Recover account</p>
+                    <h2 :id="dialogTitleId">Restore this user?</h2>
+                    <p class="admin-users-dialog-copy">Restore <strong>{{ dialog.user.name }}</strong> to the active user directory?</p>
+                    <p v-if="dialog.error" class="admin-users-dialog-state is-error" role="alert">{{ dialog.error }}</p>
+                    <div class="admin-users-dialog-actions"><button class="admin-users-secondary-button" type="button" :disabled="dialog.saving" @click="closeDialog">Cancel</button><button class="admin-users-primary-button" type="button" :disabled="dialog.saving" @click="confirmRestore">{{ dialog.saving ? 'Restoring…' : 'Restore user' }}</button></div>
+                </template>
             </section>
         </div>
         <p v-if="notice" class="admin-users-toast" :class="{ 'is-error': noticeIsError }" :role="noticeIsError ? 'alert' : 'status'">{{ notice }}</p>
@@ -249,7 +265,7 @@ import { validatePersonName, validateSupportedEmail } from '../../../shared/vali
 
 const auth = useAuthStore();
 const users = ref([]);
-const statsData = ref({ total_users: 0, active_users: 0, inactive_users: 0, new_users_last_30_days: 0 });
+const statsData = ref({ total_users: 0, active_users: 0, inactive_users: 0, banned_users: 0 });
 const activeAdmins = ref(null);
 const total = ref(0);
 const page = ref(1);
@@ -262,6 +278,8 @@ const editAvatarInput = ref(null);
 const searchInput = ref('');
 const search = ref('');
 const filters = reactive({ role: '', status: '', registered_from: '', registered_to: '' });
+const sort = ref('newest');
+const deletedView = ref(false);
 const dialog = reactive({
     type: '', user: null, loading: false, saving: false, error: '', fieldErrors: {},
     first_name: '', last_name: '', email: '', phone: '', username: '', role: '', status: '',
@@ -289,12 +307,12 @@ const canManageStatus = computed(() => isAdmin.value
 const usersPerPage = 10;
 const editAvatarPreview = computed(() => dialog.avatarPreview || (dialog.removeAvatar ? '' : dialog.user?.avatar || ''));
 
-const hasFilters = computed(() => Boolean(search.value || filters.role || filters.status || filters.registered_from || filters.registered_to));
+const hasFilters = computed(() => Boolean(deletedView.value || search.value || filters.role || filters.status || filters.registered_from || filters.registered_to));
 const stats = computed(() => [
     { label: 'Total users', value: statsData.value.total_users, icon: 'users', tone: 'primary' },
     { label: 'Active users', value: statsData.value.active_users, icon: 'active', tone: 'success' },
     { label: 'Inactive users', value: statsData.value.inactive_users, icon: 'inactive', tone: 'neutral' },
-    { label: 'New users', value: statsData.value.new_users_last_30_days, icon: 'new', tone: 'violet' },
+    { label: 'Banned users', value: statsData.value.banned_users, icon: 'new', tone: 'violet' },
 ]);
 const rangeStart = computed(() => total.value ? (page.value - 1) * usersPerPage + 1 : 0);
 const rangeEnd = computed(() => Math.min(page.value * usersPerPage, total.value));
@@ -324,7 +342,8 @@ async function loadUsers({ notifyError = false } = {}) {
     const requestSequence = ++loadRequestSequence;
     loading.value = true;
     error.value = '';
-    const params = { page: page.value, per_page: usersPerPage, sort: 'newest' };
+    const params = { page: page.value, per_page: usersPerPage, sort: sort.value };
+    if (deletedView.value) params.deleted = 1;
     if (search.value) params.search = search.value;
     if (filters.role) params.role = filters.role;
     if (filters.status) params.status = filters.status;
@@ -370,6 +389,18 @@ function onSearchInput() {
 }
 function applyFilters() { page.value = 1; loadUsers(); }
 function clearFilters() {
+    searchInput.value = '';
+    search.value = '';
+    filters.role = '';
+    filters.status = '';
+    filters.registered_from = '';
+    filters.registered_to = '';
+    deletedView.value = false;
+    page.value = 1;
+    loadUsers();
+}
+function toggleDeletedView() {
+    deletedView.value = !deletedView.value;
     searchInput.value = '';
     search.value = '';
     filters.role = '';
@@ -491,6 +522,12 @@ function openDeleteDialog(user) {
     dialog.type = 'delete';
     dialog.user = user;
     dialog.deleteConfirmation = '';
+    dialog.saving = false;
+}
+function openRestoreDialog(user) {
+    resetDialogErrors();
+    dialog.type = 'restore';
+    dialog.user = user;
     dialog.saving = false;
 }
 function closeDialog() {
@@ -719,6 +756,19 @@ async function confirmDelete() {
             : response?.status === 404
                 ? 'This user could not be found. The user list may have changed; close this dialog and refresh the list.'
                 : validationMessage || response?.data?.message || 'The delete request failed. Check your connection and try again.';
+    } finally { dialog.saving = false; }
+}
+async function confirmRestore() {
+    if (!dialog.user || dialog.saving) return;
+    dialog.saving = true;
+    try {
+        await api.post(`/admin/users/${dialog.user.id}/restore`);
+        closeDialog();
+        showNotice('User restored.');
+        await loadUsers();
+    } catch (requestError) {
+        dialog.error = requestError.response?.data?.message || 'The user could not be restored.';
+        showNotice(dialog.error, true);
     } finally { dialog.saving = false; }
 }
 

@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 import { routes } from '../../resources/js/router/routes.js';
 
-const { APPEARANCE_DEFAULTS, APPEARANCE_ACCENTS, appearanceAccentTokens, initializeAppearancePreferences, resetAppearanceSession, useAppearancePreferences } = await import('../../resources/js/features/appearance/composables/appearancePreferences.js');
+const { APPEARANCE_DEFAULTS, APPEARANCE_ACCENTS, appearanceAccentTokens, getGuestTheme, initializeAppearancePreferences, resetAppearanceSession, setGuestTheme, useAppearancePreferences } = await import('../../resources/js/features/appearance/composables/appearancePreferences.js');
 const values = new Map();
 const cssVariables = new Map();
 globalThis.localStorage = {
@@ -72,6 +72,44 @@ test('ending an appearance session restores Light without deleting account prefe
     resetAppearanceSession();
     assert.equal(document.documentElement.dataset.theme, 'light');
     assert.deepEqual(JSON.parse(values.get('planora.appearance.v1.41')), { theme: 'dark', accent: '#0F766E', density: 'compact', sidebar: 'expanded' });
+});
+
+test('guest theme persists separately and never replaces an authenticated account theme', () => {
+    resetAppearanceSession();
+    assert.equal(getGuestTheme(), 'light');
+    assert.equal(setGuestTheme('dark'), true);
+    assert.equal(document.documentElement.dataset.theme, 'dark');
+    assert.equal(values.get('planora.guest-theme.v1'), 'dark');
+    assert.match(document.cookie, /planora_guest_theme=dark/);
+
+    const account = useAppearancePreferences();
+    account.load(41);
+    assert.equal(account.preferences.theme, 'dark');
+    assert.equal(setGuestTheme('light'), false);
+    assert.deepEqual(JSON.parse(values.get('planora.appearance.v1.41')), { theme: 'dark', accent: '#0F766E', density: 'compact', sidebar: 'expanded' });
+
+    resetAppearanceSession();
+    assert.equal(document.documentElement.dataset.theme, 'dark');
+});
+
+test('public theme selector is keyboard-accessible and server shells initialize guest theme before app styles', async () => {
+    const navbar = await readFile(new URL('../../resources/js/shared/components/public/PublicNavbar.vue', import.meta.url), 'utf8');
+    const authenticatedHome = await readFile(new URL('../../resources/js/shared/components/public/AuthenticatedHome.vue', import.meta.url), 'utf8');
+    const themeSelector = await readFile(new URL('../../resources/js/shared/components/public/ThemeSelector.vue', import.meta.url), 'utf8');
+    const shell = await readFile(new URL('../../resources/views/welcome.blade.php', import.meta.url), 'utf8');
+    const errorShell = await readFile(new URL('../../resources/views/errors/page.blade.php', import.meta.url), 'utf8');
+    const css = await readFile(new URL('../../resources/css/pages/public/home.css', import.meta.url), 'utf8');
+    assert.match(navbar, /<ThemeSelector :theme="theme" @select="selectTheme" \/>/);
+    assert.match(authenticatedHome, /<ThemeSelector :theme="preferences\.theme" @select="selectTheme" \/>/);
+    assert.match(authenticatedHome, /preferences\.theme = theme;\s+save\(\);/);
+    assert.match(themeSelector, /role="group" aria-label="Choose color theme"/);
+    assert.match(themeSelector, /aria-label="Light mode"/);
+    assert.match(themeSelector, /aria-label="Dark mode"/);
+    assert.match(shell, /planora\.guest-theme\.v1/);
+    assert.match(shell, /document\.documentElement\.dataset\.theme = theme/);
+    assert.match(errorShell, /request\(\)->cookie\('planora_guest_theme'\)/);
+    assert.match(errorShell, /:root\[data-theme="dark"\]/);
+    assert.match(css, /\.public-theme-option:focus-visible/);
 });
 
 test('Appearance primary action keeps a white label in every interactive state', async () => {

@@ -7,6 +7,7 @@ use App\Models\EmailVerificationOtp;
 use App\Models\PendingRegistration;
 use App\Models\User;
 use App\Services\Api\V1\Admin\UserActivityLogger;
+use App\Services\Api\V1\Notifications\NotificationService;
 use App\Services\Settings\SettingsService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -17,8 +18,11 @@ use Throwable;
 
 class RegistrationService
 {
-    public function __construct(private readonly UserActivityLogger $activityLogger, private readonly SettingsService $settings)
-    {
+    public function __construct(
+        private readonly UserActivityLogger $activityLogger,
+        private readonly SettingsService $settings,
+        private readonly NotificationService $notifications,
+    ) {
     }
 
     public function begin(array $attributes): bool
@@ -149,6 +153,7 @@ class RegistrationService
             $pending->delete();
 
             $this->activityLogger->record('user.registered', 'User account registered and email verified.', $user, $user);
+            $this->notifications->userRegistered($user);
 
             return ['user' => $user];
         });

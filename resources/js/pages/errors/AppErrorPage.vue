@@ -86,6 +86,14 @@ onMounted(() => {
     if (props.code !== 503) return;
     availabilityPoll = window.setInterval(async () => {
         try {
+            const maintenanceScope = router.currentRoute.value.query.maintenanceScope;
+            if (typeof maintenanceScope === 'string') {
+                const response = await fetch('/api/v1/maintenance/status', { cache: 'no-store', credentials: 'same-origin' });
+                const status = await response.json();
+                if (response.ok && !status.data?.scopes?.[maintenanceScope]) window.location.assign('/');
+                return;
+            }
+
             const response = await fetch('/', { method: 'GET', cache: 'no-store', credentials: 'same-origin' });
             if (response.ok) window.location.assign('/');
         } catch {

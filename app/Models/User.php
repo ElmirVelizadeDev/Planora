@@ -73,6 +73,11 @@ class User extends Authenticatable
         return $this->hasMany(UserActivityLog::class, 'actor_id');
     }
 
+    public function planoraNotifications(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(UserNotification::class, 'recipient_id');
+    }
+
     public function ownedTasks(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(Task::class, 'owner_id');

@@ -10,6 +10,7 @@
             </button>
             <div id="public-navigation" class="public-nav-links" :class="{ 'is-open': mobileOpen }">
                 <RouterLink :to="{ name: 'home' }" @click="mobileOpen = false">Home</RouterLink>
+                <ThemeSelector :theme="theme" @select="selectTheme" />
                 <template v-if="auth.isAuthenticated">
                     <div class="public-profile-menu" @keydown.esc="profileOpen = false">
                         <button class="public-profile-trigger" type="button" aria-label="Open profile menu" :aria-expanded="profileOpen" aria-haspopup="menu" @click="profileOpen = !profileOpen">
@@ -34,11 +35,14 @@
 import { onBeforeUnmount, onMounted, ref } from 'vue';
 import { useAuthStore } from '../../../features/auth/stores/authStore.js';
 import { useLogoutConfirmation } from '../../../features/auth/composables/useLogoutConfirmation.js';
+import { getGuestTheme, setGuestTheme } from '../../../features/appearance/composables/appearancePreferences.js';
+import ThemeSelector from './ThemeSelector.vue';
 import UserAvatar from '../UserAvatar.vue';
 
 const auth = useAuthStore();
 const mobileOpen = ref(false);
 const profileOpen = ref(false);
+const theme = ref(getGuestTheme());
 const { requestLogout: openLogoutConfirmation } = useLogoutConfirmation();
 
 function closeMenus() {
@@ -52,6 +56,15 @@ function logout(event) {
     closeMenus();
     openLogoutConfirmation(event);
 }
+function selectTheme(value) {
+    if (!setGuestTheme(value)) return;
+    theme.value = value;
+}
+function syncTheme() { theme.value = getGuestTheme(); }
 onMounted(() => document.addEventListener('pointerdown', onOutside));
-onBeforeUnmount(() => document.removeEventListener('pointerdown', onOutside));
+onMounted(() => window.addEventListener('planora:guest-theme-updated', syncTheme));
+onBeforeUnmount(() => {
+    document.removeEventListener('pointerdown', onOutside);
+    window.removeEventListener('planora:guest-theme-updated', syncTheme);
+});
 </script>

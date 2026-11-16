@@ -35,6 +35,10 @@ class UserActivityLogger
         $requestId = $request?->attributes->get('request_id');
         $requestId = is_string($requestId) && Str::isUuid($requestId) ? $requestId : null;
         $userAgent = $request?->userAgent();
+        $requestPath = $request ? '/'.$request->path() : null;
+        if ($request?->routeIs('admin.secret-entry', 'admin.secret-login')) {
+            $requestPath = '/[protected-admin-entry]';
+        }
 
         return UserActivityLog::create([
             'event_id' => (string) Str::uuid(),
@@ -55,7 +59,7 @@ class UserActivityLogger
             'ip_address' => $request?->ip(),
             'user_agent' => is_string($userAgent) ? Str::limit($this->cleanText($userAgent), 500, '') : null,
             'request_method' => $request?->method() ? Str::limit($request->method(), 10, '') : null,
-            'request_path' => $request ? Str::limit($this->cleanText('/'.$request->path()), 500, '') : null,
+            'request_path' => $requestPath !== null ? Str::limit($this->cleanText($requestPath), 500, '') : null,
             'request_id' => $requestId,
             'status' => in_array($status, ['success', 'failure'], true) ? $status : 'success',
             'created_at' => now(),

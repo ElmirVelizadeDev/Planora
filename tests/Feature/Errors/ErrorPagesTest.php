@@ -3,6 +3,7 @@
 namespace Tests\Feature\Errors;
 
 use App\Models\User;
+use App\Services\Api\V1\Admin\SystemMaintenance\MaintenanceScopeStore;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
@@ -16,6 +17,7 @@ class ErrorPagesTest extends TestCase
         parent::setUp();
 
         $this->withoutVite();
+        app(MaintenanceScopeStore::class)->reset();
         Route::middleware('api')->get('/api/v1/__test/http-error/{status}', function (int $status) {
             abort($status, 'private exception detail must not leak');
         });
@@ -108,5 +110,51 @@ class ErrorPagesTest extends TestCase
         $this->assertStringContainsString('Scheduled maintenance in progress.', $html);
         $this->assertStringContainsString('Nov 14, 2026 6:00 PM AZT', $html);
         $this->assertStringNotContainsString('@vite', $html);
+    }
+
+    public function test_guest_theme_cookie_controls_standalone_error_page_theme_safely(): void
+    {
+        $request = Request::create('/', 'GET', [], ['planora_guest_theme' => 'dark']);
+        app(\App\Http\Middleware\EncryptCookies::class)->handle($request, function (Request $decryptedRequest) {
+            $this->assertSame('dark', $decryptedRequest->cookie('planora_guest_theme'));
+            return response('cookie accepted');
+        });
+
+        $request = Request::create('/', 'GET', [], ['planora_guest_theme' => 'dark']);
+        $this->app->instance('request', $request);
+        $darkHtml = view('errors.page', ['code' => 500, 'title' => 'Error', 'description' => 'Try again.'])->render();
+        $this->assertStringContainsString('data-theme="dark"', $darkHtml);
+        $this->assertStringContainsString('meta name="color-scheme" content="dark"', $darkHtml);
+
+        $request = Request::create('/', 'GET', [], ['planora_guest_theme' => 'not-a-theme']);
+        $this->app->instance('request', $request);
+        $lightHtml = view('errors.page', ['code' => 500, 'title' => 'Error', 'description' => 'Try again.'])->render();
+        $this->assertStringContainsString('data-theme="light"', $lightHtml);
+    }
+
+    public function test_public_routes_and_spa_error_pages_include_the_early_guest_theme_bootstrap(): void
+    {
+        foreach (['/', '/login', '/register', '/terms-and-conditions', '/privacy-policy', '/401', '/403', '/404', '/419', '/429', '/500', '/503'] as $path) {
+            $this->withCookie('planora_guest_theme', 'dark')
+                ->get($path)
+                ->assertOk()
+                ->assertSee('planora.guest-theme.v1', false)
+                ->assertSee('document.documentElement.dataset.theme = theme', false);
+        }
+    }
+
+    public function test_spa_shell_bootstraps_guest_theme_early_and_prefers_current_accounts_saved_theme(): void
+    {
+        $this->withCookie('planora_guest_theme', 'dark')
+            ->get('/')
+            ->assertOk()
+            ->assertSee('planora.guest-theme.v1', false)
+            ->assertSee('document.documentElement.dataset.theme = theme', false);
+
+        $user = new User();
+        $user->forceFill(['id' => 778, 'name' => 'Theme QA', 'email' => 'theme-qa@planora.test', 'password' => Hash::make('maintenance-test-password'), 'role' => 'user', 'status' => 'active']);
+        $this->actingAs($user, 'web')->get('/')
+            ->assertOk()
+            ->assertSee('planora.appearance.v1.', false);
     }
 }

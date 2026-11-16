@@ -5,13 +5,16 @@ namespace App\Services\Api\V1\Tasks;
 use App\Models\Task;
 use App\Models\User;
 use App\Services\Api\V1\Admin\UserActivityLogger;
+use App\Services\Api\V1\Notifications\NotificationService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 
 class UserTaskService
 {
-    public function __construct(private readonly UserActivityLogger $activityLogger)
-    {
+    public function __construct(
+        private readonly UserActivityLogger $activityLogger,
+        private readonly NotificationService $notifications,
+    ) {
     }
 
     public function queryFor(int $userId)
@@ -137,8 +140,9 @@ class UserTaskService
                 $task->status = $status;
                 $task->save();
                 $event = $status === 'completed' ? 'task.completed' : 'task.status_changed';
-                $this->activityLogger->recordChange($event, $this->descriptionFor($event), $task, $actor,
+                $activity = $this->activityLogger->recordChange($event, $this->descriptionFor($event), $task, $actor,
                     ['status' => $before], ['status' => $status]);
+                $this->notifications->taskStatusChanged($task, $actor, $status, $activity?->event_id);
             }
 
             return $task->refresh()->load('category');

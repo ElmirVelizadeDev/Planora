@@ -37,3 +37,9 @@
 @media (max-width: 430px) { .terms-header { width: calc(100% - 36px); height: auto; min-height: 67px; }.terms-brand { font-size: 15px; }.terms-brand-mark { width: 29px; height: 29px; }.terms-header-actions { gap: 9px; }.terms-registration-link { min-height: 32px; gap: 5px; padding-inline: 8px; font-size: 9px; }.terms-home-link { font-size: 9px; }.terms-main { padding-top: 36px; }.terms-intro { margin-bottom: 31px; }.terms-lead { font-size: 13px; }.terms-toc { padding: 14px 9px; }.terms-toc a { gap: 6px; padding: 7px 5px; }.terms-toc a span { font-size: 9px; }.terms-content { padding-inline: 16px; }.terms-section { grid-template-columns: 22px minmax(0, 1fr); gap: 10px; padding: 21px 0; }.terms-section h2 { font-size: 14px; }.terms-section p { font-size: 11px; }.terms-footer { padding-inline: 18px; } }
 @media (prefers-reduced-motion: reduce) { .terms-home-link, .terms-registration-link, .terms-toc a { transition: none; } }
 @media (prefers-reduced-motion: reduce) { .terms-page { scroll-behavior: auto; } }
+:root[data-theme="dark"] .terms-header { border-color: var(--color-border); }
+:root[data-theme="dark"] .terms-registration-link { color: var(--color-accent-text); }
+:root[data-theme="dark"] .terms-registration-link:hover { color: var(--color-accent-text); }
+:root[data-theme="dark"] .terms-eyebrow span { background: var(--color-accent); box-shadow: 0 0 0 4px var(--color-accent-subtle); }
+:root[data-theme="dark"] .terms-toc { background: var(--color-surface); }
+:root[data-theme="dark"] .terms-content { box-shadow: var(--shadow-soft); }

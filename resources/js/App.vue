@@ -1,17 +1,22 @@
 <template>
-    <RouterView />
-    <LogoutConfirmationDialog />
+    <AdminLogin v-if="adminAuthEntry" />
+    <template v-else>
+        <RouterView />
+        <LogoutConfirmationDialog />
+    </template>
 </template>
 
 <script setup>
-import { onBeforeUnmount, onMounted } from 'vue';
+import { defineAsyncComponent, onBeforeUnmount, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import LogoutConfirmationDialog from './shared/components/LogoutConfirmationDialog.vue';
+const AdminLogin = defineAsyncComponent(() => import('./features/auth/components/AdminLogin.vue'));
 import { useAuthStore } from './features/auth/stores/authStore.js';
 import { moderatorCanAccessAdminRoute, moderatorLandingRoute } from './features/auth/managementAccess.js';
 
 const router = useRouter();
 const auth = useAuthStore();
+const adminAuthEntry = document.getElementById('app')?.dataset.planoraView === 'admin-auth';
 let syncingAccess = false;
 
 async function refreshModeratorAccess(event) {
@@ -36,6 +41,26 @@ async function refreshModeratorAccess(event) {
     }
 }
 
-onMounted(() => window.addEventListener('planora:api-error', refreshModeratorAccess));
-onBeforeUnmount(() => window.removeEventListener('planora:api-error', refreshModeratorAccess));
+async function handleMaintenanceResponse(event) {
+    if (event.detail?.status !== 503) return;
+    if (adminAuthEntry) return;
+
+    const routeName = String(router.currentRoute.value.name || '');
+    if (auth.hasRole('admin') && ['admin.dashboard', 'admin.system-maintenance'].includes(routeName)) return;
+    if (routeName === 'error.503') return;
+
+    const scope = event.detail.data?.scope;
+    await router.replace(scope
+        ? { name: 'error.503', query: { maintenanceScope: scope } }
+        : { name: 'error.503' });
+}
+
+onMounted(() => {
+    window.addEventListener('planora:api-error', refreshModeratorAccess);
+    window.addEventListener('planora:api-error', handleMaintenanceResponse);
+});
+onBeforeUnmount(() => {
+    window.removeEventListener('planora:api-error', refreshModeratorAccess);
+    window.removeEventListener('planora:api-error', handleMaintenanceResponse);
+});
 </script>

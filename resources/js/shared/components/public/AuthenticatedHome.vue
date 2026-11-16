@@ -8,6 +8,7 @@
                 </RouterLink>
                 <div class="auth-home-header-actions">
                     <RouterLink class="auth-home-header-link" :to="{ name: dashboardRoute.name }">Dashboard</RouterLink>
+                    <ThemeSelector :theme="preferences.theme" @select="selectTheme" />
                     <ProfileDropdown class="auth-home-profile" :variant="profileVariant" />
                 </div>
             </nav>
@@ -71,9 +72,13 @@
 import { computed } from 'vue';
 import { RouterLink } from 'vue-router';
 import { useAuthStore } from '../../../features/auth/stores/authStore.js';
+import { useAppearancePreferences } from '../../../features/appearance/composables/appearancePreferences.js';
 import ProfileDropdown from '../ProfileDropdown.vue';
+import ThemeSelector from './ThemeSelector.vue';
 
 const auth = useAuthStore();
+const { preferences, load, save } = useAppearancePreferences();
+load(auth.user?.id);
 const displayName = computed(() => auth.user?.name?.trim() || 'there');
 const isAdmin = computed(() => auth.hasRole('admin'));
 const isUser = computed(() => auth.hasRole('user'));
@@ -95,6 +100,12 @@ const quickLinks = computed(() => {
     }
     return [];
 });
+
+function selectTheme(theme) {
+    if (preferences.theme === theme) return;
+    preferences.theme = theme;
+    save();
+}
 </script>
 
 <style src="../../../../css/components/WorkspaceHeader.css"></style>

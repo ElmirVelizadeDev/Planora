@@ -4,6 +4,7 @@
 /public/hot
 /public/storage
 /storage/*.key
+/storage/framework/planora-maintenance-scopes.json
 /vendor
 .env
 .env.*

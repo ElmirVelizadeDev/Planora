@@ -14,10 +14,25 @@ class PreventRequestsDuringMaintenance extends Middleware
      * @var array<int, string>
      */
     protected $except = [
+        'admin/dashboard',
         'admin/system-maintenance',
-        'api/v1/admin/system-maintenance*',
+        'api/v1/admin/dashboard',
+        'api/v1/admin/system-maintenance',
+        'api/v1/admin/system-maintenance/enable',
+        'api/v1/admin/system-maintenance/disable',
+        'api/v1/admin/system-maintenance/preferences',
+        'api/v1/admin/system-maintenance/scopes/*',
         'api/v1/user',
     ];
+
+    public function getExcludedPaths()
+    {
+        $adminEntryPath = config('planora.admin_entry_path');
+
+        return is_string($adminEntryPath) && $adminEntryPath !== ''
+            ? [...$this->except, $adminEntryPath]
+            : $this->except;
+    }
 
     public function handle($request, Closure $next)
     {

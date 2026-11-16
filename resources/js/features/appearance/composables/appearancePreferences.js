@@ -11,6 +11,9 @@ export const APPEARANCE_ACCENTS = Object.freeze([
 const preferences = reactive({ ...APPEARANCE_DEFAULTS });
 const ownerId = ref(null);
 const ownerKey = (id) => `planora.appearance.v1.${String(id)}`;
+const guestThemeKey = 'planora.guest-theme.v1';
+const guestThemeCookie = 'planora_guest_theme';
+const validTheme = (value) => ['light', 'dark'].includes(value);
 const validAccent = (value) => APPEARANCE_ACCENTS.some((option) => option.value === value);
 const validPreferences = (value) => ({
     theme: ['light', 'dark'].includes(value?.theme) ? value.theme : APPEARANCE_DEFAULTS.theme,
@@ -63,9 +66,46 @@ export function initializeAppearancePreferences(id) {
     applyPreferences(stored || APPEARANCE_DEFAULTS);
 }
 
+function readGuestCookieTheme() {
+    try {
+        const entry = document.cookie.split('; ').find((cookie) => cookie.startsWith(`${guestThemeCookie}=`));
+        const value = entry ? entry.slice(guestThemeCookie.length + 1) : null;
+        return validTheme(value) ? value : null;
+    } catch { return null; }
+}
+
+export function getGuestTheme() {
+    try {
+        const stored = localStorage.getItem(guestThemeKey);
+        if (validTheme(stored)) return stored;
+    } catch { /* Fall back to the theme cookie for direct server-rendered pages. */ }
+    return readGuestCookieTheme() || APPEARANCE_DEFAULTS.theme;
+}
+
+export function setGuestTheme(theme) {
+    if (!validTheme(theme) || ownerId.value !== null) return false;
+
+    try { localStorage.setItem(guestThemeKey, theme); }
+    catch { return false; }
+
+    try {
+        const secure = typeof location !== 'undefined' && location.protocol === 'https:' ? '; Secure' : '';
+        document.cookie = `${guestThemeCookie}=${encodeURIComponent(theme)}; Path=/; Max-Age=31536000; SameSite=Lax${secure}`;
+    } catch { /* The saved local preference still applies to SPA navigation. */ }
+
+    applyPreferences({ ...APPEARANCE_DEFAULTS, theme });
+    if (typeof window !== 'undefined') window.dispatchEvent(new Event('planora:guest-theme-updated'));
+    return true;
+}
+
+export function initializeGuestAppearance() {
+    if (ownerId.value !== null) return;
+    applyPreferences({ ...APPEARANCE_DEFAULTS, theme: getGuestTheme() });
+}
+
 export function resetAppearanceSession() {
     ownerId.value = null;
-    applyPreferences(APPEARANCE_DEFAULTS);
+    initializeGuestAppearance();
 }
 
 export function useAppearancePreferences() {
@@ -97,6 +137,11 @@ export function useAppearancePreferences() {
 
 if (typeof window !== 'undefined') {
     window.addEventListener('storage', (event) => {
+        if (ownerId.value === null && event.key === guestThemeKey) {
+            initializeGuestAppearance();
+            window.dispatchEvent(new Event('planora:guest-theme-updated'));
+            return;
+        }
         if (ownerId.value !== null && event.key === ownerKey(ownerId.value)) {
             try { applyPreferences(JSON.parse(event.newValue || '{}')); } catch { applyPreferences(APPEARANCE_DEFAULTS); }
             window.dispatchEvent(new Event('planora:appearance-updated'));

@@ -5,12 +5,16 @@ namespace App\Services\Api\V1\Tasks;
 use App\Models\Task;
 use App\Models\User;
 use App\Services\Api\V1\Admin\UserActivityLogger;
+use App\Services\Api\V1\Notifications\NotificationService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 
 class TaskService
 {
-    public function __construct(private readonly UserActivityLogger $activityLogger)
+    public function __construct(
+        private readonly UserActivityLogger $activityLogger,
+        private readonly NotificationService $notifications,
+    )
     {
     }
 
@@ -78,11 +82,15 @@ class TaskService
     {
         return DB::transaction(function () use ($data, $actor): Task {
             $task = Task::create($data + ['created_by' => $actor->id]);
-            $this->activityLogger->recordChange(
+            $activity = $this->activityLogger->recordChange(
                 'task.created', 'Task created.', $task, $actor, [],
                 $this->auditValues($task, ['title', 'status', 'priority', 'due_date', 'owner_id', 'assigned_user_id', 'project_id', 'category_id']),
                 ['description_changed' => filled($task->description)],
             );
+            if ($task->assigned_user_id) {
+                $assignee = $task->assignedUser;
+                if ($assignee) $this->notifications->taskAssigned($task, $assignee, $actor, $activity?->event_id);
+            }
 
             return $task->load(['owner', 'assignedUser', 'creator', 'category']);
         });
@@ -100,12 +108,17 @@ class TaskService
                 $task->save();
                 $safeFields = array_values(array_intersect($changed, $fields));
                 $event = $this->updateEvent($before, $this->auditValues($task, $safeFields), $safeFields);
+                $assignmentChanged = in_array('assigned_user_id', $safeFields, true) && $task->assigned_user_id;
                 if ($safeFields !== []) {
-                    $this->activityLogger->recordChange($event, $this->descriptionFor($event), $task, $actor,
+                    $activity = $this->activityLogger->recordChange($event, $this->descriptionFor($event), $task, $actor,
                         array_intersect_key($before, array_flip($safeFields)), $this->auditValues($task, $safeFields),
                         ['changed_fields' => $changed]);
                 } else {
                     $this->activityLogger->record('task.updated', 'Task updated.', $task, $actor, ['changed_fields' => $changed]);
+                }
+                if ($assignmentChanged) {
+                    $task->load('assignedUser');
+                    if ($task->assignedUser) $this->notifications->taskAssigned($task, $task->assignedUser, $actor, $activity?->event_id);
                 }
             }
 

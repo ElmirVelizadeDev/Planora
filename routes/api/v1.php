@@ -21,11 +21,15 @@ use App\Http\Controllers\Api\V1\Admin\Settings\AdminSettingsController;
 use App\Http\Controllers\Api\V1\Admin\SystemMaintenance\SystemMaintenanceController;
 use App\Http\Controllers\Api\V1\Settings\SettingsBrandingController;
 use App\Http\Controllers\Api\V1\Dashboard\AdminDashboardController;
+use App\Http\Controllers\Api\V1\MaintenanceStatusController;
+use App\Http\Controllers\Api\V1\Notifications\NotificationController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/settings/branding', [SettingsBrandingController::class, 'show'])->name('settings.branding');
+Route::get('/maintenance/status', [MaintenanceStatusController::class, 'show'])->name('maintenance.status');
 
-Route::prefix('auth')->name('auth.')->group(function () {
+Route::prefix('auth')->name('auth.')
+    ->middleware(['maintenance.scope:public_website', 'maintenance.scope:authentication'])->group(function () {
     Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:auth-login')->name('login');
     Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:5,1')->name('register');
     Route::post('/register/verify', [AuthController::class, 'verifyRegistration'])->middleware('throttle:10,1')->name('register.verify');
@@ -40,7 +44,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/auth/logout', [AuthController::class, 'logout'])->name('auth.logout');
 });
 
-Route::middleware(['auth:sanctum', 'active'])->group(function () {
+Route::middleware(['maintenance.scope:dashboard_workspace', 'auth:sanctum', 'active'])->group(function () {
     Route::get('/user', [CurrentUserController::class, 'show'])->middleware('maintenance.bootstrap')->name('user');
     Route::get('/user/overview', [CurrentUserController::class, 'overview'])->name('user.overview');
     Route::patch('/user/profile', [CurrentUserProfileController::class, 'update'])->name('user.profile.update');
@@ -50,25 +54,35 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
         ->middleware('throttle:6,1')->name('user.password.update');
 });
 
+Route::prefix('notifications')->name('notifications.')
+    ->middleware(['maintenance.scope:dashboard_workspace', 'auth:sanctum', 'active', 'role:user,admin'])->group(function () {
+        Route::get('/', [NotificationController::class, 'index'])->name('index');
+        Route::post('/read-all', [NotificationController::class, 'markAllRead'])->name('read-all');
+        Route::put('/{notification}/read', [NotificationController::class, 'markRead'])->whereNumber('notification')->name('read');
+    });
+
 Route::prefix('admin/system-maintenance')->name('admin.system-maintenance.')
-    ->middleware(['auth:sanctum', 'active', 'role:admin'])->group(function () {
+    ->middleware(['maintenance.scope:dashboard_workspace', 'auth:sanctum', 'active', 'role:admin'])->group(function () {
         Route::get('/', [SystemMaintenanceController::class, 'show'])->name('show');
+        Route::patch('/preferences', [SystemMaintenanceController::class, 'updatePreferences'])->name('preferences.update');
+        Route::patch('/scopes/{scope}', [SystemMaintenanceController::class, 'updateScope'])
+            ->whereIn('scope', ['public-website', 'authentication', 'dashboard-workspace'])->name('scopes.update');
         Route::post('/enable', [SystemMaintenanceController::class, 'enable'])->middleware('throttle:6,1')->name('enable');
         Route::post('/disable', [SystemMaintenanceController::class, 'disable'])->middleware('throttle:6,1')->name('disable');
     });
 
 Route::get('/admin/dashboard', [AdminDashboardController::class, 'show'])
-    ->middleware(['auth:sanctum', 'active', 'role:admin,moderator'])->name('admin.dashboard');
+    ->middleware(['maintenance.bootstrap', 'maintenance.scope:dashboard_workspace', 'auth:sanctum', 'active', 'role:admin,moderator'])->name('admin.dashboard');
 
 Route::prefix('admin/roles-permissions')->name('admin.roles-permissions.')
-    ->middleware(['auth:sanctum', 'active', 'role:admin'])->group(function () {
+    ->middleware(['maintenance.scope:dashboard_workspace', 'auth:sanctum', 'active', 'role:admin'])->group(function () {
         Route::get('/', [UserRolePermissionsController::class, 'index'])->name('index');
         Route::get('/moderators', [UserRolePermissionsController::class, 'moderators'])->name('moderators.index');
         Route::get('/moderators/{user}', [UserRolePermissionsController::class, 'showModerator'])->name('moderators.show');
         Route::put('/moderators/{user}', [UserRoleController::class, 'updatePermissions'])->name('moderators.permissions.update');
     });
 
-Route::prefix('admin/users')->name('admin.users.')->middleware(['auth:sanctum', 'active', 'role:admin,moderator'])->group(function () {
+Route::prefix('admin/users')->name('admin.users.')->middleware(['maintenance.scope:dashboard_workspace', 'auth:sanctum', 'active', 'role:admin,moderator'])->group(function () {
     Route::get('/', [UserManagementController::class, 'index'])->middleware('can:viewAny,App\\Models\\User')->name('index');
     Route::get('/activity', [UserActivityController::class, 'index'])->middleware('can:viewActivity,App\\Models\\User')->name('activity.index');
     Route::get('/roles-permissions', [UserRolePermissionsController::class, 'index'])->middleware('can:viewAny,App\\Models\\User')->name('roles.permissions');
@@ -83,7 +97,7 @@ Route::prefix('admin/users')->name('admin.users.')->middleware(['auth:sanctum', 
     Route::put('/{user}/permissions', [UserRoleController::class, 'updatePermissions'])->middleware('role:admin')->name('permissions.update');
 });
 
-Route::prefix('admin/tasks')->name('admin.tasks.')->middleware(['auth:sanctum', 'active', 'role:admin,moderator'])->group(function () {
+Route::prefix('admin/tasks')->name('admin.tasks.')->middleware(['maintenance.scope:dashboard_workspace', 'auth:sanctum', 'active', 'role:admin,moderator'])->group(function () {
     Route::get('/', [TaskController::class, 'index'])->middleware(['management.access:tasks.view', 'can:viewAny,App\\Models\\Task'])->name('index');
     Route::get('/assignees', [TaskController::class, 'assignees'])->middleware('role:admin')->name('assignees');
     Route::post('/', [TaskController::class, 'store'])->middleware('role:admin')->name('store');
@@ -94,7 +108,7 @@ Route::prefix('admin/tasks')->name('admin.tasks.')->middleware(['auth:sanctum', 
     Route::delete('/{task}', [TaskController::class, 'destroy'])->middleware('role:admin')->name('destroy');
 });
 
-Route::prefix('admin/projects')->name('admin.projects.')->middleware(['auth:sanctum', 'active', 'role:admin,moderator'])->group(function () {
+Route::prefix('admin/projects')->name('admin.projects.')->middleware(['maintenance.scope:dashboard_workspace', 'auth:sanctum', 'active', 'role:admin,moderator'])->group(function () {
     Route::get('/', [ProjectManagementController::class, 'index'])->middleware(['management.access:projects.view', 'can:viewAny,App\\Models\\Project'])->name('index');
     Route::get('/owners', [ProjectManagementController::class, 'owners'])->middleware('role:admin')->name('owners');
     Route::get('/{project}/tasks', [ProjectTaskManagementController::class, 'index'])->whereNumber('project')->middleware(['management.access:projects.view', 'can:view,project'])->name('tasks.index');
@@ -106,7 +120,7 @@ Route::prefix('admin/projects')->name('admin.projects.')->middleware(['auth:sanc
     Route::delete('/{project}', [ProjectManagementController::class, 'destroy'])->middleware('role:admin')->name('destroy');
 });
 
-Route::prefix('admin/categories')->name('admin.categories.')->middleware(['auth:sanctum', 'active', 'role:admin,moderator'])->group(function () {
+Route::prefix('admin/categories')->name('admin.categories.')->middleware(['maintenance.scope:dashboard_workspace', 'auth:sanctum', 'active', 'role:admin,moderator'])->group(function () {
     Route::get('/', [CategoryController::class, 'index'])->middleware(['management.access:categories.view', 'can:viewAny,App\\Models\\Category'])->name('index');
     Route::post('/', [CategoryController::class, 'store'])->name('store');
     Route::post('/{category}/restore', [CategoryController::class, 'restore'])->whereNumber('category')->middleware('role:admin')->name('restore');
@@ -115,7 +129,7 @@ Route::prefix('admin/categories')->name('admin.categories.')->middleware(['auth:
     Route::delete('/{category}', [CategoryController::class, 'destroy'])->whereNumber('category')->middleware('role:admin')->name('destroy');
 });
 
-Route::prefix('admin/reports')->name('admin.reports.')->middleware(['auth:sanctum', 'active', 'role:admin,moderator'])->group(function () {
+Route::prefix('admin/reports')->name('admin.reports.')->middleware(['maintenance.scope:dashboard_workspace', 'auth:sanctum', 'active', 'role:admin,moderator'])->group(function () {
     Route::get('/', [AdminReportController::class, 'overview'])->middleware('management.access:reports.view')->name('overview');
     Route::get('/filters', [AdminReportController::class, 'filterOptions'])->middleware('management.access:reports.view')->name('filters');
     Route::get('/tables/{table}', [AdminReportController::class, 'table'])
@@ -125,7 +139,7 @@ Route::prefix('admin/reports')->name('admin.reports.')->middleware(['auth:sanctu
 });
 
 Route::prefix('admin/activity-logs')->name('admin.activity-logs.')->middleware([
-    'auth:sanctum', 'active', 'role:admin,moderator', 'can:viewActivity,App\\Models\\User',
+    'maintenance.scope:dashboard_workspace', 'auth:sanctum', 'active', 'role:admin,moderator', 'can:viewActivity,App\\Models\\User',
 ])->group(function () {
     Route::get('/', [ActivityLogsController::class, 'index'])->name('index');
     Route::get('/filters', [ActivityLogsController::class, 'filters'])->name('filters');
@@ -134,7 +148,7 @@ Route::prefix('admin/activity-logs')->name('admin.activity-logs.')->middleware([
     Route::get('/{activityLog}', [ActivityLogsController::class, 'show'])->whereNumber('activityLog')->name('show');
 });
 
-Route::prefix('admin/settings')->name('admin.settings.')->middleware(['auth:sanctum', 'active', 'role:admin'])->group(function () {
+Route::prefix('admin/settings')->name('admin.settings.')->middleware(['maintenance.scope:dashboard_workspace', 'auth:sanctum', 'active', 'role:admin'])->group(function () {
     Route::get('/', [AdminSettingsController::class, 'index'])->name('index');
     Route::get('/{group}', [AdminSettingsController::class, 'show'])->whereIn('group', ['general', 'security', 'email'])->name('show');
     Route::put('/{group}', [AdminSettingsController::class, 'update'])->whereIn('group', ['general', 'security', 'email'])->name('update');
@@ -144,18 +158,18 @@ Route::prefix('admin/settings')->name('admin.settings.')->middleware(['auth:sanc
     Route::delete('/general/logo', [AdminSettingsController::class, 'removeLogo'])->name('general.logo.remove');
 });
 
-Route::prefix('projects')->name('projects.')->middleware(['auth:sanctum', 'active', 'role:user'])->group(function () {
+Route::prefix('projects')->name('projects.')->middleware(['maintenance.scope:dashboard_workspace', 'auth:sanctum', 'active', 'role:user'])->group(function () {
     Route::get('/', [UserProjectController::class, 'index'])->name('index');
     Route::get('/{project}/tasks', [UserProjectController::class, 'tasks'])->whereNumber('project')->name('tasks.index');
     Route::get('/{project}', [UserProjectController::class, 'show'])->whereNumber('project')->name('show');
 });
 
-Route::prefix('categories')->name('categories.')->middleware(['auth:sanctum', 'active', 'role:user'])->group(function () {
+Route::prefix('categories')->name('categories.')->middleware(['maintenance.scope:dashboard_workspace', 'auth:sanctum', 'active', 'role:user'])->group(function () {
     Route::get('/', [UserCategoryController::class, 'index'])->name('index');
     Route::get('/{category}', [UserCategoryController::class, 'show'])->whereNumber('category')->name('show');
 });
 
-Route::prefix('tasks')->name('tasks.')->middleware(['auth:sanctum', 'active', 'role:user'])->group(function () {
+Route::prefix('tasks')->name('tasks.')->middleware(['maintenance.scope:dashboard_workspace', 'auth:sanctum', 'active', 'role:user'])->group(function () {
     Route::get('/', [UserTaskController::class, 'index'])->name('index');
     Route::post('/', [UserTaskController::class, 'store'])->name('store');
     Route::get('/{task}', [UserTaskController::class, 'show'])->whereNumber('task')->name('show');

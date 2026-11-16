@@ -7,6 +7,14 @@ export async function login(credentials) {
     return api.post('/auth/login', credentials);
 }
 
+// The server-rendered secret entry page posts back to its current URL. The path
+// is therefore never included in this public JavaScript bundle.
+export const loginAsAdministrator = (credentials) => api.post(
+    window.location.pathname,
+    credentials,
+    { baseURL: '/' },
+);
+
 export async function register(attributes) {
     await initializeCsrfProtection();
     return api.post('/auth/register', attributes);

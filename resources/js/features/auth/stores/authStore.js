@@ -1,7 +1,7 @@
 import { computed, ref } from 'vue';
 import { defineStore } from 'pinia';
-import { getCurrentUser, login as loginRequest, logout as logoutRequest, register as registerRequest, resendRegistrationCode as resendRegistrationCodeRequest, verifyRegistration as verifyRegistrationRequest } from '../services/authApi.js';
-import { resetAppearanceSession } from '../../appearance/composables/appearancePreferences.js';
+import { getCurrentUser, login as loginRequest, loginAsAdministrator as loginAdministratorRequest, logout as logoutRequest, register as registerRequest, resendRegistrationCode as resendRegistrationCodeRequest, verifyRegistration as verifyRegistrationRequest } from '../services/authApi.js';
+import { initializeAppearancePreferences, resetAppearanceSession } from '../../appearance/composables/appearancePreferences.js';
 
 export const useAuthStore = defineStore('auth', () => {
     const user = ref(null);
@@ -22,6 +22,7 @@ export const useAuthStore = defineStore('auth', () => {
         try {
             const response = await getCurrentUser();
             user.value = response.data.data ?? response.data;
+            initializeAppearancePreferences(user.value?.id);
             return user.value;
         } catch (error) {
             if (error.response?.status === 401) {
@@ -52,6 +53,16 @@ export const useAuthStore = defineStore('auth', () => {
         const response = await loginRequest(credentials);
         const payload = response.data.data ?? response.data;
         user.value = payload.user ?? payload;
+        initializeAppearancePreferences(user.value.id);
+        initialized.value = true;
+        return { user: user.value, redirectTo: payload.redirect_to };
+    }
+
+    async function loginAsAdministrator(credentials) {
+        const response = await loginAdministratorRequest(credentials);
+        const payload = response.data.data ?? response.data;
+        user.value = payload.user ?? payload;
+        initializeAppearancePreferences(user.value.id);
         initialized.value = true;
         return { user: user.value, redirectTo: payload.redirect_to };
     }
@@ -66,6 +77,7 @@ export const useAuthStore = defineStore('auth', () => {
         const response = await verifyRegistrationRequest(attributes);
         const payload = response.data.data ?? response.data;
         user.value = payload.user;
+        initializeAppearancePreferences(user.value.id);
         initialized.value = true;
         return { user: user.value, redirectTo: payload.redirect_to || '/dashboard' };
     }
@@ -86,5 +98,5 @@ export const useAuthStore = defineStore('auth', () => {
         resetAppearanceSession();
     }
 
-    return { user, initialized, loading, isAuthenticated, roles, fetchCurrentUser, login, register, verifyRegistration, resendRegistrationCode, logout, hasRole, hasManagementPermission, clearUser };
+    return { user, initialized, loading, isAuthenticated, roles, fetchCurrentUser, login, loginAsAdministrator, register, verifyRegistration, resendRegistrationCode, logout, hasRole, hasManagementPermission, clearUser };
 });
