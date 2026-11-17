@@ -28,6 +28,7 @@ class NotificationIntegrationTest extends TestCase
     {
         $admin = User::factory()->create(['role' => 'admin', 'status' => 'active']);
         $email = 'verified-'.fake()->unique()->uuid().'@example.test';
+        $this->withHeaders(['Origin' => 'http://planora.test', 'Referer' => 'http://planora.test/']);
         $this->seedPendingRegistration($email, '246810', now()->addMinutes(5));
 
         $this->postJson('/api/v1/auth/register/verify', ['email' => $email, 'code' => '111111'])

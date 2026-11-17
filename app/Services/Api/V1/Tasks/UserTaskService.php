@@ -119,12 +119,17 @@ class UserTaskService
                 $safeFields = array_values(array_intersect($changed, $fields));
                 $event = $this->updateEvent($before, $this->auditValues($task, $safeFields), $safeFields);
                 if ($safeFields !== []) {
-                    $this->activityLogger->recordChange($event, $this->descriptionFor($event), $task, $actor,
+                    $activity = $this->activityLogger->recordChange($event, $this->descriptionFor($event), $task, $actor,
                         array_intersect_key($before, array_flip($safeFields)), $this->auditValues($task, $safeFields),
                         ['changed_fields' => $changed]);
                 } else {
+                    $activity = null;
                     $this->activityLogger->record('task.updated', 'Task updated.', $task, $actor, ['changed_fields' => $changed]);
                 }
+                if (in_array('status', $safeFields, true) && ($before['status'] ?? null) !== ($this->auditValues($task, ['status'])['status'] ?? null)) {
+                    $this->notifications->taskStatusChanged($task, $actor, $task->status?->value ?? $task->status, $activity?->event_id, $before['status'] ?? null);
+                }
+                $this->notifications->taskUpdated($task->loadMissing('assignedUser'), $actor, $safeFields, $activity?->event_id);
             }
 
             return $task->refresh()->load('category');
@@ -142,7 +147,7 @@ class UserTaskService
                 $event = $status === 'completed' ? 'task.completed' : 'task.status_changed';
                 $activity = $this->activityLogger->recordChange($event, $this->descriptionFor($event), $task, $actor,
                     ['status' => $before], ['status' => $status]);
-                $this->notifications->taskStatusChanged($task, $actor, $status, $activity?->event_id);
+                $this->notifications->taskStatusChanged($task, $actor, $status, $activity?->event_id, (string) $before);
             }
 
             return $task->refresh()->load('category');

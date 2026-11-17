@@ -87,6 +87,7 @@ class TaskService
                 $this->auditValues($task, ['title', 'status', 'priority', 'due_date', 'owner_id', 'assigned_user_id', 'project_id', 'category_id']),
                 ['description_changed' => filled($task->description)],
             );
+            $this->notifications->adminTaskCreated($task, $actor, $activity->event_id);
             if ($task->assigned_user_id) {
                 $assignee = $task->assignedUser;
                 if ($assignee) $this->notifications->taskAssigned($task, $assignee, $actor, $activity?->event_id);
@@ -114,11 +115,17 @@ class TaskService
                         array_intersect_key($before, array_flip($safeFields)), $this->auditValues($task, $safeFields),
                         ['changed_fields' => $changed]);
                 } else {
-                    $this->activityLogger->record('task.updated', 'Task updated.', $task, $actor, ['changed_fields' => $changed]);
+                    $activity = $this->activityLogger->record('task.updated', 'Task updated.', $task, $actor, ['changed_fields' => $changed]);
                 }
                 if ($assignmentChanged) {
                     $task->load('assignedUser');
                     if ($task->assignedUser) $this->notifications->taskAssigned($task, $task->assignedUser, $actor, $activity?->event_id);
+                }
+                if (in_array('status', $safeFields, true) && ($before['status'] ?? null) !== ($this->auditValues($task, ['status'])['status'] ?? null)) {
+                    $this->notifications->taskStatusChanged($task, $actor, $task->status?->value ?? $task->status, $activity?->event_id, $before['status'] ?? null);
+                }
+                if (! $assignmentChanged) {
+                    $this->notifications->taskUpdated($task->loadMissing('assignedUser'), $actor, $safeFields, $activity?->event_id);
                 }
             }
 

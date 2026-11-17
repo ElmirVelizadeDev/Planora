@@ -3,6 +3,7 @@
 namespace App\Services\Api\V1\Admin;
 
 use App\Models\User;
+use App\Services\Api\V1\Notifications\NotificationService;
 use App\Services\Api\V1\Shared\UserAvatarStorage;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -15,6 +16,7 @@ class UserManagementService
     public function __construct(
         private readonly UserActivityLogger $activityLogger,
         private readonly UserAvatarStorage $avatars,
+        private readonly NotificationService $notifications,
     ) {
     }
 
@@ -136,8 +138,9 @@ class UserManagementService
             $user->moderator_permissions = $newPermissions;
             $user->save();
 
-            $this->activityLogger->recordChange('user.role_changed', 'Administrator changed the account role.', $user, $actor,
+            $activity = $this->activityLogger->recordChange('user.role_changed', 'Administrator changed the account role.', $user, $actor,
                 ['role' => $oldRole], ['role' => $role], ['from' => $oldRole, 'to' => $role]);
+            $this->notifications->accountRoleChanged($user, $actor, $oldRole, $role, $activity->event_id);
 
             return $user->fresh('statusChangedBy:id,name');
         });
@@ -149,10 +152,13 @@ class UserManagementService
             $user = User::query()->lockForUpdate()->findOrFail($user->id);
             abort_unless($user->role === 'moderator', 422, 'Permissions can only be assigned to moderator accounts.');
             $before = $user->moderator_permissions ?? [];
-            $user->moderator_permissions = array_values(array_unique($permissions));
+            $permissions = array_values(array_unique($permissions));
+            if ($before === $permissions) return $user;
+            $user->moderator_permissions = $permissions;
             $user->save();
-            $this->activityLogger->recordChange('moderator.permissions_changed', 'Administrator updated moderator permissions.', $user, $actor,
+            $activity = $this->activityLogger->recordChange('moderator.permissions_changed', 'Administrator updated moderator permissions.', $user, $actor,
                 ['permissions' => $before], ['permissions' => $user->moderator_permissions], ['from' => $before, 'to' => $user->moderator_permissions]);
+            $this->notifications->moderatorPermissionsChanged($user, $actor, $activity->event_id);
 
             return $user->fresh();
         });
@@ -183,8 +189,9 @@ class UserManagementService
                 'active' => in_array($oldStatus, ['suspended', 'banned', 'inactive'], true) ? 'account.restored' : 'account.status_changed',
                 default => 'account.status_changed',
             };
-            $this->activityLogger->recordChange($event, 'Administrator changed account status.', $user, $actor,
+            $activity = $this->activityLogger->recordChange($event, 'Administrator changed account status.', $user, $actor,
                 ['status' => $oldStatus], ['status' => $status], ['from' => $oldStatus, 'to' => $status]);
+            $this->notifications->accountStatusChanged($user, $actor, $oldStatus, $status, $activity->event_id);
 
             return $user->fresh('statusChangedBy:id,name');
         });
@@ -197,8 +204,9 @@ class UserManagementService
             $user = User::query()->lockForUpdate()->findOrFail($user->id);
             abort_unless($actor->isNot($user), 403, 'You cannot delete your own account.');
             $this->protectLastActiveAdmin($user, false);
-            $this->activityLogger->record('user.deleted', 'Administrator moved the account to soft-deleted recovery.', $user, $actor, ['role' => $user->role]);
+            $activity = $this->activityLogger->record('user.deleted', 'Administrator moved the account to soft-deleted recovery.', $user, $actor, ['role' => $user->role]);
             $user->delete();
+            $this->notifications->accountDeleted($user, $actor, $activity->event_id);
         });
     }
 
@@ -206,6 +214,7 @@ class UserManagementService
     {
         return DB::transaction(function () use ($actor, $user) {
             $user = User::withTrashed()->lockForUpdate()->findOrFail($user->id);
+            abort_unless($user->trashed(), 409, 'This account is not deleted.');
             $user->restore();
             $previous = $user->status;
             $user->status = 'active';
@@ -213,8 +222,9 @@ class UserManagementService
             $user->status_changed_by = $actor->id;
             $user->status_changed_at = now();
             $user->save();
-            $this->activityLogger->recordChange('account.restored', 'Administrator restored the account.', $user, $actor,
-                ['status' => $previous], ['status' => 'active'], ['from' => $previous, 'to' => 'active']);
+            $activity = $this->activityLogger->record('account.restored', 'Administrator restored the account.', $user, $actor,
+                ['from' => $previous, 'to' => 'active'], 'Users', 'success', ['status' => $previous], ['status' => 'active']);
+            $this->notifications->accountRestored($user, $actor, $activity->event_id);
 
             return $user->fresh('statusChangedBy:id,name');
         });
