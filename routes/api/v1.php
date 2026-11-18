@@ -23,6 +23,7 @@ use App\Http\Controllers\Api\V1\Settings\SettingsBrandingController;
 use App\Http\Controllers\Api\V1\Dashboard\AdminDashboardController;
 use App\Http\Controllers\Api\V1\MaintenanceStatusController;
 use App\Http\Controllers\Api\V1\Notifications\NotificationController;
+use App\Http\Controllers\Api\V1\Admin\Backups\BackupController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/settings/branding', [SettingsBrandingController::class, 'show'])->name('settings.branding');
@@ -59,6 +60,16 @@ Route::prefix('notifications')->name('notifications.')
         Route::get('/', [NotificationController::class, 'index'])->name('index');
         Route::post('/read-all', [NotificationController::class, 'markAllRead'])->name('read-all');
         Route::put('/{notification}/read', [NotificationController::class, 'markRead'])->whereNumber('notification')->name('read');
+    });
+
+Route::prefix('admin/backups')->name('admin.backups.')
+    ->middleware(['maintenance.scope:dashboard_workspace', 'auth:sanctum', 'active', 'role:admin'])->group(function () {
+        Route::get('/', [BackupController::class, 'index'])->name('index');
+        Route::post('/', [BackupController::class, 'store'])->middleware('throttle:3,1')->name('store');
+        Route::get('/{backup}', [BackupController::class, 'show'])->where('backup', '[0-9a-fA-F-]{36}')->name('show');
+        Route::get('/{backup}/download', [BackupController::class, 'download'])->where('backup', '[0-9a-fA-F-]{36}')->middleware('throttle:10,1')->name('download');
+        Route::delete('/{backup}', [BackupController::class, 'destroy'])->where('backup', '[0-9a-fA-F-]{36}')->middleware('throttle:3,1')->name('destroy');
+        Route::post('/{backup}/restore', [BackupController::class, 'restore'])->where('backup', '[0-9a-fA-F-]{36}')->middleware('throttle:1,5')->name('restore');
     });
 
 Route::prefix('admin/system-maintenance')->name('admin.system-maintenance.')
