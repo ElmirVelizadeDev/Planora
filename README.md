@@ -8,6 +8,8 @@ Planora is a project and task management application built with Laravel 10 and V
 
 - User Tasks and Projects, with owner/assignee access rules, due dates, statuses, priorities, and optional Category associations.
 - Admin account, Task, Project, and Category management, plus reports, activity logs, dashboard data, and platform settings.
+- Role-aware Global Search across records each signed-in User, Moderator, or Admin may access.
+- Admin-only encrypted database, managed-file, and full backups with integrity verification and a guarded restore workflow.
 - Session authentication with verified registration, one-time-code password recovery, active-account checks, and role-based authorization.
 - A server-configured administrator sign-in route, independent maintenance scopes, and recipient-scoped notifications for task and administrative events.
 - Per-account appearance preferences and persistent guest light/dark theme selection.
@@ -18,22 +20,22 @@ User Category details and related-record counts are limited to Projects owned by
 
 | Area | Technology |
 |---|---|
-| Backend | PHP `^8.1`, Laravel `^10.10`, MySQL |
+| Backend | PHP `^8.1`, Laravel `^10.10` (locked to 10.50.4), MySQL |
 | Frontend | Vue `^3.5`, Vue Router `^4.6`, Pinia `^3` |
 | API and authentication | Versioned `/api/v1` JSON API, Sanctum stateful sessions, Axios |
-| Assets | Vite `^5`, `@vitejs/plugin-vue` |
+| Assets | Vite `^5`, `@vitejs/plugin-vue` `^6` |
 
 ## Architecture
 
 Laravel serves the Vue single-page application shell and versioned JSON API. Vue Router lazy-loads pages into separate authentication, Admin, and User layouts. Backend middleware, Form Requests, policies, services, and record-scoped queries enforce access; client route guards provide navigation behavior only.
 
-The frontend is organized under `resources/js/features/`, `resources/js/shared/`, and `resources/js/pages/`. Global CSS is loaded from `resources/css/app.css`; Vue single-file component style imports keep page and component styles with their consumers.
+The frontend is organized under `resources/js/features/`, `resources/js/shared/`, and `resources/js/pages/`. The shared workspace header hosts Global Search; the Admin Backup page uses its own API service and feature styles. Global CSS is loaded from `resources/css/app.css`; Vue single-file component style imports keep page and component styles with their consumers.
 
 For implementation details, see [Planora architecture](PLANORA_ARCHITECTURE.md), [system architecture](docs/SYSTEM_ARCHITECTURE.md), and [frontend page structure](PLANORA_FRONTEND_PAGE_STRUCTURE.md).
 
 ## Local setup
 
-Requirements: PHP 8.1 or later compatible with the Composer constraints, Composer, Node.js `^20.19.0` or `>=22.12.0`, npm, and MySQL.
+Requirements: PHP 8.1 or later compatible with the Composer constraints, Composer, Node.js `^20.19.0` or `>=22.12.0`, npm, and MySQL. The Node.js constraint comes from the locked Vue Vite plugin.
 
 ```sh
 composer install
@@ -80,7 +82,7 @@ npm run build
 
 PHPUnit feature tests require the isolated MySQL database configured in `.env.testing`. JavaScript tests use Node's built-in test runner with Node's experimental module-mocking flag; no separate test script is defined in `package.json`. A production build does not replace either test suite.
 
-The previous audit's JavaScript run reported 30 passing tests and one failure in `tests/js/error-pages.test.js`: the test reads `public/js/error-page.js`, which is absent, although `resources/views/errors/page.blade.php` references it. This result is from that earlier run and was not rerun for this documentation update.
+At this documentation audit, the JavaScript suite reported 30 passing tests and one failure: `tests/js/error-pages.test.js` expects `public/js/error-page.js`, which is absent from the repository, while `resources/views/errors/page.blade.php` references that path. This task did not change the error-page implementation or test.
 
 ## Documentation
 
@@ -94,6 +96,7 @@ The previous audit's JavaScript run reported 30 passing tests and one failure in
 - [Local mail testing](docs/LOCAL_MAIL_TESTING.md)
 - [Testing database](docs/TESTING_DATABASE.md)
 - [Error handling and maintenance operations](docs/ERROR_HANDLING_AND_MAINTENANCE.md)
+- [Backup and disaster recovery](docs/BACKUPS_AND_DISASTER_RECOVERY.md)
 - [Local demo seeders](database/seeders/README.md)
 
 The project declares the MIT license in `composer.json`.

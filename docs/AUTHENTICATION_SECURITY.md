@@ -55,6 +55,12 @@ These assignments grant access only to their corresponding Admin pages and API o
 
 The notification API is available only to authenticated active Users and Admins. Each list and read operation is scoped to the signed-in recipient; Moderators do not have notification access. Task notifications link to a Task only when the recipient's role and current task relationship permit that destination. Notifications do not carry administrator entry paths or maintenance secrets. See [API documentation](API_DOCUMENTATION.md) for endpoints and event types.
 
+## Global Search and backups
+
+Global Search requires an authenticated active account. Laravel decides which result groups to query: Admins can search management records, Moderators receive only groups allowed by their individual view permissions and never receive Admin user records, and regular Users receive only their owned/assigned Tasks, owned Projects, and Categories visible to them. Search results contain minimal display data and internal Vue Router destinations; client-side filtering is not used as an authorization boundary.
+
+Backup APIs and the `/admin/backups` page require an authenticated active Admin. Moderators do not receive access. Download, deletion, and restore use server-side backup identifiers; restore and deletion also require confirmation values tied to that identifier. Backup resources expose safe metadata rather than storage keys, checksums, encryption material, or filesystem paths. See [API documentation](API_DOCUMENTATION.md) and [backup and disaster recovery](BACKUPS_AND_DISASTER_RECOVERY.md).
+
 ## Deployment
 
 Keep `.env`, application keys, database/mail credentials, local OTP values, and recovery tokens out of version control and shared logs. Use HTTPS with secure session cookies in deployment. Configure and verify a production mail provider separately; local database OTP behavior is not a substitute for delivery testing. Configure Sanctum stateful domains, CORS, session domains, and CSRF for the deployed SPA origin.

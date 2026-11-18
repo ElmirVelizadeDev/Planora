@@ -13,7 +13,7 @@ Registration requests are kept outside `users` until email verification succeeds
 
 ## Scheduler deployment
 
-The Laravel schedule runs both `auth:purge-expired-registrations` and `auth:purge-expired-password-recovery-otps` every five minutes. It also runs `planora:notify-tasks-due-soon` daily at 08:00 with overlap prevention. Keep Laravel's scheduler running in production:
+The Laravel schedule runs both `auth:purge-expired-registrations` and `auth:purge-expired-password-recovery-otps` every five minutes. It also runs `planora:notify-tasks-due-soon` daily at 08:00 with overlap prevention. When `BACKUP_SCHEDULE_ENABLED` is true, the configured daily full backup and 03:15 retention-pruning task are scheduled as well; see [Backup & Disaster Recovery](BACKUPS_AND_DISASTER_RECOVERY.md) for their configuration and operational requirements. Keep Laravel's scheduler running in production:
 
 **Linux / cron** (add once per deployment user):
 

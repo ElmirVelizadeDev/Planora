@@ -47,6 +47,12 @@ erDiagram
 
 Planora maintenance scope state is not stored in MySQL. `MaintenanceScopeStore` reads and writes `storage/framework/planora-maintenance-scopes.json` under shared or exclusive file locks. The file is ignored by Git. Laravel's native global maintenance state uses Laravel's configured maintenance driver and is separate from this scope file.
 
+## Search and backup persistence
+
+Global Search queries the existing `users`, `tasks`, `projects`, and `categories` tables using the current user's permissions and record scope. It does not add a search index, denormalized search table, or migration.
+
+Backup history and operation records are JSON metadata stored alongside encrypted artifacts on the configured private Laravel filesystem disk. The Backup feature intentionally adds no MySQL table or schema migration. Backup encryption keys and artifact contents must be protected as described in [backup and disaster recovery](BACKUPS_AND_DISASTER_RECOVERY.md).
+
 ## Migrations and demo data
 
 The Project schema is created by `2026_11_11_000001_create_projects_table.php`; the nullable Task-to-Project relationship is added by `2026_11_11_000002_add_project_id_to_tasks_table.php`. Categories are created by `2026_11_12_000001_create_categories_table.php`; nullable Category foreign keys on Projects and Tasks are added by `2026_11_13_000001_add_category_id_to_projects_and_tasks_tables.php`. Earlier migrations create account, authentication, activity, and Task tables.

@@ -53,11 +53,11 @@ The command reports success only after archive validation, encryption, storage, 
 5. File recovery restores only the managed file paths listed above. It overlays archived files and does not delete files created after the backup.
 6. Confirm the site is available, inspect protected logs, and retain the safety backup until the recovery is validated.
 
-Do not test restore against a production database. Use an isolated disposable MySQL/MariaDB instance with a dedicated test account and schemas. The automated feature tests use fake storage and mocked database exporters/restorers; they do not prove cross-schema restore behavior on every server version or hosting configuration.
+Do not test restore against a production database. Use an isolated disposable MySQL/MariaDB instance with a dedicated test account and schemas. The automated feature tests use fake storage and mocked database exporters/restorers; they do not prove cross-schema restore behavior on every server version or hosting configuration. A controlled QA run on MySQL 8.0.30 used a disposable `planora_backup_qa` database to verify encrypted database backup, full database and managed-file restore, rollback after an injected post-swap validation failure, corrupted-archive rejection, and safety-backup retention. This is evidence for that isolated environment only; repeat the procedure against a disposable instance matching the deployment target before relying on recovery there.
 
 ## API and access
 
-All routes are under `/api/v1/admin/backups` and require authenticated, active Admin access. The API supports listing/filtering/pagination, creation, metadata detail, encrypted download, deletion, and restore. Moderator access is intentionally not granted. API resources expose safe metadata only; artifact keys, checksums, and encryption details are not returned.
+All routes are under `/api/v1/admin/backups` and require authenticated, active Admin access. The API supports listing/filtering/pagination, creation, metadata detail, encrypted download, deletion, and restore. Delete and restore confirmations must match `DELETE <backup-uuid>` or `RESTORE <backup-uuid>`, respectively. Moderator access is intentionally not granted. API resources expose safe metadata only; artifact keys, checksums, and encryption details are not returned. See [API documentation](API_DOCUMENTATION.md) for the endpoint and validation reference.
 
 ## Limitations and operational checks
 

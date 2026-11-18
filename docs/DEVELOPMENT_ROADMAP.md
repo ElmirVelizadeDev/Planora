@@ -12,12 +12,9 @@ This document records implementation boundaries visible in the current repositor
 - Role-aware Admin Dashboard aggregates, unified Reports & Analytics, searchable Activity Logs, and General/Security/Email settings.
 - Admin Task soft-delete recovery with an audited restore flow; Project deletion remains permanent and detaches linked Tasks.
 - Server-configured administrator entry, independently enforced maintenance scopes, and persisted User/Admin notifications for task and administrative events.
+- Role-aware Global Search backed by scoped database queries, and Admin-only encrypted Backup & Recovery with verification, retention, and guarded restore.
 - Account appearance preferences and guest light/dark theme persistence.
 - Local-only idempotent demo seeders for Categories, Projects, linked Project Tasks, and standalone Tasks. The account seeder is invoked unconditionally by `DatabaseSeeder`; do not use `db:seed` or `migrate --seed` outside a disposable local database. See [seeder notes](../database/seeders/README.md).
-
-## In Progress
-
-No work is currently confirmed as in progress in the repository.
 
 ## Planned
 

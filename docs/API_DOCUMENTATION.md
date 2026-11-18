@@ -36,6 +36,18 @@ See [authentication and security](AUTHENTICATION_SECURITY.md), [registration OTP
 |---|---|---|
 | `GET` | `/api/v1/settings/branding` | Public, no parameters; returns `data.application_name`, `data.workspace_name`, and `data.application_logo_url` (nullable) |
 
+## Global Search
+
+`GET /api/v1/search` requires an authenticated active account with the `user`, `moderator`, or `admin` role. Search is enforced by Laravel, not by frontend filtering. The optional query parameters are `q` (string, maximum 120 characters) and `limit` (integer 1–8, default 5). Queries are trimmed; values shorter than two characters, including an omitted or whitespace-only `q`, return an empty result. `limit` is applied independently to each group, so it is not a total-result cap.
+
+| Role | Search groups and scope |
+|---|---|
+| Admin | Users by name/email, Tasks by title/description, Projects by name/description, and active Categories by name/description. |
+| Moderator | Only groups allowed by the matching `viewAny` permission; Admin accounts are excluded from User results. |
+| User | Tasks owned by or assigned to the current User, Projects owned by the current User, and active Categories. User records are not searchable. |
+
+The response is `{ "data": { "groups": [...], "total": 0 } }`. Empty groups are omitted. Each result includes `id`, `title`, `subtitle` when available, `type`, and a Vue Router `to` object. The service returns only the fields needed for display and navigation. User results navigate to the Admin Users page's profile-view query state; other results navigate to their existing Task, Project, or Category route. Results use the database's current `LIKE` collation and do not include soft-deleted records.
+
 ## Admin APIs
 
 Admin APIs require an authenticated active Admin or, for specifically delegated modules, an active Moderator with the corresponding permission. Create/update/delete operations that are Admin-only add an explicit `admin` role check. The Vue guard and sidebar mirror supported capabilities for navigation; Laravel remains authoritative.
@@ -135,6 +147,21 @@ The `PUT` body uses top-level fields. Required fields must be supplied; nullable
 - **General:** `application_name` and `workspace_name` are required strings up to 100 characters; `workspace_description` is nullable text up to 500 characters; `contact_email` is nullable RFC-valid email up to 255 characters; `default_language` is `en`; `timezone` must be a valid timezone; `date_format` is one of `Y-m-d`, `d/m/Y`, `m/d/Y`, or `d M Y`; `time_format` is `24h` or `12h`. `application_logo` is prohibited in this body and must use the logo endpoint.
 - **Security:** `minimum_password_length` is an integer from 8–64; `require_uppercase`, `require_lowercase`, `require_number`, and `require_special_character` are required booleans; `max_login_attempts` is an integer from 3–20; `login_lockout_minutes` is 1–60; `otp_expiration_minutes` is 2–15; `otp_max_attempts` is 3–10; and `otp_resend_cooldown_seconds` is 30–600.
 - **Email:** `mail_mailer` is one of `smtp`, `sendmail`, `log`, or `array`; `mail_host` is a nullable hostname string up to 255 characters; `mail_port` is an integer from 1–65535; `mail_encryption` is `none`, `ssl`, or `tls`; `mail_username` is nullable text up to 255 characters; `mail_from_address` is a required RFC-valid email up to 255 characters; `mail_from_name` is a required string up to 100 characters. `mail_password` is optional, nullable text up to 1000 characters; `remove_mail_password` is an optional boolean. The password is never returned by the API; only whether one is configured is exposed.
+
+### Backup & Recovery
+
+All endpoints require an authenticated active Admin. Moderators and regular Users are denied. Backup records and encrypted artifacts are stored on the configured private filesystem disk; the API does not expose filesystem paths, artifact keys, checksums, or encryption material. See [backup and disaster recovery](BACKUPS_AND_DISASTER_RECOVERY.md) for storage, restore safety, and operational requirements.
+
+| Method | Endpoint | Request and response |
+|---|---|---|
+| `GET` | `/api/v1/admin/backups` | List history. Optional query: `search` (max 80; searches backup ID, type, and status), `type` (`database`, `files`, `full`), `status` (`running`, `successful`, `failed`), `page` (minimum 1), and `per_page` (1–50; default 15). Returns `data`, pagination `meta`, and a `summary`. |
+| `POST` | `/api/v1/admin/backups` | JSON body `{ "type": "full" }`; type must be `database`, `files`, or `full`. Returns HTTP 201 with the safe backup resource in `data` and a `message`. Limited to three requests per minute. |
+| `GET` | `/api/v1/admin/backups/{backup}` | Read safe metadata for a UUID backup identifier. Returns the resource in `data`; unavailable IDs return 404. |
+| `GET` | `/api/v1/admin/backups/{backup}/download` | Verify and download the encrypted archive. Limited to ten requests per minute. |
+| `DELETE` | `/api/v1/admin/backups/{backup}` | JSON body `{ "confirmation": "DELETE <backup-uuid>" }`; confirmation must match the ID. Limited to three requests per minute. The only remaining verified backup cannot be deleted. |
+| `POST` | `/api/v1/admin/backups/{backup}/restore` | JSON body `{ "confirmation": "RESTORE <backup-uuid>" }`; confirmation must match the ID. Limited to one request per five minutes. Restore first creates a verified full safety backup. |
+
+Backup resources expose `id`, `filename`, `type`, `status`, `created_at`, `completed_at`, `size_bytes`, a safe `storage_location` label, `verified`, `failure_code`, and component summaries. Invalid request fields use Laravel's JSON validation response. Unsupported backup operations return a safe 4xx/5xx message; diagnostic exception details are kept in protected server logs.
 
 ## Notifications
 
