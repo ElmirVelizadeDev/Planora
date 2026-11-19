@@ -4,6 +4,10 @@ export async function getUserTasks(params = {}) {
     return (await api.get('/tasks', { params })).data;
 }
 
+export async function getUserCalendarTasks(params = {}) {
+    return (await api.get('/tasks/calendar', { params })).data;
+}
+
 export async function getUserTask(taskId) {
     return (await api.get(`/tasks/${taskId}`)).data;
 }

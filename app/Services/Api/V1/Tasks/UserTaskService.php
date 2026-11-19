@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Services\Api\V1\Admin\UserActivityLogger;
 use App\Services\Api\V1\Notifications\NotificationService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 class UserTaskService
@@ -58,6 +59,19 @@ class UserTaskService
         };
 
         return $query->paginate($filters['per_page'] ?? 10)->withQueryString();
+    }
+
+    public function calendarRange(int $userId, array $filters): Collection
+    {
+        $query = $this->queryFor($userId)
+            ->whereNotNull('due_date')
+            ->where('due_date', '>=', $filters['start_date'])
+            ->where('due_date', '<=', $filters['end_date']);
+
+        if (! empty($filters['status'])) $query->where('status', $filters['status']);
+        if (! empty($filters['priority'])) $query->where('priority', $filters['priority']);
+
+        return $query->with('category')->orderBy('due_date')->orderBy('id')->get();
     }
 
     public function paginateForProject(int $userId, int $projectId, array $filters): LengthAwarePaginator

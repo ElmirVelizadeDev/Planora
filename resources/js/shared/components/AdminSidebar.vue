@@ -33,6 +33,7 @@ const adminLinks = [
     { label: 'Tasks', icon: '✓', to: { name: 'admin.tasks.index' } },
     { label: 'Reports & Analytics', icon: '▥', to: { name: 'admin.reports' } },
     { label: 'Activity Logs', icon: '◷', to: { name: 'admin.activity-logs.index' }, activeOn: ['admin.activity-logs.index', 'admin.activity-logs.show'] },
+    { label: 'Backups & Recovery', icon: '◫', to: { name: 'admin.backups.index' } },
     { label: 'Roles & Permissions', icon: 'shield-check', to: { name: 'admin.roles-permissions.index' } },
     { label: 'Settings', icon: '⚙', to: { name: 'admin.settings.index' } },
 ];

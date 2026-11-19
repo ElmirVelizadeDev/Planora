@@ -24,6 +24,7 @@ use App\Http\Controllers\Api\V1\Dashboard\AdminDashboardController;
 use App\Http\Controllers\Api\V1\MaintenanceStatusController;
 use App\Http\Controllers\Api\V1\Notifications\NotificationController;
 use App\Http\Controllers\Api\V1\Admin\Backups\BackupController;
+use App\Http\Controllers\Api\V1\Search\GlobalSearchController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/settings/branding', [SettingsBrandingController::class, 'show'])->name('settings.branding');
@@ -46,6 +47,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 });
 
 Route::middleware(['maintenance.scope:dashboard_workspace', 'auth:sanctum', 'active'])->group(function () {
+    Route::get('/search', GlobalSearchController::class)->middleware('role:user,admin,moderator')->name('search.index');
     Route::get('/user', [CurrentUserController::class, 'show'])->middleware('maintenance.bootstrap')->name('user');
     Route::get('/user/overview', [CurrentUserController::class, 'overview'])->name('user.overview');
     Route::patch('/user/profile', [CurrentUserProfileController::class, 'update'])->name('user.profile.update');
@@ -181,6 +183,7 @@ Route::prefix('categories')->name('categories.')->middleware(['maintenance.scope
 });
 
 Route::prefix('tasks')->name('tasks.')->middleware(['maintenance.scope:dashboard_workspace', 'auth:sanctum', 'active', 'role:user'])->group(function () {
+    Route::get('/calendar', [UserTaskController::class, 'calendar'])->name('calendar');
     Route::get('/', [UserTaskController::class, 'index'])->name('index');
     Route::post('/', [UserTaskController::class, 'store'])->name('store');
     Route::get('/{task}', [UserTaskController::class, 'show'])->whereNumber('task')->name('show');

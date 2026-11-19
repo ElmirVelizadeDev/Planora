@@ -105,6 +105,7 @@ export const routes = [
             { path: 'notifications', name: 'admin.notifications.index', component: () => import('../pages/admin/notifications/AdminNotificationsIndex.vue'), meta: { requiresRole: 'admin' } },
             { path: 'activity-logs', name: 'admin.activity-logs.index', component: () => import('../pages/admin/activity-logs/ActivityLogsIndex.vue') },
             { path: 'activity-logs/:logId', name: 'admin.activity-logs.show', component: () => import('../pages/admin/activity-logs/ActivityLogsShow.vue') },
+            { path: 'backups', name: 'admin.backups.index', component: () => import('../pages/admin/backups/BackupsIndex.vue'), meta: { requiresRole: 'admin' } },
             { path: 'settings', name: 'admin.settings.index', component: () => import('../pages/admin/settings/AdminSettingsIndex.vue') },
             { path: 'settings/general', name: 'admin.settings.general', component: () => import('../pages/admin/settings/AdminSettingsGeneral.vue') },
             { path: 'settings/security', name: 'admin.settings.security', component: () => import('../pages/admin/settings/AdminSettingsSecurity.vue') },

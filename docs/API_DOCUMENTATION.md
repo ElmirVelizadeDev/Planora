@@ -231,11 +231,14 @@ These endpoints require an authenticated active normal User. User Project collec
 | `GET` | `/api/v1/projects/{project}` | Read an owned Project |
 | `GET` | `/api/v1/projects/{project}/tasks` | List accessible Tasks in an owned Project; supports status, priority, Category, and pagination filters |
 | `GET` | `/api/v1/tasks` | List owned/assigned Tasks with search, status, priority, due-state, Category, sort, date-range, and pagination filters |
+| `GET` | `/api/v1/tasks/calendar` | Return all owned/assigned Tasks with due dates in an inclusive calendar range |
 | `POST` | `/api/v1/tasks` | Create a Task owned by the current User |
 | `GET` | `/api/v1/tasks/{task}` | Read an owned or assigned Task |
 | `PATCH` | `/api/v1/tasks/{task}` | Update an owned Task |
 | `PATCH` | `/api/v1/tasks/{task}/status` | Update status of an owned or assigned Task |
 | `DELETE` | `/api/v1/tasks/{task}` | Soft-delete an owned Task |
+
+The calendar range endpoint requires `start_date` and `end_date` in `Y-m-d` format. Both endpoints are inclusive, and the range may contain at most 180 calendar dates. Optional `status` values are `pending`, `in_progress`, or `completed`; optional `priority` values are `low`, `medium`, `high`, or `urgent`. Results are unpaginated and contain only Tasks the authenticated User owns or is assigned to; Tasks without a due date and soft-deleted Tasks are excluded. Due dates are serialized as date-only `Y-m-d` values.
 
 Project and Task creation/update accept an optional nullable `category_id`. New assignments must reference an active Category. An existing archived Category may remain selected when an existing Project or Task is updated without changing that association; it cannot be newly assigned. Project and Task resources return a nested Category summary (`id`, `name`, `color`, and `status`) when loaded, including `status: archived` for retained historical associations.
 

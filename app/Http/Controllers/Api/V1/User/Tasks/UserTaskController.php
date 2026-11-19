@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1\User\Tasks;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\User\Tasks\IndexUserTaskRequest;
+use App\Http\Requests\Api\V1\User\Tasks\CalendarRangeRequest;
 use App\Http\Requests\Api\V1\User\Tasks\StoreUserTaskRequest;
 use App\Http\Requests\Api\V1\User\Tasks\UpdateUserTaskRequest;
 use App\Http\Requests\Api\V1\User\Tasks\UpdateUserTaskStatusRequest;
@@ -15,6 +16,13 @@ use Illuminate\Http\Request;
 
 class UserTaskController extends Controller
 {
+    public function calendar(CalendarRangeRequest $request, UserTaskService $tasks): JsonResponse
+    {
+        $records = $tasks->calendarRange($request->user()->id, $request->validated());
+
+        return response()->json(['data' => UserTaskResource::collection($records)->resolve($request)]);
+    }
+
     public function index(IndexUserTaskRequest $request, UserTaskService $tasks): JsonResponse
     {
         $user = $request->user();

@@ -22,6 +22,7 @@
 
 <script setup>
 import { computed, reactive, ref, watch } from 'vue';
+import { useRoute } from 'vue-router';
 import TaskForm from './TaskForm.vue';
 import { createUserTask, getUserTask, updateUserTask } from '../services/userTaskApi.js';
 import { getUserCategories } from '../../../categories/user/services/userCategoryApi.js';
@@ -33,6 +34,7 @@ const props = defineProps({
     pageDescription: { type: String, required: true },
 });
 const emit = defineEmits(['saved']);
+const route = useRoute();
 const editing = computed(() => props.mode === 'edit');
 const loading = ref(false), saving = ref(false), loadError = ref(''), formError = ref('');
 const errors = reactive({}), categories = ref([]), archivedCategory = ref(null);
@@ -42,7 +44,7 @@ async function load() {
     loading.value = true; loadError.value = '';
     try { categories.value = (await getUserCategories({ per_page: 50, sort: 'name', direction: 'asc' })).data || []; }
     catch { categories.value = []; }
-    if (!editing.value) { loading.value = false; return; }
+    if (!editing.value) { form.due_date = typeof route.query.due_date === 'string' ? route.query.due_date : ''; loading.value = false; return; }
     if (!props.taskId) { loadError.value = 'This task could not be found.'; loading.value = false; return; }
     Object.assign(form, { title: '', description: '', status: 'pending', priority: 'medium', due_date: '' });
     Object.keys(errors).forEach(field => delete errors[field]);

@@ -75,11 +75,12 @@ class ActivityLogsTest extends TestCase
     public function test_activity_logs_spa_fallback_allows_admin_and_permitted_moderator_only(): void
     {
         $admin = $this->account('admin');
-        $this->actingAs($admin)->get('/admin/activity-logs')->assertOk()->assertSee('<div id="app"></div>', false);
-        $this->get('/admin/activity-logs/123')->assertOk()->assertSee('<div id="app"></div>', false);
+        $this->actingAs($admin)->get('/admin/activity-logs')->assertOk()->assertSee('<div id="app" data-planora-view="application"></div>', false);
+        $this->get('/admin/activity-logs/123')->assertOk()->assertSee('<div id="app" data-planora-view="application"></div>', false);
 
         $permittedModerator = $this->account('moderator', ['activity.view']);
-        $this->actingAs($permittedModerator)->get('/admin/activity-logs')->assertOk();
+        $this->actingAs($permittedModerator)->get('/admin/activity-logs')->assertOk()
+            ->assertSee('<div id="app" data-planora-view="application"></div>', false);
 
         $deniedModerator = $this->account('moderator', ['users.view']);
         $this->actingAs($deniedModerator)->get('/admin/activity-logs')->assertForbidden();

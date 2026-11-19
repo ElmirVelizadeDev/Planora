@@ -71,6 +71,7 @@ const pageContext = computed(() => {
         if (name.startsWith('admin.categories.')) return 'Categories';
         if (name === 'admin.reports') return 'Reports & Analytics';
         if (name.startsWith('admin.activity-logs.')) return 'Activity Logs';
+        if (name.startsWith('admin.backups.')) return 'Backups & Recovery';
         if (name.startsWith('admin.settings.')) return 'Settings';
         if (name === 'admin.roles-permissions.index') return 'Roles & Permissions';
         if (name === 'admin.system-maintenance') return 'System Maintenance';

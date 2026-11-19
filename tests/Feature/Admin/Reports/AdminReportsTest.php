@@ -255,4 +255,102 @@ class AdminReportsTest extends TestCase
         $this->getJson('/api/v1/admin/reports/tables/tasks?search=No%20such%20task')
             ->assertOk()->assertJsonPath('data.meta.total', 0)->assertJsonCount(0, 'data.data');
     }
+
+    public function test_user_kpis_and_breakdowns_share_the_non_deleted_account_population(): void
+    {
+        $filters = ['from' => '2001-05-01', 'to' => '2001-05-07'];
+        $before = app(\App\Services\Api\V1\Admin\AdminReportService::class)->build($filters);
+
+        $accounts = [
+            ['role' => 'user', 'status' => 'active'],
+            ['role' => 'user', 'status' => 'inactive'],
+            ['role' => 'moderator', 'status' => 'suspended'],
+            ['role' => 'admin', 'status' => 'banned'],
+        ];
+        foreach ($accounts as $attributes) {
+            User::factory()->create($attributes + ['created_at' => '2000-01-01 12:00:00', 'updated_at' => '2000-01-01 12:00:00']);
+        }
+        $deleted = User::factory()->create(['role' => 'user', 'status' => 'active']);
+        $deleted->delete();
+
+        $after = app(\App\Services\Api\V1\Admin\AdminReportService::class)->build($filters);
+        $userMetrics = $after['overview']['users'];
+        $statusCounts = array_column($after['user_analytics']['status_distribution'], 'value', 'key');
+        $roleCounts = array_column($after['user_analytics']['role_distribution'], 'value', 'key');
+
+        $this->assertSame($before['overview']['users']['total'] + 4, $userMetrics['total']);
+        $this->assertSame($before['overview']['users']['active'] + 1, $userMetrics['active']);
+        $this->assertSame($before['overview']['users']['inactive'] + 1, $userMetrics['inactive']);
+        $this->assertSame($before['overview']['users']['suspended'] + 1, $userMetrics['suspended']);
+        $this->assertSame($before['overview']['users']['banned'] + 1, $userMetrics['banned']);
+        $this->assertSame($userMetrics['total'], array_sum($statusCounts));
+        $this->assertSame($userMetrics['total'], array_sum($roleCounts));
+        $this->assertSame($before['overview']['users']['new_in_period'], $userMetrics['new_in_period']);
+    }
+
+    public function test_user_registration_trend_and_growth_use_inclusive_equal_length_utc_periods(): void
+    {
+        foreach ([
+            '2001-04-24 00:00:00',
+            '2001-04-27 12:00:00',
+            '2001-04-30 23:59:59',
+            '2001-05-01 00:00:00',
+            '2001-05-07 23:59:59',
+        ] as $index => $createdAt) {
+            User::factory()->create([
+                'name' => 'Period registration '.$index,
+                'created_at' => $createdAt,
+                'updated_at' => $createdAt,
+            ]);
+        }
+        User::factory()->create(['name' => 'Outside before', 'created_at' => '2001-04-23 23:59:59', 'updated_at' => '2001-04-23 23:59:59']);
+        User::factory()->create(['name' => 'Outside after', 'created_at' => '2001-05-08 00:00:00', 'updated_at' => '2001-05-08 00:00:00']);
+
+        $report = app(\App\Services\Api\V1\Admin\AdminReportService::class)->build([
+            'from' => '2001-05-01', 'to' => '2001-05-07',
+        ]);
+
+        $this->assertSame('2001-04-24', $report['period']['previous_from']);
+        $this->assertSame('2001-04-30', $report['period']['previous_to']);
+        $this->assertSame(2, $report['overview']['users']['new_in_period']);
+        $this->assertSame(3, $report['overview']['users']['previous_period']);
+        $this->assertSame(-33.3, $report['overview']['users']['growth_percent']);
+        $this->assertSame(7, count($report['user_analytics']['registration_trend']));
+        $this->assertSame('2001-05-01', $report['user_analytics']['registration_trend'][0]['date']);
+        $this->assertSame('2001-05-07', $report['user_analytics']['registration_trend'][6]['date']);
+        $this->assertSame([1, 0, 0, 0, 0, 0, 1], array_column($report['user_analytics']['registration_trend'], 'value'));
+    }
+
+    public function test_user_registration_table_search_sort_pagination_and_export_expose_only_report_fields(): void
+    {
+        for ($index = 1; $index <= 12; $index++) {
+            $createdAt = sprintf('2001-05-%02d 12:00:00', min($index, 7));
+            User::factory()->create([
+                'name' => sprintf('Report Scope %02d', $index),
+                'created_at' => $createdAt,
+                'updated_at' => $createdAt,
+            ]);
+        }
+
+        $admin = $this->admin();
+        $this->actingAs($admin, 'sanctum');
+        $table = $this->getJson('/api/v1/admin/reports/tables/registrations?from=2001-05-01&to=2001-05-07&search=Report%20Scope&sort=name&direction=asc&page=2&per_page=10')
+            ->assertOk()->assertJsonPath('data.meta.total', 12)->assertJsonPath('data.meta.current_page', 2)
+            ->assertJsonCount(2, 'data.data')->assertJsonPath('data.data.0.name', 'Report Scope 11')
+            ->assertJsonPath('data.data.1.name', 'Report Scope 12');
+        $this->assertArrayNotHasKey('email', $table->json('data.data.0'));
+        $this->assertArrayNotHasKey('password', $table->json('data.data.0'));
+
+        $formulaUser = User::factory()->create([
+            'name' => '=SUM(1,1)',
+            'created_at' => '2001-05-03 12:00:00',
+            'updated_at' => '2001-05-03 12:00:00',
+        ]);
+        $csv = $this->get('/api/v1/admin/reports/export?from=2001-05-01&to=2001-05-07&user_id='.$formulaUser->id)
+            ->assertOk()->streamedContent();
+
+        $this->assertStringContainsString("'=SUM(1,1)", $csv);
+        $this->assertStringNotContainsString($formulaUser->email, $csv);
+        $this->assertStringNotContainsString($formulaUser->getRawOriginal('password'), $csv);
+    }
 }

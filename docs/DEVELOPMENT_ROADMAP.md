@@ -18,7 +18,7 @@ This document records implementation boundaries visible in the current repositor
 
 ## Planned
 
-- Complete the remaining User Calendar, Tags, and productivity workflows as product scope requires. Notifications have persisted APIs and history views; notification-preference settings and other scaffolded screens should not be mistaken for delivered workflows.
+- Complete the remaining Tags and productivity workflows as product scope requires. The User Calendar is implemented with month, week, day, and agenda views backed by the authorized Task range endpoint. Notifications have persisted APIs and history views; notification-preference settings and other scaffolded screens should not be mistaken for delivered workflows.
 - Add additional Moderator module permissions only when business purpose, object-level rules, backend authorization, UI behavior, and tests are defined together.
 - Expand automated coverage and browser verification for the current feature set.
 

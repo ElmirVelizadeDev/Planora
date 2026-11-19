@@ -258,12 +258,15 @@
 
 <script setup>
 import UserAvatar from '../../../shared/components/UserAvatar.vue';
-import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue';
+import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from '../../../features/auth/stores/authStore.js';
 import api from '../../../shared/services/api.js';
 import { validatePersonName, validateSupportedEmail } from '../../../shared/validation.js';
 
 const auth = useAuthStore();
+const route = useRoute();
+const router = useRouter();
 const users = ref([]);
 const statsData = ref({ total_users: 0, active_users: 0, inactive_users: 0, banned_users: 0 });
 const activeAdmins = ref(null);
@@ -548,6 +551,11 @@ function closeDialog() {
         dialog.avatarPreview = '';
         dialog.removeAvatar = false;
         resetDialogErrors();
+        if (route.query.view) {
+            const query = { ...route.query };
+            delete query.view;
+            router.replace({ name: 'admin.users.index', query });
+        }
     }
 }
 function showNotice(message, isError = false) {
@@ -772,6 +780,10 @@ async function confirmRestore() {
     } finally { dialog.saving = false; }
 }
 
+watch(() => route.query.view, (userId) => {
+    if (!userId || !/^\d+$/.test(String(userId))) return;
+    openViewDialog({ id: Number(userId), name: 'Loading profile…', email: '' });
+}, { immediate: true });
 onMounted(() => { loadUsers(); loadAccessOptions(); });
 onBeforeUnmount(() => {
     clearTimeout(searchTimer);
