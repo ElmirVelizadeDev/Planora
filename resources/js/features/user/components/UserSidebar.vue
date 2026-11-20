@@ -12,7 +12,7 @@
 </template>
 
 <script setup>
-import WorkspaceSidebar from './WorkspaceSidebar.vue';
+import WorkspaceSidebar from '../../../shared/components/layout/WorkspaceSidebar.vue';
 
 defineProps({
     collapsed: { type: Boolean, default: false },
@@ -32,4 +32,4 @@ const links = [
 ];
 </script>
 
-<style src="../../../css/components/UserSidebar.css"></style>
+<style src="../../../../css/components/UserSidebar.css"></style>

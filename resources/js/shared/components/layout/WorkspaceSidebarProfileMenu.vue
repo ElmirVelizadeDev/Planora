@@ -60,8 +60,8 @@
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
 import { RouterLink } from 'vue-router';
-import { useLogoutConfirmation } from '../../features/auth/composables/useLogoutConfirmation.js';
-import { useAuthStore } from '../../features/auth/stores/authStore.js';
+import { useLogoutConfirmation } from '../../../features/auth/composables/useLogoutConfirmation.js';
+import { useAuthStore } from '../../../features/auth/stores/authStore.js';
 
 const { requestLogout } = useLogoutConfirmation();
 const auth = useAuthStore();

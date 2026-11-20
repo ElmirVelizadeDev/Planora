@@ -44,9 +44,9 @@
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, useId, watch } from 'vue';
 import { RouterLink, useRouter } from 'vue-router';
-import { useAuthStore } from '../../features/auth/stores/authStore.js';
-import { useNotificationStore } from '../../features/notifications/stores/notificationStore.js';
-import NotificationItem from '../../features/notifications/components/NotificationItem.vue';
+import { useAuthStore } from '../../auth/stores/authStore.js';
+import { useNotificationStore } from '../stores/notificationStore.js';
+import NotificationItem from './NotificationItem.vue';
 
 const props = defineProps({ variant: { type: String, required: true } });
 const auth = useAuthStore();
@@ -106,4 +106,4 @@ onMounted(() => {
 onBeforeUnmount(() => document.removeEventListener('pointerdown', onOutside));
 </script>
 
-<style src="../../../css/components/notifications.css"></style>
+<style src="../../../../css/components/notifications.css"></style>

@@ -14,6 +14,7 @@ use App\Http\Controllers\Api\V1\Admin\Tasks\TaskController;
 use App\Http\Controllers\Api\V1\User\Tasks\UserTaskController;
 use App\Http\Controllers\Api\V1\User\Projects\UserProjectController;
 use App\Http\Controllers\Api\V1\User\Categories\UserCategoryController;
+use App\Http\Controllers\Api\V1\User\Reports\UserTaskReportController;
 use App\Http\Controllers\Api\V1\Admin\Projects\ProjectTaskManagementController;
 use App\Http\Controllers\Api\V1\Admin\Reports\AdminReportController;
 use App\Http\Controllers\Api\V1\Admin\ActivityLogs\ActivityLogsController;
@@ -183,6 +184,7 @@ Route::prefix('categories')->name('categories.')->middleware(['maintenance.scope
 });
 
 Route::prefix('tasks')->name('tasks.')->middleware(['maintenance.scope:dashboard_workspace', 'auth:sanctum', 'active', 'role:user'])->group(function () {
+    Route::get('/reports', UserTaskReportController::class)->name('reports');
     Route::get('/calendar', [UserTaskController::class, 'calendar'])->name('calendar');
     Route::get('/', [UserTaskController::class, 'index'])->name('index');
     Route::post('/', [UserTaskController::class, 'store'])->name('store');

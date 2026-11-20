@@ -31,7 +31,7 @@
             <button v-if="query" class="workspace-search-clear" type="button" aria-label="Clear search" @click="clearSearch">×</button>
             <kbd aria-hidden="true">{{ isMac ? '⌘ K' : 'Ctrl K' }}</kbd>
             <button class="workspace-search-close" type="button" aria-label="Close search" @click="closeSearch(true)">
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
             </button>
         </form>
 
@@ -82,8 +82,8 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
-import { useAuthStore } from '../../features/auth/stores/authStore.js';
-import { searchWorkspace } from '../../features/search/services/globalSearchApi.js';
+import { useAuthStore } from '../../../features/auth/stores/authStore.js';
+import { searchWorkspace } from '../../../features/search/services/globalSearchApi.js';
 
 const emit = defineEmits(['overlay-change']);
 const router = useRouter();

@@ -18,8 +18,8 @@
 
 <script setup>
 import AppHeader from '../shared/components/layout/AppHeader.vue';
-import WorkspaceFooter from '../shared/components/WorkspaceFooter.vue';
-import UserSidebar from '../shared/components/UserSidebar.vue';
+import WorkspaceFooter from '../shared/components/layout/WorkspaceFooter.vue';
+import UserSidebar from '../features/user/components/UserSidebar.vue';
 import { useWorkspaceSidebar } from '../shared/composables/useWorkspaceSidebar.js';
 import { useAuthStore } from '../features/auth/stores/authStore.js';
 import { useAppearancePreferences } from '../features/appearance/composables/appearancePreferences.js';

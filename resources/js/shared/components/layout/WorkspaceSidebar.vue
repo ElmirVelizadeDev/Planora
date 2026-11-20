@@ -104,10 +104,10 @@
 <script setup>
 import { computed } from 'vue';
 import { RouterLink, useRoute } from 'vue-router';
-import { useAuthStore } from '../../features/auth/stores/authStore.js';
-import { useLogoutConfirmation } from '../../features/auth/composables/useLogoutConfirmation.js';
+import { useAuthStore } from '../../../features/auth/stores/authStore.js';
+import { useLogoutConfirmation } from '../../../features/auth/composables/useLogoutConfirmation.js';
 import WorkspaceSidebarProfileMenu from './WorkspaceSidebarProfileMenu.vue';
-import UserAvatar from './UserAvatar.vue';
+import UserAvatar from '../UserAvatar.vue';
 
 const props = defineProps({
     variant: { type: String, required: true },
@@ -133,4 +133,4 @@ function isExplicitlyActive(item) {
 
 </script>
 
-<style src="../../../css/components/WorkspaceSidebar.css"></style>
+<style src="../../../../css/components/WorkspaceSidebar.css"></style>

@@ -9,8 +9,8 @@
 .user-tasks-primary-button > span { font-size: 18px; font-weight: 400; line-height: 1; }
 .user-tasks-secondary-button { border-color: var(--color-border); }
 .user-tasks-secondary-button:hover { border-color: var(--color-accent-border); color: var(--color-accent-text); }
-.user-tasks-danger-button, .user-task-delete-button { background: var(--color-danger-action); }
-.user-tasks-danger-button:hover, .user-task-delete-button:hover { background: var(--color-danger-action-hover); }
+.user-tasks-danger-button, .user-tasks-delete-button { background: var(--color-danger-action); }
+.user-tasks-danger-button:hover, .user-tasks-delete-button:hover { background: var(--color-danger-action-hover); }
 .user-tasks-stat-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 13px; }
 .user-tasks-stat-card, .user-tasks-panel { min-width: 0; border: 1px solid var(--color-border); border-radius: 14px; background: var(--color-surface); box-shadow: 0 3px 12px rgb(32 40 58 / 3%); }
 .user-tasks-stat-card { display: grid; min-height: 102px; grid-template-columns: 35px minmax(0, 1fr); grid-template-rows: auto auto; align-content: center; align-items: center; column-gap: 12px; padding: 15px 17px; }

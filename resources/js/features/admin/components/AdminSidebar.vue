@@ -12,10 +12,10 @@
 </template>
 
 <script setup>
-import WorkspaceSidebar from './WorkspaceSidebar.vue';
+import WorkspaceSidebar from '../../../shared/components/layout/WorkspaceSidebar.vue';
 import { computed } from 'vue';
-import { useAuthStore } from '../../features/auth/stores/authStore.js';
-import { moderatorAdminLinks, moderatorLandingRoute } from '../../features/auth/managementAccess.js';
+import { useAuthStore } from '../../auth/stores/authStore.js';
+import { moderatorAdminLinks, moderatorLandingRoute } from '../../auth/managementAccess.js';
 
 defineProps({
     collapsed: { type: Boolean, default: false },
@@ -46,4 +46,4 @@ const links = computed(() => {
 });
 </script>
 
-<style src="../../../css/components/AdminSidebar.css"></style>
+<style src="../../../../css/components/AdminSidebar.css"></style>

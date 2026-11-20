@@ -58,6 +58,7 @@ async function load() {
     finally { loading.value = false; }
 }
 async function submit() {
+    if (saving.value) return;
     saving.value = true; formError.value = ''; Object.keys(errors).forEach(key => delete errors[key]);
     const payload = { ...form, description: form.description || null, due_date: form.due_date || null, owner_id: Number(form.owner_id), assigned_user_id: form.assigned_user_id ? Number(form.assigned_user_id) : null };
     try {

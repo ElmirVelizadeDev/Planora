@@ -22,7 +22,7 @@
 <script setup>
 import AdminTaskPriorityBadge from './AdminTaskPriorityBadge.vue';
 import AdminTaskStatusBadge from './AdminTaskStatusBadge.vue';
-import AdminStatusSelect from '../../../../shared/components/AdminStatusSelect.vue';
+import AdminStatusSelect from '../../../../features/admin/components/AdminStatusSelect.vue';
 import UserAvatar from '../../../../shared/components/UserAvatar.vue';
 
 const ADMIN_TASK_STATUSES = [

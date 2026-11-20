@@ -22,7 +22,7 @@
 <script setup>
 import AdminProjectStatusBadge from './AdminProjectStatusBadge.vue';
 import UserAvatar from '../../../../shared/components/UserAvatar.vue';
-import AdminStatusSelect from '../../../../shared/components/AdminStatusSelect.vue';
+import AdminStatusSelect from '../../../../features/admin/components/AdminStatusSelect.vue';
 import { ADMIN_PROJECT_STATUSES } from '../composables/useAdminProjects.js';
 
 defineProps({

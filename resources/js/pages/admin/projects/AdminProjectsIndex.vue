@@ -50,8 +50,8 @@
             />
         </section>
 
-        <div v-if="['create', 'edit'].includes(dialog.type)" class="admin-projects-backdrop" @click.self="closeDialog">
-            <AdminProjectForm :project="dialog.project" :owners="owners" :categories="categories" :owner-error="ownersError" :saving="dialog.saving" :error="dialog.error" :errors="dialog.errors" @cancel="closeDialog" @submit="saveFromDialog" />
+        <div v-if="['create', 'edit'].includes(dialog.type)" class="admin-projects-backdrop" @click.self="closeProjectDialog">
+            <AdminProjectForm :project="dialog.project" :owners="owners" :categories="categories" :owner-error="ownersError" :saving="dialog.saving" :error="dialog.error" :errors="dialog.errors" @cancel="closeProjectDialog" @submit="saveFromDialog" />
         </div>
         <AdminProjectDeleteDialog v-if="dialog.type === 'delete'" :project="dialog.project" :saving="dialog.saving" :error="dialog.error" @close="closeDialog" @confirm="deleteFromDialog" />
         <div v-if="notice" class="admin-projects-notice" role="status">{{ notice }}</div>
@@ -59,7 +59,8 @@
 </template>
 
 <script setup>
-import { computed, onMounted, onBeforeUnmount, ref } from 'vue';
+import { computed, onMounted, onBeforeUnmount, ref, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from '../../../features/auth/stores/authStore.js';
 import AdminProjectDeleteDialog from '../../../features/projects/admin/components/AdminProjectDeleteDialog.vue';
 import AdminProjectFilters from '../../../features/projects/admin/components/AdminProjectFilters.vue';
@@ -78,6 +79,8 @@ const {
 const notice = ref('');
 const categories = ref([]);
 const statusSaving = ref(false);
+const route = useRoute();
+const router = useRouter();
 const auth = useAuthStore();
 const isAdmin = computed(() => auth.hasRole('admin'));
 const canManageStatus = computed(() => isAdmin.value || auth.hasManagementPermission('projects.status.manage'));
@@ -90,7 +93,25 @@ function showNotice(message) {
 }
 
 async function saveFromDialog(payload) {
-    if (await saveProject(payload)) showNotice('Project saved.');
+    const openedFromQuickAdd = route.query.quickAdd === 'project';
+    if (await saveProject(payload, { refreshList: !openedFromQuickAdd })) {
+        showNotice('Project saved.');
+        clearQuickAddQuery();
+        if (openedFromQuickAdd) await loadProjects();
+    }
+}
+
+function clearQuickAddQuery() {
+    if (route.query.quickAdd !== 'project') return;
+    const query = { ...route.query };
+    delete query.quickAdd;
+    router.replace({ name: 'admin.projects.index', query });
+}
+
+function closeProjectDialog() {
+    if (dialog.saving) return;
+    closeDialog();
+    clearQuickAddQuery();
 }
 
 async function deleteFromDialog() {
@@ -108,6 +129,9 @@ async function changeProjectStatus({ project, status }) {
 }
 
 onMounted(async () => { loadProjects(); if (isAdmin.value) { loadOwners(); try { categories.value = (await getAdminProjectCategories()).data || []; } catch { categories.value = []; } } });
+watch(() => route.query.quickAdd, (value) => {
+    if (value === 'project' && isAdmin.value) openCreate();
+}, { immediate: true });
 onBeforeUnmount(() => clearTimeout(noticeTimer));
 </script>
 

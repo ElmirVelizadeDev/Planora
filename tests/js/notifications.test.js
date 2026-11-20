@@ -22,7 +22,7 @@ test('Admin and User notification histories use the shared notification page and
 });
 
 test('shared notification dropdown supports badge, outside click, Escape, read actions, and internal navigation', async () => {
-    const dropdown = await source('../../resources/js/shared/components/NotificationDropdown.vue');
+    const dropdown = await source('../../resources/js/features/notifications/components/NotificationDropdown.vue');
     const store = await source('../../resources/js/features/notifications/stores/notificationStore.js');
     const api = await source('../../resources/js/features/notifications/services/notificationsApi.js');
 

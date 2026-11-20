@@ -21,7 +21,7 @@
         <SearchBar ref="searchRef" class="workspace-header-search" @overlay-change="searchOverlayOpen = $event" />
 
         <div class="workspace-header-actions">
-            <HeaderQuickActions v-if="variant === 'user'" />
+            <AdminQuickAdd v-if="variant === 'admin' && auth.hasRole('admin')" />
             <NotificationDropdown :variant="variant" />
             <HeaderHelpCenter />
             <ProfileDropdown :variant="variant" />
@@ -33,10 +33,11 @@
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { useRoute } from 'vue-router';
 import HeaderHelpCenter from './HeaderHelpCenter.vue';
-import HeaderQuickActions from './HeaderQuickActions.vue';
-import NotificationDropdown from '../NotificationDropdown.vue';
+import AdminQuickAdd from '../../../features/admin/components/AdminQuickAdd.vue';
+import NotificationDropdown from '../../../features/notifications/components/NotificationDropdown.vue';
 import ProfileDropdown from '../ProfileDropdown.vue';
-import SearchBar from '../SearchBar.vue';
+import SearchBar from './SearchBar.vue';
+import { useAuthStore } from '../../../features/auth/stores/authStore.js';
 import { getPublicBranding } from '../../../features/settings/services/settingsApi.js';
 
 const props = defineProps({
@@ -46,6 +47,7 @@ const props = defineProps({
 defineEmits(['toggle-sidebar']);
 
 const route = useRoute();
+const auth = useAuthStore();
 const searchRef = ref(null);
 const searchOverlayOpen = ref(false);
 const branding = ref({ application_name: 'Planora', workspace_name: 'Planora' });

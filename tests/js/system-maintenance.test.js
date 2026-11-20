@@ -11,13 +11,13 @@ test('System Maintenance is an Admin-only page and is not added to the main side
     assert.equal(maintenance.path, 'system-maintenance');
     assert.equal(maintenance.meta.requiresRole, 'admin');
 
-    const sidebarMenu = source('../../resources/js/shared/components/WorkspaceSidebarProfileMenu.vue');
+    const sidebarMenu = source('../../resources/js/shared/components/layout/WorkspaceSidebarProfileMenu.vue');
     assert.match(sidebarMenu, /v-if="auth\.hasRole\('admin'\)"[\s\S]*?System Maintenance/);
     const headerMenu = source('../../resources/js/shared/components/ProfileDropdown.vue');
     assert.match(headerMenu, /v-if="variant === 'admin'" class="profile-menu-item" :to="\{ name: 'admin\.system-maintenance' \}"[\s\S]*?<span>System Maintenance<\/span>/);
     assert.match(headerMenu, /class="profile-menu-item" :to="\{ name: 'admin\.system-maintenance' \}"/);
-    assert.doesNotMatch(source('../../resources/js/shared/components/AdminSidebar.vue'), /System Maintenance/);
-    assert.doesNotMatch(source('../../resources/js/shared/components/UserSidebar.vue'), /System Maintenance/);
+    assert.doesNotMatch(source('../../resources/js/features/admin/components/AdminSidebar.vue'), /System Maintenance/);
+    assert.doesNotMatch(source('../../resources/js/features/user/components/UserSidebar.vue'), /System Maintenance/);
 });
 
 test('maintenance management exposes three independent confirmed scopes and reads live server status', () => {

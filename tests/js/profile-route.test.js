@@ -28,10 +28,10 @@ test('account settings is a dedicated authenticated shared route with a canonica
 });
 
 test('account settings is available in the shared profile menus and header, not main sidebar navigation', () => {
-    const adminSidebar = readSource('../../resources/js/shared/components/AdminSidebar.vue');
-    const userSidebar = readSource('../../resources/js/shared/components/UserSidebar.vue');
-    const workspaceSidebar = readSource('../../resources/js/shared/components/WorkspaceSidebar.vue');
-    const profileMenu = readSource('../../resources/js/shared/components/WorkspaceSidebarProfileMenu.vue');
+    const adminSidebar = readSource('../../resources/js/features/admin/components/AdminSidebar.vue');
+    const userSidebar = readSource('../../resources/js/features/user/components/UserSidebar.vue');
+    const workspaceSidebar = readSource('../../resources/js/shared/components/layout/WorkspaceSidebar.vue');
+    const profileMenu = readSource('../../resources/js/shared/components/layout/WorkspaceSidebarProfileMenu.vue');
     const headerProfileDropdown = readSource('../../resources/js/shared/components/ProfileDropdown.vue');
 
     assert.doesNotMatch(adminSidebar, /Account Settings|account\.settings/);

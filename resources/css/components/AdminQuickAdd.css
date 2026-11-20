@@ -1,0 +1,12 @@
+.admin-quick-add-popover { width: min(286px, calc(100vw - 28px)); padding: 7px; }
+.admin-quick-add-heading { margin: 0; padding: 8px 10px 7px; color: var(--color-text-secondary); font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.admin-quick-add-item { display: flex; width: 100%; min-height: 58px; align-items: center; gap: 10px; padding: 8px 9px; border: 0; border-radius: 9px; color: var(--color-text); background: transparent; cursor: pointer; font: inherit; text-align: left; }
+.admin-quick-add-item:hover,
+.admin-quick-add-item:focus-visible { color: var(--color-accent-text); background: var(--color-selected-background); }
+.admin-quick-add-icon { display: grid; width: 34px; height: 34px; flex: 0 0 34px; place-items: center; border: 1px solid var(--color-border); border-radius: 9px; color: var(--color-accent-text); background: var(--color-surface); }
+.admin-quick-add-icon svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.6; }
+.admin-quick-add-copy { display: grid; min-width: 0; gap: 3px; }
+.admin-quick-add-copy strong { color: var(--color-text); font-size: 11px; font-weight: 650; }
+.admin-quick-add-copy small { color: var(--color-text-secondary); font-size: 10px; line-height: 1.35; }
+.admin-quick-add-item:focus-visible { outline: 3px solid var(--color-focus-ring); outline-offset: 1px; }
+.admin-quick-add-error { position: absolute; top: calc(100% + 8px); right: 0; z-index: 41; width: min(286px, calc(100vw - 28px)); box-sizing: border-box; margin: 0; padding: 10px 12px; border: 1px solid var(--color-danger-border, #f0c8c5); border-radius: 9px; color: var(--color-danger, #a8322c); background: var(--color-surface); box-shadow: var(--shadow-soft); font-size: 10px; line-height: 1.45; }

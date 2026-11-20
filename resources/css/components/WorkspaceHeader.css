@@ -47,9 +47,6 @@
 .header-profile-chevron { width: 15px; height: 15px; flex: 0 0 15px; fill: none; stroke: var(--color-text-secondary); stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.5; }
 .header-popover { position: absolute; top: calc(100% + 10px); right: 0; z-index: 40; overflow: hidden; border: 1px solid var(--color-border); border-radius: 14px; background: var(--color-surface); box-shadow: var(--shadow-soft); }
 .notification-popover { width: min(300px, calc(100vw - 32px)); }
-.quick-add-popover { width: min(270px, calc(100vw - 32px)); padding: 15px; }
-.quick-add-popover strong { color: var(--color-text); font-size: 12px; }
-.quick-add-popover p { margin: 7px 0 0; color: var(--color-text-secondary); font-size: 11px; line-height: 1.5; }
 .header-popover-heading { display: grid; gap: 4px; padding: 13px 15px; border-bottom: 1px solid var(--color-border); }
 .header-popover-heading strong { overflow: hidden; color: var(--color-text); font-size: 12px; font-weight: 650; text-overflow: ellipsis; white-space: nowrap; }
 .header-popover-heading span { overflow: hidden; color: var(--color-text-secondary); font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
@@ -72,10 +69,17 @@
 .workspace-search:focus-within { border-color: var(--color-accent-border); background: var(--color-surface); box-shadow: 0 0 0 3px var(--color-focus-ring); }
 .workspace-header-search .workspace-search-icon { position: static; width: 14px; height: 14px; flex: 0 0 14px; border: 0; border-radius: 0; color: var(--color-text-secondary); fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
 .workspace-search input { width: 100%; min-width: 0; padding: 0; border: 0; outline: 0; color: var(--color-text); background: transparent; font: inherit; font-size: 10px; }
+.workspace-search input[type="search"] { -webkit-appearance: none; appearance: none; }
+.workspace-search input[type="search"]::-webkit-search-cancel-button,
+.workspace-search input[type="search"]::-webkit-search-decoration,
+.workspace-search input[type="search"]::-webkit-search-results-button,
+.workspace-search input[type="search"]::-webkit-search-results-decoration { display: none; -webkit-appearance: none; }
+.workspace-search input[type="search"]::-ms-clear { display: none; }
 .workspace-search input::placeholder { color: var(--color-text-secondary); }
 .workspace-search kbd { flex: 0 0 auto; padding: 3px 5px; border: 1px solid var(--color-border); border-radius: 5px; color: var(--color-text-secondary); background: var(--color-surface); font-family: inherit; font-size: 9px; line-height: 1.2; }
-.workspace-search-clear { display: grid; width: 20px; height: 20px; flex: 0 0 20px; place-items: center; padding: 0; border: 0; border-radius: 50%; color: var(--color-text-secondary); background: transparent; cursor: pointer; font-size: 17px; }
+.workspace-search-clear { display: grid; width: 32px; height: 32px; flex: 0 0 32px; place-items: center; padding: 0; border: 0; border-radius: 9px; color: var(--color-text-secondary); background: transparent; cursor: pointer; font-size: 17px; }
 .workspace-search-clear:hover { color: var(--color-accent-text); background: var(--color-surface); }
+.workspace-search-clear:focus-visible { outline: 3px solid var(--color-focus-ring); outline-offset: 1px; }
 .workspace-search-status { position: absolute; top: calc(100% + 6px); left: 0; z-index: 25; width: 100%; margin: 0; padding: 10px 12px; border: 1px solid var(--color-border); border-radius: 10px; color: var(--color-text-secondary); background: var(--color-surface); box-shadow: var(--shadow-soft); font-size: 10px; }
 .header-search-mobile-trigger { display: none; }
 
@@ -156,7 +160,7 @@
         transition: color 160ms ease, border-color 160ms ease, background 160ms ease, transform 160ms ease;
     }
     .workspace-search-close:hover { border-color: var(--color-accent-border); color: var(--color-accent-text); background: var(--color-surface); transform: scale(1.03); }
-    .workspace-search-close svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-width: 1.8; }
+    .workspace-search-close svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.8; }
     .workspace-header-search .workspace-search-status {
         position: fixed;
         z-index: 2;

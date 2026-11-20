@@ -7,7 +7,7 @@ const router = createRouter({
     // for generated assets and must not be reused as the Vue Router URL prefix.
     history: createWebHistory('/'),
     routes,
-    scrollBehavior: () => ({ top: 0 }),
+    scrollBehavior: (to) => to.hash ? { el: to.hash } : ({ top: 0 }),
 });
 
 installRouteGuards(router);

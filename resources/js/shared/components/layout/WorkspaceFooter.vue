@@ -5,4 +5,4 @@
     </footer>
 </template>
 
-<style src="../../../css/components/WorkspaceFooter.css"></style>
+<style src="../../../../css/components/WorkspaceFooter.css"></style>
