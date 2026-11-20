@@ -204,4 +204,3 @@ function capitalize(value) { return String(value || '').replace(/^\w/, (letter) 
 </script>
 
 <style src="../../../css/pages/account-settings.css"></style>
-<style src="../../../css/pages/profile.css"></style>

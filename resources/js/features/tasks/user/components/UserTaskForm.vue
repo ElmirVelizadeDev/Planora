@@ -78,4 +78,4 @@ async function submit() {
 watch(() => [props.mode, props.taskId], load, { immediate: true });
 </script>
 
-<style src="../../../../../css/pages/app/tasks/form.css"></style>
+<style src="../../../../../css/pages/user/tasks/form.css"></style>

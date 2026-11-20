@@ -1,3 +1,5 @@
+@import "./profile.css";
+
 .account-settings-layout { display: grid; grid-template-columns: minmax(190px, 225px) minmax(0, 1fr); align-items: start; gap: 18px; }
 .account-settings-navigation { position: sticky; top: 92px; display: grid; gap: 5px; min-width: 0; padding: 13px 10px 10px; border: 1px solid var(--color-border-subtle); border-radius: 15px; background: var(--color-surface); box-shadow: var(--shadow-soft); }
 .account-settings-navigation > p { margin: 2px 9px 7px; color: var(--color-text-muted); font-size: 9px; font-weight: 750; letter-spacing: .12em; }

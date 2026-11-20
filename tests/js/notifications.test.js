@@ -11,7 +11,7 @@ test('Admin and User notification histories use the shared notification page and
     const adminRoute = routes.find((route) => route.path === '/admin');
     const adminNotifications = adminRoute.children.find((child) => child.name === 'admin.notifications.index');
     const adminPage = await source('../../resources/js/pages/admin/notifications/AdminNotificationsIndex.vue');
-    const userPage = await source('../../resources/js/pages/app/notifications/NotificationsIndex.vue');
+    const userPage = await source('../../resources/js/pages/user/notifications/NotificationsIndex.vue');
 
     assert.equal(userRoute.meta.requiresRole, 'user');
     assert.equal(userNotifications.path, 'notifications');

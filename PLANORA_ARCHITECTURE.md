@@ -30,6 +30,8 @@ flowchart LR
 
 ## Frontend
 
+Route-level pages are grouped by application area: public, auth, user, admin, account, profile, and errors. User workspace routes lazy-load pages from `resources/js/pages/user/`. Account appearance preferences remain at `resources/js/pages/account/SettingsAppearance.vue` because both User and Admin accounts can reach them through a layout that selects the appropriate workspace shell. User page styles are scoped to `resources/css/pages/user/`; the account appearance stylesheet is feature-owned under `resources/css/features/`.
+
 - `resources/views/welcome.blade.php` is the SPA shell; `resources/js/app.js` mounts Vue, Pinia, and Vue Router.
 - `resources/js/router/routes.js` declares lazy-loaded public, Auth, User, Admin, and error pages. `resources/js/router/guards.js` checks session identity, role, supported Moderator permissions, and maintenance status for navigation.
 - The administrator sign-in screen is selected by a server-rendered shell marker at the configured entry path. The path itself is not exposed as a frontend route.
@@ -39,7 +41,7 @@ flowchart LR
 - One authenticated `/profile` route serves User, Moderator, and Admin accounts. A thin profile layout selects the existing User or Admin workspace shell while all roles share the same profile page and feature components in `resources/js/features/profile/`.
 - User and Admin Task features are separated under `resources/js/features/tasks/`. Admin Project components and API helpers are in `resources/js/features/projects/admin/`; User Project API helpers are in `resources/js/features/projects/user/`.
 - Global Search uses one role-aware `/api/v1/search` service and the shared workspace header; the backend returns only records the current role may view. Admin backup UI and API helpers live under `resources/js/pages/admin/backups/` and `resources/js/features/admin/backups/`.
-- Categories use `resources/js/features/categories/admin/`, `user/`, and `shared/` for their active components, composables, and API services. Route pages live under `resources/js/pages/admin/categories/` and `resources/js/pages/app/categories/`.
+- Categories use `resources/js/features/categories/admin/`, `user/`, and `shared/` for their active components, composables, and API services. Route pages live under `resources/js/pages/admin/categories/` and `resources/js/pages/user/categories/`.
 - Shared layouts and components live under `resources/js/layouts/` and `resources/js/shared/`; styles and tokens live under `resources/css/`.
 - `resources/css/app.css` is the single global stylesheet entry and loads `tokens/index.css`, `base/reset.css`, then `base/typography.css`. Layout styles are in `layouts/`, reusable styles in `components/`, Category styles in `features/categories/{admin,shared,user}/`, and other route styles remain in `pages/`. Vue SFC stylesheet imports preserve lazy loading for route and component styles.
 

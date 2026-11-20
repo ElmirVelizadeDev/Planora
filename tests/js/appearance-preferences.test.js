@@ -113,7 +113,7 @@ test('public theme selector is keyboard-accessible and server shells initialize 
 });
 
 test('Appearance primary action keeps a white label in every interactive state', async () => {
-    const css = await readFile(new URL('../../resources/css/pages/app/appearance.css', import.meta.url), 'utf8');
+    const css = await readFile(new URL('../../resources/css/features/appearance-preferences.css', import.meta.url), 'utf8');
     const stateRule = css.match(/\.appearance-page \.appearance-button\.appearance-button--primary,[\s\S]*?\.appearance-page \.appearance-button\.appearance-button--primary:disabled \{ color: #fff; \}/);
     assert.ok(stateRule, 'a specific white-text rule should cover the primary button states');
     for (const state of [':hover', ':active', ':focus-visible', ':disabled']) assert.ok(stateRule[0].includes(`.appearance-button--primary${state}`));
