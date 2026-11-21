@@ -1,5 +1,5 @@
 import { computed, ref, watch } from 'vue';
-import { getUserCalendarTasks } from '../../tasks/user/services/userTaskApi.js';
+import { getUserCalendarTasks } from '../../../tasks/user/services/userTaskApi.js';
 import { addDays, addMonths, dateKey, monthGrid, mondayStart } from '../utils/calendarDateUtils.js';
 
 export function useCalendar() {

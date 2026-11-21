@@ -2,18 +2,18 @@
     <main class="auth-page page-login">
         <section class="auth-card" aria-labelledby="login-title">
             <RouterLink class="auth-back-home" :to="{ name: 'home' }"><span aria-hidden="true">←</span>Back to Home</RouterLink>
-            <p class="auth-eyebrow">Welcome back</p>
-            <h1 id="login-title">Sign in to Planora</h1>
-            <p class="auth-description">Enter your details to continue to your workspace.</p>
+            <p class="auth-eyebrow">{{ challenge ? 'Two-step verification' : 'Welcome back' }}</p>
+            <h1 id="login-title">{{ challenge ? 'Verify your identity' : 'Sign in to Planora' }}</h1>
+            <p class="auth-description">{{ challenge ? 'Enter your authenticator code or a one-time recovery code.' : 'Enter your details to continue to your workspace.' }}</p>
             <p v-if="$route.query.reset === 'success'" class="auth-success" role="status">Your password has been updated. Sign in with your new password.</p>
 
             <form class="auth-form" @submit.prevent="submit">
-                <label class="auth-field">
+                <label v-if="!challenge" class="auth-field">
                     <span>Email address</span>
                     <input v-model.trim="email" type="email" name="email" autocomplete="username" required maxlength="255" :aria-invalid="Boolean(fieldErrors.email)" :aria-describedby="fieldErrors.email ? 'login-email-error' : undefined" @input="clearFieldError('email')">
                     <small v-if="fieldErrors.email" id="login-email-error" class="auth-field-error">{{ fieldErrors.email[0] }}</small>
                 </label>
-                <div class="auth-field">
+                <div v-if="!challenge" class="auth-field">
                     <label for="login-password">Password</label>
                     <div class="auth-password-control">
                         <input id="login-password" v-model="password" :type="showPassword ? 'text' : 'password'" name="password" autocomplete="current-password" required maxlength="128" :aria-invalid="Boolean(fieldErrors.password)" :aria-describedby="fieldErrors.password ? 'login-password-error' : undefined" @input="clearFieldError('password')">
@@ -24,7 +24,8 @@
                     </div>
                     <small v-if="fieldErrors.password" id="login-password-error" class="auth-field-error">{{ fieldErrors.password[0] }}</small>
                 </div>
-                <div class="auth-login-options">
+                <label v-else class="auth-field"><span>{{ recoveryMode ? 'Recovery code' : 'Authenticator code' }}</span><input v-model.trim="verificationCode" type="text" :inputmode="recoveryMode ? 'text' : 'numeric'" autocomplete="one-time-code" :maxlength="recoveryMode ? 10 : 6" required autofocus></label>
+                <div v-if="!challenge" class="auth-login-options">
                     <label class="auth-remember-control" for="login-remember">
                         <input id="login-remember" v-model="remember" type="checkbox" name="remember">
                         <span class="auth-remember-check" aria-hidden="true"></span>
@@ -32,11 +33,13 @@
                     </label>
                     <RouterLink class="auth-inline-link" :to="{ name: 'forgot-password' }">Forgot password?</RouterLink>
                 </div>
+                <button v-if="challenge" class="auth-inline-link" type="button" @click="recoveryMode = !recoveryMode; verificationCode = ''; errorMessage = ''">Use {{ recoveryMode ? 'authenticator' : 'recovery' }} code</button>
                 <p v-if="errorMessage" class="auth-error" role="alert"><span class="auth-alert-icon" aria-hidden="true">!</span><span>{{ errorMessage }}</span></p>
                 <button class="auth-submit" type="submit" :disabled="loading" :aria-busy="loading">
                     <span v-if="loading" class="auth-spinner" aria-hidden="true"></span>
-                    <span>{{ loading ? 'Signing in…' : 'Sign in to Planora' }}</span><span v-if="!loading" aria-hidden="true">→</span>
+                    <span>{{ loading ? 'Verifying…' : challenge ? 'Verify and continue' : 'Sign in to Planora' }}</span><span v-if="!loading" aria-hidden="true">→</span>
                 </button>
+                <button v-if="challenge" class="auth-inline-link" type="button" :disabled="loading" @click="challenge = false; password = ''; verificationCode = ''">Back to sign in</button>
             </form>
 
             <p class="auth-switch">Don't have an account? <RouterLink :to="{ name: 'register' }">Create one</RouterLink></p>
@@ -58,6 +61,9 @@ const remember = ref(false);
 const loading = ref(false);
 const errorMessage = ref('');
 const fieldErrors = ref({});
+const challenge = ref(false);
+const recoveryMode = ref(false);
+const verificationCode = ref('');
 
 function clearFieldError(field) {
     if (fieldErrors.value[field]) {
@@ -74,11 +80,25 @@ async function submit() {
     fieldErrors.value = {};
 
     try {
+        if (challenge.value) {
+            const result = await auth.verifyAdminMfaLogin(recoveryMode.value ? { recovery_code: verificationCode.value } : { code: verificationCode.value });
+            await router.replace(result.redirectTo || '/admin/dashboard');
+            return;
+        }
         const result = await auth.login({ email: email.value, password: password.value, remember: remember.value });
+        if (result.mfaRequired) {
+            challenge.value = true;
+            password.value = '';
+            return;
+        }
         await router.replace(result.redirectTo || '/403');
     } catch (error) {
         fieldErrors.value = error.response?.data?.errors || {};
-        errorMessage.value = error.response?.status === 403
+        if (challenge.value && error.response?.status === 401) {
+            challenge.value = false;
+            verificationCode.value = '';
+            errorMessage.value = 'That verification challenge expired. Sign in again to continue.';
+        } else errorMessage.value = error.response?.status === 403
             ? (error.response.data.message || 'This account is not authorized to sign in.')
             : (error.response?.data?.message === 'The given data was invalid.'
                 ? ''

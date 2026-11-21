@@ -80,7 +80,7 @@ test('the secret administrator entry is rendered from server state and absent fr
     const routeSource = source('../../routes/web.php');
     const blade = source('../../resources/views/welcome.blade.php');
     const app = source('../../resources/js/App.vue');
-    const adminLogin = source('../../resources/js/features/auth/components/AdminLogin.vue');
+    const adminLogin = source('../../resources/js/features/auth/admin/components/AdminLogin.vue');
     const authApi = source('../../resources/js/features/auth/services/authApi.js');
 
     assert.match(routeSource, /config\('planora\.admin_entry_path'\)/);

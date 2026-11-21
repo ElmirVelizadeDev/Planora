@@ -1,5 +1,6 @@
 import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue';
-import { deleteAdminTask, restoreAdminTask, getAdminTasks, getTaskAssignees, getAdminTaskCategories, updateAdminTaskStatus } from '../services/adminTaskApi.js';
+import { getActiveAdminCategories } from '../../../categories/admin/services/adminCategoryApi.js';
+import { deleteAdminTask, restoreAdminTask, getAdminTasks, getTaskAssignees, updateAdminTaskStatus } from '../services/adminTaskApi.js';
 
 export function useAdminTasks() {
     const tasks = ref([]), assignees = ref([]), categories = ref([]), loading = ref(false), error = ref('');
@@ -54,7 +55,7 @@ export function useAdminTasks() {
             assignees.value = [];
         }
     }
-    async function loadCategories() { try { categories.value = (await getAdminTaskCategories()).data || []; } catch { categories.value = []; } }
+    async function loadCategories() { try { categories.value = (await getActiveAdminCategories()).data || []; } catch { categories.value = []; } }
 
     function refreshTasks() {
         if (!loading.value) loadTasks();

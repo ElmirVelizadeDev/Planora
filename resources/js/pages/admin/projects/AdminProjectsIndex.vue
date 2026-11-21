@@ -68,7 +68,8 @@ import AdminProjectForm from '../../../features/projects/admin/components/AdminP
 import AdminProjectStats from '../../../features/projects/admin/components/AdminProjectStats.vue';
 import AdminProjectTable from '../../../features/projects/admin/components/AdminProjectTable.vue';
 import { useAdminProjects } from '../../../features/projects/admin/composables/useAdminProjects.js';
-import { getAdminProjectCategories, updateAdminProjectStatus } from '../../../features/projects/admin/services/adminProjectApi.js';
+import { getActiveAdminCategories } from '../../../features/categories/admin/services/adminCategoryApi.js';
+import { updateAdminProjectStatus } from '../../../features/projects/admin/services/adminProjectApi.js';
 
 const {
     projects, owners, ownersError, loading, error, searchInput, status, categoryId, page, total, lastPage,
@@ -128,7 +129,7 @@ async function changeProjectStatus({ project, status }) {
     finally { statusSaving.value = false; }
 }
 
-onMounted(async () => { loadProjects(); if (isAdmin.value) { loadOwners(); try { categories.value = (await getAdminProjectCategories()).data || []; } catch { categories.value = []; } } });
+onMounted(async () => { loadProjects(); if (isAdmin.value) { loadOwners(); try { categories.value = (await getActiveAdminCategories()).data || []; } catch { categories.value = []; } } });
 watch(() => route.query.quickAdd, (value) => {
     if (value === 'project' && isAdmin.value) openCreate();
 }, { immediate: true });

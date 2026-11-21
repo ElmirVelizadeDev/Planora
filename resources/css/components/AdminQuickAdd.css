@@ -1,4 +1,4 @@
-.admin-quick-add-popover { width: min(286px, calc(100vw - 28px)); padding: 7px; }
+.header-popover.admin-quick-add-popover { z-index: 1100; box-sizing: border-box; min-width: 0; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; width: min(286px, calc(100vw - 16px)); padding: 7px; border-color: var(--admin-dropdown-border, var(--color-border)); border-radius: var(--admin-dropdown-radius, 14px); background: var(--admin-dropdown-surface, var(--color-surface)); box-shadow: var(--admin-dropdown-shadow, var(--shadow-soft)); }
 .admin-quick-add-heading { margin: 0; padding: 8px 10px 7px; color: var(--color-text-secondary); font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
 .admin-quick-add-item { display: flex; width: 100%; min-height: 58px; align-items: center; gap: 10px; padding: 8px 9px; border: 0; border-radius: 9px; color: var(--color-text); background: transparent; cursor: pointer; font: inherit; text-align: left; }
 .admin-quick-add-item:hover,

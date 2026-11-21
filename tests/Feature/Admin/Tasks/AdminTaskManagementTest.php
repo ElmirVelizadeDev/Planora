@@ -87,6 +87,7 @@ class AdminTaskManagementTest extends TestCase
         $this->patchJson('/api/v1/admin/tasks/'.$id, ['title' => 'Updated task', 'status' => 'completed', 'assigned_user_id' => null])
             ->assertOk()->assertJsonPath('task.title', 'Updated task')->assertJsonPath('task.status', 'completed')->assertJsonPath('task.assigned_user', null);
         $this->getJson('/api/v1/admin/tasks/'.$id)->assertOk()->assertJsonPath('task.owner.id', $owner->id)->assertJsonPath('task.status', 'completed');
+        $this->grantAdminStepUp('users.manage', $admin);
         $this->deleteJson('/api/v1/admin/tasks/'.$id)->assertOk();
         $this->assertSoftDeleted('tasks', ['id' => $id]);
         $this->getJson('/api/v1/admin/tasks/'.$id)->assertNotFound();
@@ -112,9 +113,11 @@ class AdminTaskManagementTest extends TestCase
         $this->patchJson('/api/v1/admin/tasks/'.$created['id'], ['priority' => 'high'])->assertOk();
         $this->assertDatabaseHas('user_activity_logs', ['event' => 'task.priority_changed', 'subject_id' => $created['id']]);
 
+        $this->grantAdminStepUp('users.manage', $admin);
         $this->deleteJson('/api/v1/admin/tasks/'.$created['id'])->assertOk();
         $this->assertSoftDeleted('tasks', ['id' => $created['id']]);
         $this->getJson('/api/v1/admin/tasks?deleted=1')->assertOk()->assertJsonPath('data.0.id', $created['id']);
+        $this->grantAdminStepUp('users.manage', $admin);
         $this->postJson('/api/v1/admin/tasks/'.$created['id'].'/restore')->assertOk()->assertJsonPath('task.id', $created['id']);
         $this->assertDatabaseHas('user_activity_logs', ['event' => 'task.deleted', 'subject_id' => $created['id']]);
         $this->assertDatabaseHas('user_activity_logs', ['event' => 'task.restored', 'actor_id' => $admin->id, 'subject_id' => $created['id']]);

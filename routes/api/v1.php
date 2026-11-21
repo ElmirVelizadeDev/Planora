@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\V1\Admin\Users\UserRolePermissionsController;
 use App\Http\Controllers\Api\V1\User\Profile\CurrentUserController;
 use App\Http\Controllers\Api\V1\User\Profile\CurrentUserProfileController;
 use App\Http\Controllers\Api\V1\Auth\PasswordController;
+use App\Http\Controllers\Api\V1\Admin\AdminMfaController;
 use App\Http\Controllers\Api\V1\Admin\Tasks\TaskController;
 use App\Http\Controllers\Api\V1\User\Tasks\UserTaskController;
 use App\Http\Controllers\Api\V1\User\Projects\UserProjectController;
@@ -34,6 +35,7 @@ Route::get('/maintenance/status', [MaintenanceStatusController::class, 'show'])-
 Route::prefix('auth')->name('auth.')
     ->middleware(['maintenance.scope:public_website', 'maintenance.scope:authentication'])->group(function () {
     Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:auth-login')->name('login');
+    Route::post('/admin/mfa/verify-login', [AuthController::class, 'verifyAdminMfa'])->middleware('throttle:10,1')->name('admin-mfa.verify-login');
     Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:5,1')->name('register');
     Route::post('/register/verify', [AuthController::class, 'verifyRegistration'])->middleware('throttle:10,1')->name('register.verify');
     Route::post('/register/resend', [AuthController::class, 'resendRegistrationCode'])->middleware('throttle:3,1')->name('register.resend');
@@ -58,6 +60,20 @@ Route::middleware(['maintenance.scope:dashboard_workspace', 'auth:sanctum', 'act
         ->middleware('throttle:6,1')->name('user.password.update');
 });
 
+Route::prefix('admin/mfa')->name('admin.mfa.')
+    ->middleware(['maintenance.bootstrap', 'maintenance.scope:dashboard_workspace', 'auth:sanctum', 'active', 'role:admin'])->group(function () {
+        Route::get('/', [AdminMfaController::class, 'status'])->name('status');
+        Route::post('/enrollment', [AdminMfaController::class, 'begin'])->middleware('throttle:5,1')->name('enrollment.start');
+        Route::post('/enrollment/verify', [AdminMfaController::class, 'enable'])->middleware('throttle:10,1')->name('enrollment.verify');
+        Route::delete('/enrollment', [AdminMfaController::class, 'cancelEnrollment'])->name('enrollment.cancel');
+        Route::post('/disable', [AdminMfaController::class, 'disable'])->middleware('step-up:mfa.disable')->name('disable');
+        Route::post('/recovery-codes', [AdminMfaController::class, 'regenerateRecoveryCodes'])->middleware(['step-up:mfa.recovery', 'throttle:5,1'])->name('recovery.regenerate');
+    });
+
+Route::post('/admin/step-up/verify', [AdminMfaController::class, 'verifyStepUp'])
+    ->middleware(['maintenance.bootstrap', 'maintenance.scope:dashboard_workspace', 'auth:sanctum', 'active', 'role:admin', 'throttle:5,1'])
+    ->name('admin.step-up.verify');
+
 Route::prefix('notifications')->name('notifications.')
     ->middleware(['maintenance.scope:dashboard_workspace', 'auth:sanctum', 'active', 'role:user,admin'])->group(function () {
         Route::get('/', [NotificationController::class, 'index'])->name('index');
@@ -71,18 +87,18 @@ Route::prefix('admin/backups')->name('admin.backups.')
         Route::post('/', [BackupController::class, 'store'])->middleware('throttle:3,1')->name('store');
         Route::get('/{backup}', [BackupController::class, 'show'])->where('backup', '[0-9a-fA-F-]{36}')->name('show');
         Route::get('/{backup}/download', [BackupController::class, 'download'])->where('backup', '[0-9a-fA-F-]{36}')->middleware('throttle:10,1')->name('download');
-        Route::delete('/{backup}', [BackupController::class, 'destroy'])->where('backup', '[0-9a-fA-F-]{36}')->middleware('throttle:3,1')->name('destroy');
-        Route::post('/{backup}/restore', [BackupController::class, 'restore'])->where('backup', '[0-9a-fA-F-]{36}')->middleware('throttle:1,5')->name('restore');
+        Route::delete('/{backup}', [BackupController::class, 'destroy'])->where('backup', '[0-9a-fA-F-]{36}')->middleware(['throttle:3,1', 'step-up:backups.delete'])->name('destroy');
+        Route::post('/{backup}/restore', [BackupController::class, 'restore'])->where('backup', '[0-9a-fA-F-]{36}')->middleware(['throttle:1,5', 'step-up:backups.restore'])->name('restore');
     });
 
 Route::prefix('admin/system-maintenance')->name('admin.system-maintenance.')
     ->middleware(['maintenance.scope:dashboard_workspace', 'auth:sanctum', 'active', 'role:admin'])->group(function () {
         Route::get('/', [SystemMaintenanceController::class, 'show'])->name('show');
-        Route::patch('/preferences', [SystemMaintenanceController::class, 'updatePreferences'])->name('preferences.update');
+        Route::patch('/preferences', [SystemMaintenanceController::class, 'updatePreferences'])->middleware('step-up:system.maintenance')->name('preferences.update');
         Route::patch('/scopes/{scope}', [SystemMaintenanceController::class, 'updateScope'])
-            ->whereIn('scope', ['public-website', 'authentication', 'dashboard-workspace'])->name('scopes.update');
-        Route::post('/enable', [SystemMaintenanceController::class, 'enable'])->middleware('throttle:6,1')->name('enable');
-        Route::post('/disable', [SystemMaintenanceController::class, 'disable'])->middleware('throttle:6,1')->name('disable');
+            ->whereIn('scope', ['public-website', 'authentication', 'dashboard-workspace'])->middleware('step-up:system.maintenance')->name('scopes.update');
+        Route::post('/enable', [SystemMaintenanceController::class, 'enable'])->middleware(['throttle:6,1', 'step-up:system.maintenance'])->name('enable');
+        Route::post('/disable', [SystemMaintenanceController::class, 'disable'])->middleware(['throttle:6,1', 'step-up:system.maintenance'])->name('disable');
     });
 
 Route::get('/admin/dashboard', [AdminDashboardController::class, 'show'])
@@ -93,33 +109,33 @@ Route::prefix('admin/roles-permissions')->name('admin.roles-permissions.')
         Route::get('/', [UserRolePermissionsController::class, 'index'])->name('index');
         Route::get('/moderators', [UserRolePermissionsController::class, 'moderators'])->name('moderators.index');
         Route::get('/moderators/{user}', [UserRolePermissionsController::class, 'showModerator'])->name('moderators.show');
-        Route::put('/moderators/{user}', [UserRoleController::class, 'updatePermissions'])->name('moderators.permissions.update');
+        Route::put('/moderators/{user}', [UserRoleController::class, 'updatePermissions'])->middleware('step-up:roles.manage')->name('moderators.permissions.update');
     });
 
 Route::prefix('admin/users')->name('admin.users.')->middleware(['maintenance.scope:dashboard_workspace', 'auth:sanctum', 'active', 'role:admin,moderator'])->group(function () {
     Route::get('/', [UserManagementController::class, 'index'])->middleware('can:viewAny,App\\Models\\User')->name('index');
     Route::get('/activity', [UserActivityController::class, 'index'])->middleware('can:viewActivity,App\\Models\\User')->name('activity.index');
     Route::get('/roles-permissions', [UserRolePermissionsController::class, 'index'])->middleware('can:viewAny,App\\Models\\User')->name('roles.permissions');
-    Route::post('/', [UserManagementController::class, 'store'])->middleware('role:admin')->name('store');
-    Route::post('/{user}/password', [UserManagementController::class, 'changePassword'])->middleware('role:admin')->name('password.change');
+    Route::post('/', [UserManagementController::class, 'store'])->middleware(['role:admin', 'step-up:roles.manage'])->name('store');
+    Route::post('/{user}/password', [UserManagementController::class, 'changePassword'])->middleware(['role:admin', 'step-up:users.manage'])->name('password.change');
     Route::get('/{user}', [UserManagementController::class, 'show'])->middleware('can:view,user')->name('show');
     Route::patch('/{user}', [UserManagementController::class, 'update'])->middleware('role:admin')->name('update');
-    Route::delete('/{user}', [UserManagementController::class, 'destroy'])->middleware('role:admin')->name('destroy');
-    Route::post('/{userId}/restore', [UserManagementController::class, 'restore'])->name('restore');
-    Route::patch('/{user}/role', [UserRoleController::class, 'updateRole'])->middleware('role:admin')->name('role.update');
-    Route::patch('/{user}/status', [UserRoleController::class, 'updateStatus'])->name('status.update');
-    Route::put('/{user}/permissions', [UserRoleController::class, 'updatePermissions'])->middleware('role:admin')->name('permissions.update');
+    Route::delete('/{user}', [UserManagementController::class, 'destroy'])->middleware(['role:admin', 'step-up:users.manage'])->name('destroy');
+    Route::post('/{userId}/restore', [UserManagementController::class, 'restore'])->middleware(['role:admin', 'step-up:users.manage'])->name('restore');
+    Route::patch('/{user}/role', [UserRoleController::class, 'updateRole'])->middleware(['role:admin', 'step-up:roles.manage'])->name('role.update');
+    Route::patch('/{user}/status', [UserRoleController::class, 'updateStatus'])->middleware('step-up:users.manage')->name('status.update');
+    Route::put('/{user}/permissions', [UserRoleController::class, 'updatePermissions'])->middleware(['role:admin', 'step-up:roles.manage'])->name('permissions.update');
 });
 
 Route::prefix('admin/tasks')->name('admin.tasks.')->middleware(['maintenance.scope:dashboard_workspace', 'auth:sanctum', 'active', 'role:admin,moderator'])->group(function () {
     Route::get('/', [TaskController::class, 'index'])->middleware(['management.access:tasks.view', 'can:viewAny,App\\Models\\Task'])->name('index');
     Route::get('/assignees', [TaskController::class, 'assignees'])->middleware('role:admin')->name('assignees');
     Route::post('/', [TaskController::class, 'store'])->middleware('role:admin')->name('store');
-    Route::post('/{taskId}/restore', [TaskController::class, 'restore'])->whereNumber('taskId')->middleware('role:admin')->name('restore');
+    Route::post('/{taskId}/restore', [TaskController::class, 'restore'])->whereNumber('taskId')->middleware(['role:admin', 'step-up:users.manage'])->name('restore');
     Route::get('/{task}', [TaskController::class, 'show'])->middleware('can:view,task')->name('show');
     Route::patch('/{task}/status', [TaskController::class, 'updateStatus'])->middleware(['management.access:tasks.status.manage', 'can:manageStatus,task'])->name('status.update');
     Route::patch('/{task}', [TaskController::class, 'update'])->middleware('role:admin')->name('update');
-    Route::delete('/{task}', [TaskController::class, 'destroy'])->middleware('role:admin')->name('destroy');
+    Route::delete('/{task}', [TaskController::class, 'destroy'])->middleware(['role:admin', 'step-up:users.manage'])->name('destroy');
 });
 
 Route::prefix('admin/projects')->name('admin.projects.')->middleware(['maintenance.scope:dashboard_workspace', 'auth:sanctum', 'active', 'role:admin,moderator'])->group(function () {
@@ -131,16 +147,16 @@ Route::prefix('admin/projects')->name('admin.projects.')->middleware(['maintenan
     Route::post('/', [ProjectManagementController::class, 'store'])->middleware('role:admin')->name('store');
     Route::patch('/{project}/status', [ProjectManagementController::class, 'updateStatus'])->middleware(['management.access:projects.status.manage', 'can:manageStatus,project'])->name('status.update');
     Route::patch('/{project}', [ProjectManagementController::class, 'update'])->middleware('role:admin')->name('update');
-    Route::delete('/{project}', [ProjectManagementController::class, 'destroy'])->middleware('role:admin')->name('destroy');
+    Route::delete('/{project}', [ProjectManagementController::class, 'destroy'])->middleware(['role:admin', 'step-up:users.manage'])->name('destroy');
 });
 
 Route::prefix('admin/categories')->name('admin.categories.')->middleware(['maintenance.scope:dashboard_workspace', 'auth:sanctum', 'active', 'role:admin,moderator'])->group(function () {
     Route::get('/', [CategoryController::class, 'index'])->middleware(['management.access:categories.view', 'can:viewAny,App\\Models\\Category'])->name('index');
     Route::post('/', [CategoryController::class, 'store'])->name('store');
-    Route::post('/{category}/restore', [CategoryController::class, 'restore'])->whereNumber('category')->middleware('role:admin')->name('restore');
+    Route::post('/{category}/restore', [CategoryController::class, 'restore'])->whereNumber('category')->middleware(['role:admin', 'step-up:users.manage'])->name('restore');
     Route::get('/{category}', [CategoryController::class, 'show'])->whereNumber('category')->middleware('management.access:categories.view')->name('show');
     Route::patch('/{category}', [CategoryController::class, 'update'])->whereNumber('category')->middleware('role:admin')->name('update');
-    Route::delete('/{category}', [CategoryController::class, 'destroy'])->whereNumber('category')->middleware('role:admin')->name('destroy');
+    Route::delete('/{category}', [CategoryController::class, 'destroy'])->whereNumber('category')->middleware(['role:admin', 'step-up:users.manage'])->name('destroy');
 });
 
 Route::prefix('admin/reports')->name('admin.reports.')->middleware(['maintenance.scope:dashboard_workspace', 'auth:sanctum', 'active', 'role:admin,moderator'])->group(function () {
@@ -165,8 +181,8 @@ Route::prefix('admin/activity-logs')->name('admin.activity-logs.')->middleware([
 Route::prefix('admin/settings')->name('admin.settings.')->middleware(['maintenance.scope:dashboard_workspace', 'auth:sanctum', 'active', 'role:admin'])->group(function () {
     Route::get('/', [AdminSettingsController::class, 'index'])->name('index');
     Route::get('/{group}', [AdminSettingsController::class, 'show'])->whereIn('group', ['general', 'security', 'email'])->name('show');
-    Route::put('/{group}', [AdminSettingsController::class, 'update'])->whereIn('group', ['general', 'security', 'email'])->name('update');
-    Route::post('/{group}/reset', [AdminSettingsController::class, 'reset'])->whereIn('group', ['general', 'security', 'email'])->name('reset');
+    Route::put('/{group}', [AdminSettingsController::class, 'update'])->whereIn('group', ['general', 'security', 'email'])->middleware('step-up:settings.security')->name('update');
+    Route::post('/{group}/reset', [AdminSettingsController::class, 'reset'])->whereIn('group', ['general', 'security', 'email'])->middleware('step-up:settings.security')->name('reset');
     Route::post('/email/test', [AdminSettingsController::class, 'testEmail'])->middleware('throttle:3,1')->name('email.test');
     Route::post('/general/logo', [AdminSettingsController::class, 'uploadLogo'])->name('general.logo.upload');
     Route::delete('/general/logo', [AdminSettingsController::class, 'removeLogo'])->name('general.logo.remove');

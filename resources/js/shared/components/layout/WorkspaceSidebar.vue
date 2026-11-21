@@ -64,7 +64,7 @@
                         <UserAvatar class="workspace-account-avatar" :name="accountName" :image-src="auth.user?.avatar || ''" />
                         <span v-if="!collapsed || mobileOpen" class="workspace-account-copy"><strong>{{ accountName }}</strong><small>Personal account</small></span>
                     </RouterLink>
-                    <WorkspaceSidebarProfileMenu v-if="!collapsed || mobileOpen" @navigate="closeOnMobile" />
+                    <WorkspaceSidebarProfileMenu v-if="!collapsed || mobileOpen" :variant="variant" @navigate="closeOnMobile" />
                 </div>
                 <button class="workspace-logout-link" type="button" aria-haspopup="dialog" :title="collapsed ? 'Sign out' : undefined" @click="requestLogout">
                     <span class="workspace-nav-icon" aria-hidden="true">↪</span>
@@ -77,7 +77,7 @@
                         <UserAvatar class="workspace-account-avatar" :name="accountName" :image-src="auth.user?.avatar || ''" />
                         <span v-if="!collapsed || mobileOpen" class="workspace-account-copy"><strong>{{ accountName }}</strong><small>{{ auth.hasRole('admin') ? 'Administrator' : 'Moderator' }}</small></span>
                     </RouterLink>
-                    <WorkspaceSidebarProfileMenu v-if="!collapsed || mobileOpen" @navigate="closeOnMobile" />
+                    <WorkspaceSidebarProfileMenu v-if="!collapsed || mobileOpen" :variant="variant" @navigate="closeOnMobile" />
                 </div>
                 <button class="workspace-logout-link" type="button" aria-haspopup="dialog" :title="collapsed ? 'Sign out' : undefined" @click="requestLogout">
                     <span class="workspace-nav-icon" aria-hidden="true">↪</span>

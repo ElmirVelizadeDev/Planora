@@ -1,7 +1,7 @@
 import { useAuthStore } from '../features/auth/stores/authStore.js';
 import { moderatorCanAccessAdminRoute, moderatorLandingRoute } from '../features/auth/managementAccess.js';
 import { initializeAppearancePreferences, resetAppearanceSession } from '../features/appearance/composables/appearancePreferences.js';
-import { getMaintenanceStatus } from '../features/system-maintenance/services/maintenanceStatusApi.js';
+import { getMaintenanceStatus } from '../features/system-maintenance/shared/services/maintenanceStatusApi.js';
 
 export function installRouteGuards(router) {
     router.beforeEach(async (to) => {

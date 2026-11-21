@@ -43,7 +43,8 @@ import AdminProjectDetails from '../../../features/projects/admin/components/Adm
 import AdminProjectForm from '../../../features/projects/admin/components/AdminProjectForm.vue';
 import AdminProjectStatusBadge from '../../../features/projects/admin/components/AdminProjectStatusBadge.vue';
 import { useAdminProjects } from '../../../features/projects/admin/composables/useAdminProjects.js';
-import { createAdminProjectTask, getAdminProjectTasks, getAdminProjectCategories, updateAdminProjectStatus } from '../../../features/projects/admin/services/adminProjectApi.js';
+import { getActiveAdminCategories } from '../../../features/categories/admin/services/adminCategoryApi.js';
+import { createAdminProjectTask, getAdminProjectTasks, updateAdminProjectStatus } from '../../../features/projects/admin/services/adminProjectApi.js';
 import { deleteAdminTask, getTaskAssignees, updateAdminTaskStatus } from '../../../features/tasks/admin/services/adminTaskApi.js';
 import { useAuthStore } from '../../../features/auth/stores/authStore.js';
 import AdminTaskFormFields from '../../../features/tasks/admin/components/AdminTaskFormFields.vue';
@@ -107,7 +108,7 @@ function resetProjectTaskFilters() { taskPage.value = 1; loadProjectTasks(); }
 async function openTaskForm() {
     taskFormOpen.value = true; taskFormError.value = ''; taskFieldErrors.value = {};
     Object.assign(taskForm, { title: '', description: '', status: 'pending', priority: 'medium', due_date: '', owner_id: detail.value?.owner?.id ? String(detail.value.owner.id) : '', assigned_user_id: '', category_id: '' });
-    try { const [response, categoryResponse] = await Promise.all([getTaskAssignees(), getAdminProjectCategories()]); taskAssignees.value = response.data || []; categories.value = categoryResponse.data || []; }
+    try { const [response, categoryResponse] = await Promise.all([getTaskAssignees(), getActiveAdminCategories()]); taskAssignees.value = response.data || []; categories.value = categoryResponse.data || []; }
     catch { taskFormError.value = 'Eligible users could not be loaded.'; }
 }
 async function createProjectTask() {
@@ -127,7 +128,7 @@ function showNotice(message) {
 }
 
 watch(() => route.params.projectId, projectId => {
-    if (projectId) { loadProject(projectId); loadProjectTasks(); if (isAdmin.value) getAdminProjectCategories().then(response => { categories.value = response.data || []; }).catch(() => { categories.value = []; }); }
+    if (projectId) { loadProject(projectId); loadProjectTasks(); if (isAdmin.value) getActiveAdminCategories().then(response => { categories.value = response.data || []; }).catch(() => { categories.value = []; }); }
 }, { immediate: true });
 onBeforeUnmount(() => clearTimeout(noticeTimer));
 </script>

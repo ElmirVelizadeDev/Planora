@@ -38,7 +38,7 @@ import NotificationDropdown from '../../../features/notifications/components/Not
 import ProfileDropdown from '../ProfileDropdown.vue';
 import SearchBar from './SearchBar.vue';
 import { useAuthStore } from '../../../features/auth/stores/authStore.js';
-import { getPublicBranding } from '../../../features/settings/services/settingsApi.js';
+import { getPublicBranding } from '../../../features/settings/shared/services/brandingApi.js';
 
 const props = defineProps({
     variant: { type: String, required: true, validator: (value) => ['user', 'admin'].includes(value) },

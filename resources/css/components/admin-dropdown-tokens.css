@@ -1,0 +1,8 @@
+:root {
+    --admin-dropdown-surface: var(--color-surface-elevated, var(--color-surface));
+    --admin-dropdown-border: var(--color-border);
+    --admin-dropdown-shadow: 0 12px 32px rgb(32 40 58 / 14%);
+    --admin-dropdown-radius: 12px;
+    --admin-dropdown-option-radius: 8px;
+    --admin-dropdown-transition: 140ms ease;
+}

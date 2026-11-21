@@ -11,7 +11,7 @@
                         <td data-label="Status"><AdminStatusSelect v-if="canManageStatus && !deletedView" :model-value="task.status" :options="ADMIN_TASK_STATUSES" :disabled="loading" :aria-label="`Change status for ${task.title}`" @update:model-value="$emit('status-change', { task, status: $event })" /><AdminTaskStatusBadge v-else :status="task.status" /></td>
                         <td data-label="Due date"><time v-if="task.due_date" :class="{ 'is-overdue': isOverdue(task) }" :datetime="task.due_date">{{ formatDate(task.due_date) }}</time><span v-else class="admin-tasks-muted">—</span></td>
                         <td data-label="Created"><time :datetime="task.created_at">{{ formatDate(task.created_at) }}</time></td>
-                        <td data-label="Actions"><div class="admin-tasks-actions"><template v-if="deletedView"><span class="admin-tasks-muted">Deleted</span><button v-if="isAdmin" type="button" @click="$emit('restore', task)">Restore</button></template><template v-else><RouterLink :to="{ name: 'admin.tasks.show', params: { taskId: task.id } }" :aria-label="`View ${task.title}`">View</RouterLink><template v-if="isAdmin"><RouterLink :to="{ name: 'admin.tasks.edit', params: { taskId: task.id } }" :aria-label="`Edit ${task.title}`">Edit</RouterLink><button class="is-danger" type="button" :aria-label="`Delete ${task.title}`" @click="$emit('delete', task)">Delete</button></template></template></div></td>
+                        <td data-label="Actions"><AdminActionDropdown v-if="!deletedView || isAdmin" :active-key="activeActionKey" :item-key="task.id" :label="`Actions for ${task.title}`" :items="actionItems(task)" @update:active-key="activeActionKey = $event" /><span v-else class="admin-tasks-muted">Deleted</span></td>
                     </tr>
                 </tbody>
             </table>
@@ -20,6 +20,8 @@
 </template>
 
 <script setup>
+import { ref, watch } from 'vue';
+import AdminActionDropdown from '../../../admin/components/AdminActionDropdown.vue';
 import AdminTaskPriorityBadge from './AdminTaskPriorityBadge.vue';
 import AdminTaskStatusBadge from './AdminTaskStatusBadge.vue';
 import AdminStatusSelect from '../../../../features/admin/components/AdminStatusSelect.vue';
@@ -31,7 +33,7 @@ const ADMIN_TASK_STATUSES = [
     { value: 'completed', label: 'Completed' },
 ];
 
-defineProps({
+const props = defineProps({
     tasks: { type: Array, required: true },
     loading: { type: Boolean, default: false },
     page: { type: Number, required: true },
@@ -44,7 +46,22 @@ defineProps({
     isAdmin: { type: Boolean, default: true },
     canManageStatus: { type: Boolean, default: false },
 });
-defineEmits(['delete', 'restore', 'page-change', 'per-page-change', 'status-change']);
+const emit = defineEmits(['delete', 'restore', 'page-change', 'per-page-change', 'status-change']);
+const activeActionKey = ref(null);
+
+function actionItems(task) {
+    if (props.deletedView) return [{ key: 'restore', label: 'Restore', icon: 'restore', onSelect: () => emit('restore', task) }];
+    const items = [{ key: 'view', label: 'View', icon: 'view', to: { name: 'admin.tasks.show', params: { taskId: task.id } } }];
+    if (props.isAdmin) {
+        items.push({ key: 'edit', label: 'Edit', icon: 'edit', to: { name: 'admin.tasks.edit', params: { taskId: task.id } } });
+        items.push({ key: 'delete', label: 'Delete', icon: 'delete', danger: true, separatorBefore: true, onSelect: () => emit('delete', task) });
+    }
+    return items;
+}
+
+watch(() => props.tasks.map(task => String(task.id)), (ids) => {
+    if (activeActionKey.value !== null && !ids.includes(String(activeActionKey.value))) activeActionKey.value = null;
+});
 
 function formatNumber(value) { return new Intl.NumberFormat().format(Number(value) || 0); }
 function formatDate(value) { if (!value) return '—'; const date = new Date(value); return Number.isNaN(date.getTime()) ? '—' : new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'short', year: 'numeric' }).format(date); }

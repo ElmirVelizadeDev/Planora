@@ -69,6 +69,7 @@ class CategoryProjectTaskIntegrationTest extends TestCase
             ->assertOk()->assertJsonPath('category.projects_count', 1)->assertJsonPath('category.tasks_count', 1)
             ->assertJsonFragment(['name' => 'Integration project'])->assertJsonFragment(['title' => 'Integration task']);
 
+        $this->grantAdminStepUp('users.manage', $admin);
         $this->deleteJson('/api/v1/admin/categories/'.$category->id)->assertOk();
         $this->patchJson('/api/v1/admin/projects/'.$project['id'], ['category_id' => $category->id])
             ->assertOk()->assertJsonPath('project.category.status', 'archived');

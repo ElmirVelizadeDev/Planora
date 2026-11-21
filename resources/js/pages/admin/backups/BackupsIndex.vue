@@ -12,12 +12,7 @@
                     <span>{{ loading ? 'Refreshing...' : 'Refresh' }}</span>
                 </button>
                 <div class="admin-backups__create-wrap">
-                    <button class="admin-backups__primary" type="button" :disabled="working" :aria-expanded="createOpen" @click="createOpen = !createOpen"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>{{ working ? 'Working…' : 'Create backup' }}</button>
-                    <div v-if="createOpen" class="admin-backups__create-menu" role="group" aria-label="Backup type">
-                        <button type="button" @click="startBackup('full')">Full backup <span>Database and uploaded files</span></button>
-                        <button type="button" @click="startBackup('database')">Database only <span>MySQL tables and data</span></button>
-                        <button type="button" @click="startBackup('files')">Files only <span>Managed uploads and app metadata</span></button>
-                    </div>
+                    <button ref="createTrigger" class="admin-backups__primary" type="button" :disabled="working" :aria-expanded="createOpen" aria-haspopup="menu" aria-controls="backup-create-menu" @click="toggleCreateMenu"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>{{ working ? 'Working…' : 'Create backup' }}</button>
                 </div>
             </div>
         </header>
@@ -77,6 +72,14 @@
             </footer>
         </section>
 
+        <Teleport to="body">
+            <div v-if="createOpen" id="backup-create-menu" ref="createMenu" class="admin-backups__create-menu" :style="createMenuStyle" role="menu" aria-label="Backup type" @keydown="onCreateMenuKeydown">
+                <button type="button" role="menuitem" @click="startBackup('full')">Full backup <span>Database and uploaded files</span></button>
+                <button type="button" role="menuitem" @click="startBackup('database')">Database only <span>MySQL tables and data</span></button>
+                <button type="button" role="menuitem" @click="startBackup('files')">Files only <span>Managed uploads and app metadata</span></button>
+            </div>
+        </Teleport>
+
         <div v-if="selected" class="admin-backups__modal-backdrop" @click.self="selected = null">
             <section class="admin-backups__details" role="dialog" aria-modal="true" aria-labelledby="backup-details-title">
                 <button class="admin-backups__close" type="button" aria-label="Close backup details" @click="selected = null">×</button>
@@ -91,9 +94,10 @@
 </template>
 
 <script setup>
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
+import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
 import AppConfirmDialog from '../../../shared/components/AppConfirmDialog.vue';
-import { createBackup, deleteBackup, downloadBackup, fetchBackups, restoreBackup } from '../../../features/admin/backups/services/backupsApi.js';
+import { getAnchoredPopoverStyle } from '../../../shared/composables/getAnchoredPopoverStyle.js';
+import { createBackup, deleteBackup, downloadBackup, fetchBackups, restoreBackup } from '../../../features/backups/admin/services/backupsApi.js';
 
 const backups = ref([]);
 const summary = ref({});
@@ -106,6 +110,9 @@ const search = ref('');
 const typeFilter = ref('');
 const statusFilter = ref('');
 const createOpen = ref(false);
+const createTrigger = ref(null);
+const createMenu = ref(null);
+const createMenuStyle = ref({});
 const selected = ref(null);
 const confirmOpen = ref(false);
 const pending = ref(null);
@@ -119,6 +126,74 @@ const confirmLabel = computed(() => pending.value?.kind === 'restore' ? 'Restore
 const confirmMessage = computed(() => pending.value?.kind === 'restore'
     ? `Planora will create and verify a fresh full safety backup first. The application will briefly enter maintenance while database tables are staged and swapped. This will replace current data with ${pending.value.item.filename}.`
     : `This permanently removes ${pending.value?.item.filename}. The only remaining verified backup cannot be deleted.`);
+
+function positionCreateMenu() {
+    if (!createOpen.value || !createTrigger.value || !createMenu.value) return;
+    createMenuStyle.value = getAnchoredPopoverStyle(createTrigger.value, {
+        width: 260,
+        maxHeight: 300,
+        gutter: 8,
+        gap: 7,
+        alignment: 'end',
+        viewportAware: true,
+    });
+}
+function addCreateMenuListeners() {
+    document.addEventListener('pointerdown', onCreateMenuOutsidePointer);
+    document.addEventListener('keydown', onCreateMenuDocumentKeydown);
+    window.addEventListener('resize', positionCreateMenu, { passive: true });
+    window.addEventListener('scroll', positionCreateMenu, { passive: true, capture: true });
+    window.visualViewport?.addEventListener('resize', positionCreateMenu, { passive: true });
+    window.visualViewport?.addEventListener('scroll', positionCreateMenu, { passive: true });
+}
+function removeCreateMenuListeners() {
+    document.removeEventListener('pointerdown', onCreateMenuOutsidePointer);
+    document.removeEventListener('keydown', onCreateMenuDocumentKeydown);
+    window.removeEventListener('resize', positionCreateMenu);
+    window.removeEventListener('scroll', positionCreateMenu, true);
+    window.visualViewport?.removeEventListener('resize', positionCreateMenu);
+    window.visualViewport?.removeEventListener('scroll', positionCreateMenu);
+}
+async function toggleCreateMenu() {
+    if (createOpen.value) {
+        closeCreateMenu();
+        return;
+    }
+    createOpen.value = true;
+    await nextTick();
+    positionCreateMenu();
+    addCreateMenuListeners();
+    createMenu.value?.querySelector('[role="menuitem"]')?.focus({ preventScroll: true });
+}
+function closeCreateMenu(restoreFocus = false) {
+    const shouldRestoreFocus = restoreFocus && Boolean(createMenu.value?.contains(document.activeElement));
+    createOpen.value = false;
+    createMenuStyle.value = {};
+    removeCreateMenuListeners();
+    if (shouldRestoreFocus) nextTick(() => createTrigger.value?.focus({ preventScroll: true }));
+}
+function onCreateMenuOutsidePointer(event) {
+    if (createTrigger.value?.contains(event.target) || createMenu.value?.contains(event.target)) return;
+    closeCreateMenu();
+}
+function onCreateMenuDocumentKeydown(event) {
+    if (event.key !== 'Escape' || !createOpen.value) return;
+    event.preventDefault();
+    closeCreateMenu(true);
+}
+function onCreateMenuKeydown(event) {
+    const items = [...(createMenu.value?.querySelectorAll('[role="menuitem"]') || [])];
+    const current = items.indexOf(document.activeElement);
+    let target = null;
+    if (event.key === 'ArrowDown') target = items[(current + 1 + items.length) % items.length];
+    if (event.key === 'ArrowUp') target = items[(current - 1 + items.length) % items.length];
+    if (event.key === 'Home') target = items[0];
+    if (event.key === 'End') target = items.at(-1);
+    if (target) {
+        event.preventDefault();
+        target.focus({ preventScroll: true });
+    }
+}
 
 async function load() {
     if (loading.value) return;
@@ -141,7 +216,7 @@ function scheduleSearch() {
 }
 function applyFilters() { meta.value.current_page = 1; load(); }
 async function startBackup(type) {
-    createOpen.value = false;
+    closeCreateMenu();
     working.value = true;
     feedback.value = null;
     try {
@@ -219,7 +294,10 @@ function componentSummary(components = {}) {
     return Object.entries(components).map(([name, detail]) => `${typeLabel(name)}${detail?.tables ? ` · ${detail.tables} tables` : ''}${detail?.files ? ` · ${detail.files} files` : ''}`).join(' / ') || '—';
 }
 onMounted(load);
-onBeforeUnmount(() => clearTimeout(searchTimer));
+onBeforeUnmount(() => {
+    clearTimeout(searchTimer);
+    removeCreateMenuListeners();
+});
 </script>
 
-<style src="../../../../css/features/admin/backups.css"></style>
+<style src="../../../../css/features/backups/admin/index.css"></style>

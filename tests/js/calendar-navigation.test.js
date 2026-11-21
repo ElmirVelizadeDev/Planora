@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { addMonths, dateKey } from '../../resources/js/features/calendar/utils/calendarDateUtils.js';
+import { addMonths, dateKey } from '../../resources/js/features/calendar/user/utils/calendarDateUtils.js';
 
 const cases = [
     ['March 31 to February', '2025-03-31', -1, '2025-02-28'],

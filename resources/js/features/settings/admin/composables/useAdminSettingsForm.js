@@ -1,7 +1,7 @@
 import { computed, onBeforeUnmount, reactive, ref, toRaw } from 'vue';
-import { onBeforeRouteLeave } from 'vue-router';
-import { getSettingsGroup, resetSettingsGroup, updateSettingsGroup } from '../../services/settingsApi.js';
+import { getSettingsGroup, resetSettingsGroup, updateSettingsGroup } from '../services/adminSettingsApi.js';
 import { settingsAreDirty } from './settingsState.js';
+import { useUnsavedChangesConfirmation } from '../../../../shared/composables/useUnsavedChangesConfirmation.js';
 
 function copy(value) {
     return JSON.parse(JSON.stringify(value));
@@ -18,9 +18,8 @@ export function useAdminSettingsForm(group) {
     const validationErrors = ref({});
     const dirty = computed(() => settingsAreDirty(values, initial.value));
     const confirmation = reactive({ open: false, mode: '', title: '', message: '', confirmLabel: '', loadingLabel: '', error: '' });
-    let pendingNavigation = null;
-    let confirmationBeforeNavigation = null;
     let afterAction = null;
+    const { settleNavigation } = useUnsavedChangesConfirmation({ dirty, saving, confirmation });
 
     function apply(next) {
         Object.keys(values).forEach((key) => delete values[key]);
@@ -103,19 +102,6 @@ export function useAdminSettingsForm(group) {
         openConfirmation('reset', 'Reset Settings?', message, 'Reset to defaults', 'Resetting…');
     }
 
-    function settleNavigation(shouldLeave) {
-        if (!pendingNavigation) return;
-        const current = pendingNavigation;
-        pendingNavigation = null;
-        confirmation.open = false;
-        confirmation.mode = '';
-        if (!shouldLeave && confirmationBeforeNavigation) {
-            Object.assign(confirmation, confirmationBeforeNavigation);
-        }
-        confirmationBeforeNavigation = null;
-        current.resolve(shouldLeave);
-    }
-
     function cancelConfirmation() {
         if (confirmation.mode === 'leave') {
             settleNavigation(false);
@@ -162,24 +148,6 @@ export function useAdminSettingsForm(group) {
         event.returnValue = '';
     };
     window.addEventListener('beforeunload', warnBeforeLeave);
-    onBeforeRouteLeave(() => {
-        if (saving.value) return false;
-        if (!dirty.value) return true;
-        if (pendingNavigation) return pendingNavigation.promise;
-
-        confirmationBeforeNavigation = confirmation.open ? { ...confirmation } : null;
-        confirmation.open = true;
-        confirmation.mode = 'leave';
-        confirmation.title = 'Unsaved changes';
-        confirmation.message = 'You have unsaved changes. If you leave this page, those changes will be discarded.';
-        confirmation.confirmLabel = 'Leave page';
-        confirmation.loadingLabel = '';
-        confirmation.error = '';
-
-        const promise = new Promise((resolve) => { pendingNavigation = { promise: null, resolve }; });
-        pendingNavigation.promise = promise;
-        return promise;
-    });
     onBeforeUnmount(() => window.removeEventListener('beforeunload', warnBeforeLeave));
 
     return reactive({ values, loading, loaded, saving, error, notice, validationErrors, dirty, confirmation, load, save, reset, mergeSavedValues, openSaveConfirmation, openResetConfirmation, cancelConfirmation, confirmConfirmation });

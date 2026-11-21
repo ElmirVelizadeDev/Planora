@@ -1,4 +1,4 @@
-import api from '../../../shared/services/api.js';
+import api from '../../../../shared/services/api.js';
 
 export async function getSettingsOverview(config = {}) {
     return (await api.get('/admin/settings', config)).data.data;
@@ -28,8 +28,4 @@ export async function removeSettingsLogo(config = {}) {
 
 export async function sendSettingsTestEmail(recipient, config = {}) {
     return (await api.post('/admin/settings/email/test', { recipient }, config)).data;
-}
-
-export async function getPublicBranding(config = {}) {
-    return (await api.get('/settings/branding', config)).data.data;
 }

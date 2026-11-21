@@ -44,7 +44,7 @@ import { onMounted, ref } from 'vue';
 import AdminSettingsLayout from './AdminSettingsLayout.vue';
 import SettingsIntro from './components/SettingsIntro.vue';
 import SettingsSaveBar from './components/SettingsSaveBar.vue';
-import { removeSettingsLogo, uploadSettingsLogo } from '../../../features/settings/services/settingsApi.js';
+import { removeSettingsLogo, uploadSettingsLogo } from '../../../features/settings/admin/services/adminSettingsApi.js';
 import { useAdminSettingsForm } from '../../../features/settings/admin/composables/useAdminSettingsForm.js';
 
 const form = useAdminSettingsForm('general');

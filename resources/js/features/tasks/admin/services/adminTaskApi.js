@@ -4,10 +4,6 @@ export async function getAdminTasks(params = {}) {
     return (await api.get('/admin/tasks', { params })).data;
 }
 
-export async function getAdminTaskCategories() {
-    return (await api.get('/admin/categories', { params: { status: 'active', per_page: 50, sort: 'name', direction: 'asc' } })).data;
-}
-
 export async function getAdminTask(taskId) {
     return (await api.get(`/admin/tasks/${taskId}`)).data;
 }

@@ -1,6 +1,6 @@
 <template>
     <main class="admin-task-form-page" :aria-busy="loading || saving">
-        <header class="admin-task-form-header"><div><p class="admin-task-form-eyebrow">Task management</p><h1>{{ editing ? 'Edit task' : 'Create task' }}</h1><p>{{ editing ? 'Update task details and assignment.' : 'Add a task to the platform and assign ownership.' }}</p></div><RouterLink :to="backRoute" class="admin-task-form-back">← Back to tasks</RouterLink></header>
+        <header class="admin-task-form-header"><div><p class="admin-task-form-eyebrow">Task management</p><h1>{{ editing ? 'Edit task' : 'Create task' }}</h1><p>{{ editing ? 'Update task details and assignment.' : 'Add a task to the platform and assign ownership.' }}</p></div><RouterLink :to="backRoute" class="admin-task-form-back"><span aria-hidden="true">←</span> Back to Tasks</RouterLink></header>
         <div v-if="loadError" class="admin-task-form-alert" role="alert">{{ loadError }} <button type="button" @click="load">Try again</button></div>
         <div v-else-if="loading" class="admin-task-form-loading" role="status"><span class="admin-task-form-spinner"></span>Loading task information…</div>
         <form v-else class="admin-task-form-card" novalidate @submit.prevent="submit">
@@ -30,7 +30,8 @@ import { computed, onMounted, reactive, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import AdminTaskAssignment from '../../../features/tasks/admin/components/AdminTaskAssignment.vue';
 import AdminTaskFormFields from '../../../features/tasks/admin/components/AdminTaskFormFields.vue';
-import { createAdminTask, getAdminTask, getTaskAssignees, getAdminTaskCategories, updateAdminTask } from '../../../features/tasks/admin/services/adminTaskApi.js';
+import { getActiveAdminCategories } from '../../../features/categories/admin/services/adminCategoryApi.js';
+import { createAdminTask, getAdminTask, getTaskAssignees, updateAdminTask } from '../../../features/tasks/admin/services/adminTaskApi.js';
 
 const route = useRoute(), router = useRouter();
 const editing = computed(() => Boolean(route.params.taskId));
@@ -44,7 +45,7 @@ async function load() {
     try {
         const [assigneeData, categoryResponse, taskResponse] = await Promise.all([
             getTaskAssignees(),
-            getAdminTaskCategories(),
+            getActiveAdminCategories(),
             editing.value ? getAdminTask(route.params.taskId) : Promise.resolve(null),
         ]);
         users.value = assigneeData.data || [];

@@ -63,6 +63,7 @@ class ProjectTaskIntegrationTest extends TestCase
         ])->assertCreated()->assertJsonPath('task.project_id', $project->id);
         $taskId = $created->json('task.id');
         $this->getJson('/api/v1/admin/projects/'.$project->id.'/tasks?status=pending&priority=medium')->assertOk()->assertJsonPath('meta.total', 1);
+        $this->grantAdminStepUp('users.manage', $admin);
         $this->deleteJson('/api/v1/admin/projects/'.$project->id)->assertOk();
         $this->assertDatabaseHas('tasks', ['id' => $taskId, 'project_id' => null]);
     }

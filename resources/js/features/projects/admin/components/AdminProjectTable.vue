@@ -11,7 +11,7 @@
                         <td data-label="Start date"><time v-if="project.start_date" :datetime="project.start_date">{{ formatDate(project.start_date) }}</time><span v-else class="admin-projects-muted">—</span></td>
                         <td data-label="Due date"><time v-if="project.due_date" :datetime="project.due_date">{{ formatDate(project.due_date) }}</time><span v-else class="admin-projects-muted">—</span></td>
                         <td data-label="Created"><time :datetime="project.created_at">{{ formatDate(project.created_at) }}</time></td>
-                        <td data-label="Actions"><div class="admin-projects-actions"><RouterLink :to="{ name: 'admin.projects.show', params: { projectId: project.id } }">View</RouterLink><template v-if="isAdmin"><button type="button" @click="$emit('edit', project)">Edit</button><button class="is-danger" type="button" @click="$emit('delete', project)">Delete</button></template></div></td>
+                        <td data-label="Actions"><AdminActionDropdown :active-key="activeActionKey" :item-key="project.id" :label="`Actions for ${project.name}`" :items="actionItems(project)" @update:active-key="activeActionKey = $event" /></td>
                     </tr>
                 </tbody>
             </table>
@@ -20,18 +20,34 @@
 </template>
 
 <script setup>
+import { ref, watch } from 'vue';
+import AdminActionDropdown from '../../../admin/components/AdminActionDropdown.vue';
 import AdminProjectStatusBadge from './AdminProjectStatusBadge.vue';
 import UserAvatar from '../../../../shared/components/UserAvatar.vue';
 import AdminStatusSelect from '../../../../features/admin/components/AdminStatusSelect.vue';
 import { ADMIN_PROJECT_STATUSES } from '../composables/useAdminProjects.js';
 
-defineProps({
+const props = defineProps({
     projects: { type: Array, required: true }, loading: { type: Boolean, default: false },
     page: { type: Number, required: true }, lastPage: { type: Number, required: true },
     total: { type: Number, required: true }, rangeStart: { type: Number, required: true }, rangeEnd: { type: Number, required: true },
     isAdmin: { type: Boolean, default: true }, canManageStatus: { type: Boolean, default: false },
 });
-defineEmits(['edit', 'delete', 'page-change', 'status-change']);
+const emit = defineEmits(['edit', 'delete', 'page-change', 'status-change']);
+const activeActionKey = ref(null);
+
+function actionItems(project) {
+    const items = [{ key: 'view', label: 'View', icon: 'view', to: { name: 'admin.projects.show', params: { projectId: project.id } } }];
+    if (props.isAdmin) {
+        items.push({ key: 'edit', label: 'Edit', icon: 'edit', onSelect: () => emit('edit', project) });
+        items.push({ key: 'delete', label: 'Delete', icon: 'delete', danger: true, separatorBefore: true, onSelect: () => emit('delete', project) });
+    }
+    return items;
+}
+
+watch(() => props.projects.map(project => String(project.id)), (ids) => {
+    if (activeActionKey.value !== null && !ids.includes(String(activeActionKey.value))) activeActionKey.value = null;
+});
 
 function formatNumber(value) { return new Intl.NumberFormat().format(Number(value) || 0); }
 function formatDate(value) {

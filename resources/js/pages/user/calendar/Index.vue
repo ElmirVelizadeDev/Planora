@@ -91,9 +91,9 @@
 <script setup>
 import { computed, defineComponent, h } from 'vue';
 import { useRouter } from 'vue-router';
-import CalendarHeader from '../../../features/calendar/components/CalendarHeader.vue';
-import { useCalendar } from '../../../features/calendar/composables/useCalendar.js';
-import { addDays, dateKey, formatDate, isSameDay, mondayStart, monthGrid, todayKey } from '../../../features/calendar/utils/calendarDateUtils.js';
+import CalendarHeader from '../../../features/calendar/user/components/CalendarHeader.vue';
+import { useCalendar } from '../../../features/calendar/user/composables/useCalendar.js';
+import { addDays, dateKey, formatDate, isSameDay, mondayStart, monthGrid, todayKey } from '../../../features/calendar/user/utils/calendarDateUtils.js';
 import TaskPriorityBadge from '../../../features/tasks/user/components/TaskPriorityBadge.vue';
 import TaskStatusBadge from '../../../features/tasks/user/components/TaskStatusBadge.vue';
 

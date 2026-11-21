@@ -4,6 +4,10 @@ export async function getAdminCategories(params = {}) {
     return (await api.get('/admin/categories', { params })).data;
 }
 
+export function getActiveAdminCategories() {
+    return getAdminCategories({ status: 'active', per_page: 50, sort: 'name', direction: 'asc' });
+}
+
 export async function getAdminCategory(categoryId) {
     return (await api.get(`/admin/categories/${categoryId}`)).data;
 }

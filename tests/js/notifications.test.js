@@ -46,6 +46,7 @@ test('shared notification dropdown supports badge, outside click, Escape, read a
 
 test('notification views provide filtering, pagination, loading, empty, and error states with token-based theme styling', async () => {
     const page = await source('../../resources/js/features/notifications/components/NotificationsPage.vue');
+    const dropdown = await source('../../resources/js/features/notifications/components/NotificationDropdown.vue');
     const css = await source('../../resources/css/components/notifications.css');
     const resource = await source('../../app/Http/Resources/Api/V1/Notifications/NotificationResource.php');
 
@@ -55,7 +56,9 @@ test('notification views provide filtering, pagination, loading, empty, and erro
     assert.match(page, /Loading notifications/);
     assert.match(page, /You’re all caught up/);
     assert.match(page, /role="alert"/);
-    assert.match(css, /\.notification-popover \{ position: absolute; top: calc\(100% \+ 10px\); right: 0; z-index: 40; width: min\(360px, calc\(100vw - 32px\)\)/);
+    assert.match(css, /\.notification-popover \{ z-index: 1100; display: flex; flex-direction: column/);
+    assert.match(dropdown, /getAnchoredPopoverStyle\(trigger\.value, \{ width: 360, maxHeight: 520, viewportAware: props\.variant === 'admin' \}\)/);
+    assert.match(dropdown, /await nextTick\(\);\s*popover\.value\?\.querySelector\('button:not\(:disabled\), a\[href\]'\)\?\.focus\(\{ preventScroll: true \}\)/);
     assert.match(css, /var\(--color-surface\)/);
     assert.match(css, /var\(--color-selected-background\)/);
     assert.match(resource, /tasks\.show/);

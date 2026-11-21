@@ -55,6 +55,7 @@
 
 <script setup>
 import { computed, nextTick, onBeforeUnmount, ref, useId } from 'vue';
+import { getAnchoredPopoverStyle } from '../../../shared/composables/getAnchoredPopoverStyle.js';
 
 const props = defineProps({
     modelValue: { type: String, required: true },
@@ -68,7 +69,7 @@ const root = ref(null);
 const menu = ref(null);
 const isOpen = ref(false);
 const activeIndex = ref(0);
-const menuPosition = ref({ top: 0, left: 0, minWidth: 0, maxHeight: 240 });
+const menuPosition = ref({ top: 0, left: 0, width: 0, maxHeight: 240 });
 const opensAbove = ref(false);
 const controlId = `admin-status-${useId()}`;
 const triggerId = `${controlId}-trigger`;
@@ -77,7 +78,7 @@ const selectedOption = computed(() => props.options.find(option => option.value 
 const menuStyle = computed(() => ({
     top: `${menuPosition.value.top}px`,
     left: `${menuPosition.value.left}px`,
-    minWidth: `${menuPosition.value.minWidth}px`,
+    width: `${menuPosition.value.width}px`,
     maxHeight: `${menuPosition.value.maxHeight}px`,
 }));
 
@@ -88,20 +89,20 @@ function positionMenu() {
     if (!trigger || !menu.value) return;
 
     const rect = trigger.getBoundingClientRect();
-    const viewportPadding = 8;
-    const menuWidth = Math.min(Math.max(rect.width, 176), window.innerWidth - viewportPadding * 2);
-    const availableBelow = window.innerHeight - rect.bottom - viewportPadding;
-    const availableAbove = rect.top - viewportPadding;
-    opensAbove.value = availableBelow < Math.min(menu.value.scrollHeight, 220) && availableAbove > availableBelow;
-    const maxHeight = Math.max(96, Math.min(240, opensAbove.value ? availableAbove : availableBelow));
-    const menuHeight = Math.min(menu.value.scrollHeight, maxHeight);
-    const left = Math.max(viewportPadding, Math.min(rect.left, window.innerWidth - menuWidth - viewportPadding));
-
+    const style = getAnchoredPopoverStyle(trigger, {
+        width: Math.max(rect.width, 176),
+        maxHeight: 240,
+        gutter: 8,
+        gap: 6,
+        alignment: 'start',
+        viewportAware: true,
+    });
+    opensAbove.value = Number.parseFloat(style.top) < rect.top;
     menuPosition.value = {
-        top: opensAbove.value ? Math.max(viewportPadding, rect.top - menuHeight - 6) : Math.min(window.innerHeight - menuHeight - viewportPadding, rect.bottom + 6),
-        left,
-        minWidth: menuWidth,
-        maxHeight,
+        top: Number.parseFloat(style.top),
+        left: Number.parseFloat(style.left),
+        width: Number.parseFloat(style.width),
+        maxHeight: Number.parseFloat(style.maxHeight),
     };
 }
 
@@ -115,6 +116,8 @@ async function openMenu() {
     window.addEventListener('pointerdown', onOutsidePointerDown, true);
     window.addEventListener('resize', positionMenu);
     window.addEventListener('scroll', positionMenu, true);
+    window.visualViewport?.addEventListener('resize', positionMenu);
+    window.visualViewport?.addEventListener('scroll', positionMenu);
 }
 
 function closeMenu() {
@@ -123,6 +126,8 @@ function closeMenu() {
     window.removeEventListener('pointerdown', onOutsidePointerDown, true);
     window.removeEventListener('resize', positionMenu);
     window.removeEventListener('scroll', positionMenu, true);
+    window.visualViewport?.removeEventListener('resize', positionMenu);
+    window.visualViewport?.removeEventListener('scroll', positionMenu);
 }
 
 function toggle() {
@@ -139,13 +144,22 @@ function select(option) {
     if (option.value !== props.modelValue) emit('update:modelValue', option.value);
 }
 
+function scrollActiveOption() {
+    const option = menu.value?.querySelector(`#${CSS.escape(optionId(activeIndex.value))}`);
+    if (!option || !menu.value) return;
+    const menuRect = menu.value.getBoundingClientRect();
+    const optionRect = option.getBoundingClientRect();
+    if (optionRect.top < menuRect.top) menu.value.scrollTop -= menuRect.top - optionRect.top;
+    else if (optionRect.bottom > menuRect.bottom) menu.value.scrollTop += optionRect.bottom - menuRect.bottom;
+}
+
 function moveActive(direction) {
     if (!isOpen.value) {
         openMenu();
         return;
     }
     activeIndex.value = (activeIndex.value + direction + props.options.length) % props.options.length;
-    nextTick(() => document.getElementById(optionId(activeIndex.value))?.scrollIntoView({ block: 'nearest' }));
+    nextTick(scrollActiveOption);
 }
 
 function onTriggerKeydown(event) {
@@ -189,7 +203,7 @@ onBeforeUnmount(closeMenu);
 .admin-status-select__trigger.is-in_progress .admin-status-select__dot, .admin-status-select__option.is-in_progress .admin-status-select__dot { background: #5b6cfa; }
 .admin-status-select__trigger.is-on_hold .admin-status-select__dot, .admin-status-select__option.is-on_hold .admin-status-select__dot { background: #b98736; }
 .admin-status-select__trigger.is-completed .admin-status-select__dot, .admin-status-select__option.is-completed .admin-status-select__dot { background: var(--color-success-subtle); }
-.admin-status-select__menu { position: fixed; z-index: 1200; overflow: auto; padding: 5px; border: 1px solid var(--color-border); border-radius: 9px; color: var(--color-text); background: var(--color-surface); box-shadow: 0 10px 24px rgb(32 40 58 / 12%); transform-origin: top center; overscroll-behavior: contain; }
+.admin-status-select__menu { position: fixed; z-index: 1200; overflow: auto; padding: 5px; border: 1px solid var(--admin-dropdown-border, var(--color-border)); border-radius: var(--admin-dropdown-radius, 12px); color: var(--color-text); background: var(--admin-dropdown-surface, var(--color-surface)); box-shadow: var(--admin-dropdown-shadow, 0 10px 24px rgb(32 40 58 / 12%)); transform-origin: top center; overscroll-behavior: contain; }
 .admin-status-select__menu.is-above { transform-origin: bottom center; }
 .admin-status-select__option { display: flex; min-height: 34px; align-items: center; gap: 9px; padding: 0 9px; border-radius: 7px; color: var(--color-text); font-size: 11px; font-weight: 550; cursor: pointer; transition: background 140ms ease, color 140ms ease; }
 .admin-status-select__option:hover { background: var(--color-accent-subtle); }

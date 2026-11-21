@@ -38,7 +38,7 @@
 <script setup>
 import { onMounted, ref } from 'vue';
 import AdminSettingsLayout from './AdminSettingsLayout.vue';
-import { getSettingsOverview } from '../../../features/settings/services/settingsApi.js';
+import { getSettingsOverview } from '../../../features/settings/admin/services/adminSettingsApi.js';
 
 const loading = ref(true);
 const error = ref('');

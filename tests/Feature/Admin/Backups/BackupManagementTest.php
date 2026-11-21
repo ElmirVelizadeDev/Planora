@@ -47,11 +47,13 @@ class BackupManagementTest extends TestCase
     {
         $admin = User::factory()->create(['role' => 'admin', 'status' => 'active']);
         $id = (string) \Illuminate\Support\Str::uuid();
-        $this->actingAs($admin, 'sanctum')
-            ->postJson('/api/v1/admin/backups/'.$id.'/restore', ['confirmation' => 'RESTORE another-id'])
+        $this->actingAs($admin, 'sanctum');
+        $this->grantAdminStepUp('backups.restore', $admin);
+        $this->postJson('/api/v1/admin/backups/'.$id.'/restore', ['confirmation' => 'RESTORE another-id'])
             ->assertUnprocessable()
             ->assertJsonPath('message', 'Confirmation must match RESTORE and the backup identifier.');
 
+        $this->grantAdminStepUp('backups.delete', $admin);
         $this->deleteJson('/api/v1/admin/backups/'.$id, ['confirmation' => 'DELETE another-id'])
             ->assertUnprocessable()
             ->assertJsonPath('message', 'Confirm deletion using the backup identifier.');

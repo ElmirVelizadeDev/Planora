@@ -63,16 +63,20 @@ class RolesPermissionsTest extends TestCase
         $moderator = $this->account('moderator', ['users.view']);
         $this->actingAs($admin, 'sanctum');
 
+        $this->grantAdminStepUp('roles.manage', $admin);
         $this->putJson('/api/v1/admin/roles-permissions/moderators/'.$moderator->id, ['permissions' => ['users.view', 'activity.view']])
             ->assertOk()->assertJsonPath('user.moderator_permissions.1', 'activity.view');
         $this->assertDatabaseHas('user_activity_logs', ['event' => 'moderator.permissions_changed', 'actor_id' => $admin->id, 'user_id' => $moderator->id]);
         $moderator->refresh();
         $this->assertTrue($moderator->hasManagementPermission('activity.view'));
 
+        $this->grantAdminStepUp('roles.manage', $admin);
         $this->putJson('/api/v1/admin/roles-permissions/moderators/'.$moderator->id, ['permissions' => []])->assertOk();
         $this->assertFalse($moderator->fresh()->hasManagementPermission('activity.view'));
+        $this->grantAdminStepUp('roles.manage', $admin);
         $this->putJson('/api/v1/admin/roles-permissions/moderators/'.$moderator->id, ['permissions' => ['roles.manage']])->assertUnprocessable();
         $user = $this->account('user');
+        $this->grantAdminStepUp('roles.manage', $admin);
         $this->putJson('/api/v1/admin/roles-permissions/moderators/'.$user->id, ['permissions' => ['users.view']])->assertForbidden();
     }
 
@@ -167,10 +171,13 @@ class RolesPermissionsTest extends TestCase
         $moderator = $this->account('moderator');
         $this->actingAs($admin, 'sanctum');
 
+        $this->grantAdminStepUp('roles.manage', $admin);
         $this->putJson('/api/v1/admin/roles-permissions/moderators/'.$moderator->id, ['permissions' => ['projects.status.manage']])
             ->assertUnprocessable()->assertJsonValidationErrors(['permissions']);
+        $this->grantAdminStepUp('roles.manage', $admin);
         $this->putJson('/api/v1/admin/roles-permissions/moderators/'.$moderator->id, ['permissions' => ['users.view', 'users.view']])
             ->assertUnprocessable()->assertJsonValidationErrors(['permissions.1']);
+        $this->grantAdminStepUp('roles.manage', $admin);
         $this->putJson('/api/v1/admin/roles-permissions/moderators/'.$moderator->id, ['permissions' => ['users.status.manage']])
             ->assertUnprocessable()->assertJsonValidationErrors(['permissions']);
     }

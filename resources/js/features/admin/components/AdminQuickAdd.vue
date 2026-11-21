@@ -14,7 +14,8 @@
             <span>Quick add</span>
         </button>
 
-        <section v-if="open" :id="menuId" ref="menu" class="header-popover admin-quick-add-popover" role="menu" aria-label="Create new">
+        <Teleport to="body">
+        <section v-if="open" :id="menuId" ref="menu" :style="menuStyle" class="header-popover admin-quick-add-popover" role="menu" aria-label="Create new" @keydown="onKeydown" @focusout="onFocusout">
             <p class="admin-quick-add-heading">Create new</p>
             <button v-for="(action, index) in actions" :key="action.label" class="admin-quick-add-item" type="button" role="menuitem" @click="selectAction(action)">
                 <span class="admin-quick-add-icon" aria-hidden="true">
@@ -25,6 +26,7 @@
                 <span class="admin-quick-add-copy"><strong>{{ action.label }}</strong><small>{{ action.description }}</small></span>
             </button>
         </section>
+        </Teleport>
         <p v-if="navigationError" class="admin-quick-add-error" role="alert">{{ navigationError }}</p>
     </div>
 </template>
@@ -32,12 +34,14 @@
 <script setup>
 import { nextTick, onBeforeUnmount, onMounted, ref, useId, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { getAnchoredPopoverStyle } from '../../../shared/composables/getAnchoredPopoverStyle.js';
 
 const route = useRoute();
 const router = useRouter();
 const root = ref(null);
 const trigger = ref(null);
 const menu = ref(null);
+const menuStyle = ref({});
 const open = ref(false);
 const navigationError = ref('');
 const menuId = `admin-quick-add-${useId()}`;
@@ -55,12 +59,19 @@ function closeMenu(restoreFocus = false) {
     if (restoreFocus) trigger.value?.focus({ preventScroll: true });
 }
 
-function toggleMenu() {
+async function toggleMenu() {
     if (open.value) closeMenu();
     else {
         navigationError.value = '';
         open.value = true;
+        await nextTick();
+        positionMenu();
     }
+}
+
+function positionMenu() {
+    if (!open.value || !trigger.value || !menu.value) return;
+    menuStyle.value = getAnchoredPopoverStyle(trigger.value, { width: 286, maxHeight: 420, viewportAware: true });
 }
 
 async function focusAction(index) {
@@ -68,6 +79,7 @@ async function focusAction(index) {
         navigationError.value = '';
         open.value = true;
         await nextTick();
+        positionMenu();
     }
     const items = menu.value?.querySelectorAll('[role="menuitem"]');
     if (items?.length) items[(index + items.length) % items.length]?.focus();
@@ -100,14 +112,14 @@ function onKeydown(event) {
 }
 
 function onOutsidePointer(event) {
-    if (open.value && event.target instanceof Node && !root.value?.contains(event.target)) closeMenu();
+    if (open.value && event.target instanceof Node && !root.value?.contains(event.target) && !menu.value?.contains(event.target)) closeMenu();
 }
 
 function onFocusout() {
     window.clearTimeout(focusoutTimer);
     focusoutTimer = window.setTimeout(() => {
         focusoutTimer = undefined;
-        if (open.value && !root.value?.contains(document.activeElement)) closeMenu();
+        if (open.value && !root.value?.contains(document.activeElement) && !menu.value?.contains(document.activeElement)) closeMenu();
     }, 0);
 }
 
@@ -131,11 +143,19 @@ watch(() => route.fullPath, () => closeMenu());
 onMounted(() => {
     document.addEventListener('pointerdown', onOutsidePointer);
     document.addEventListener('keydown', onDocumentKeydown);
+    window.addEventListener('resize', positionMenu, { passive: true });
+    window.addEventListener('scroll', positionMenu, { passive: true, capture: true });
+    window.visualViewport?.addEventListener('resize', positionMenu, { passive: true });
+    window.visualViewport?.addEventListener('scroll', positionMenu, { passive: true });
 });
 onBeforeUnmount(() => {
     window.clearTimeout(focusoutTimer);
     document.removeEventListener('pointerdown', onOutsidePointer);
     document.removeEventListener('keydown', onDocumentKeydown);
+    window.removeEventListener('resize', positionMenu);
+    window.removeEventListener('scroll', positionMenu, true);
+    window.visualViewport?.removeEventListener('resize', positionMenu);
+    window.visualViewport?.removeEventListener('scroll', positionMenu);
 });
 </script>
 

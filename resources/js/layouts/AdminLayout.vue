@@ -31,3 +31,4 @@ const { sidebarCollapsed, mobileSidebarOpen, toggleSidebar } = useWorkspaceSideb
 </script>
 
 <style src="../../css/layouts/AdminLayout.css" scoped></style>
+<style src="../../css/components/admin-dropdown-tokens.css"></style>

@@ -63,9 +63,11 @@ class AdminCategoryManagementTest extends TestCase
         $this->getJson('/api/v1/admin/categories/'.$id)->assertOk()->assertJsonPath('category.color', '#123ABC');
         $this->patchJson('/api/v1/admin/categories/'.$id, ['name' => 'Product Design', 'description' => null])
             ->assertOk()->assertJsonPath('category.name', 'Product Design')->assertJsonPath('category.description', null);
+        $this->grantAdminStepUp('users.manage', $admin);
         $this->deleteJson('/api/v1/admin/categories/'.$id)->assertOk();
         $this->assertSoftDeleted('categories', ['id' => $id]);
         $this->getJson('/api/v1/admin/categories/'.$id)->assertOk()->assertJsonPath('category.status', 'archived');
+        $this->grantAdminStepUp('users.manage', $admin);
         $this->postJson('/api/v1/admin/categories/'.$id.'/restore')->assertOk()->assertJsonPath('category.status', 'active');
         $this->assertDatabaseHas('categories', ['id' => $id, 'deleted_at' => null]);
     }

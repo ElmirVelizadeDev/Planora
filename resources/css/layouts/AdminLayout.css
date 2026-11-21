@@ -111,6 +111,18 @@
     transition: border-color 140ms ease, background-color 140ms ease, box-shadow 140ms ease;
 }
 
+.admin-layout :deep(select) {
+    box-sizing: border-box;
+    min-width: 0;
+    padding-inline-end: 29px;
+    appearance: none;
+    background-image: linear-gradient(45deg, transparent 50%, var(--color-text-secondary) 50%), linear-gradient(135deg, var(--color-text-secondary) 50%, transparent 50%);
+    background-position: calc(100% - 13px) 50%, calc(100% - 9px) 50%;
+    background-repeat: no-repeat;
+    background-size: 4px 4px, 4px 4px;
+    font-family: var(--font-family-sans);
+}
+
 .admin-layout :deep(select:hover:not(:disabled)),
 .admin-layout :deep(input[type="date"]:hover:not(:disabled)) {
     border-color: var(--color-border-subtle);
@@ -123,6 +135,8 @@
     background-color: var(--color-surface);
     box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 10%, transparent);
 }
+
+.admin-layout :deep(select:disabled) { cursor: not-allowed; opacity: .62; }
 
 .admin-layout :deep(select option:hover:not(:checked)) {
     color: var(--color-text);

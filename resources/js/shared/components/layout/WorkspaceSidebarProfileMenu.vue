@@ -22,6 +22,7 @@
                 :id="menuId"
                 ref="menu"
                 class="workspace-sidebar-profile-menu"
+                :class="{ 'is-admin': variant === 'admin' }"
                 :style="positionStyle"
                 role="menu"
                 aria-label="Account options"
@@ -66,6 +67,7 @@ import { useAuthStore } from '../../../features/auth/stores/authStore.js';
 const { requestLogout } = useLogoutConfirmation();
 const auth = useAuthStore();
 const emit = defineEmits(['navigate']);
+defineProps({ variant: { type: String, default: 'user' } });
 const open = ref(false);
 const triggerWrap = ref(null);
 const trigger = ref(null);

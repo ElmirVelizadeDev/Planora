@@ -87,7 +87,7 @@
 import UserAvatar from '../../shared/components/UserAvatar.vue';
 import { computed, onMounted, ref } from 'vue';
 import { useAuthStore } from '../../features/auth/stores/authStore.js';
-import { getAdminDashboard } from '../../features/dashboard/services/dashboardApi.js';
+import { getAdminDashboard } from '../../features/dashboard/admin/services/dashboardApi.js';
 
 const auth = useAuthStore();
 const isAdmin = computed(() => auth.hasRole('admin'));

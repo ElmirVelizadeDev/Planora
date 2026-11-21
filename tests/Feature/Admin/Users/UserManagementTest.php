@@ -174,7 +174,9 @@ class UserManagementTest extends TestCase
 
         foreach (['user', 'moderator', 'admin'] as $role) {
             $email = 'managed-'.$role.'-'.Str::uuid().'@gmail.com';
-            $this->actingAs($admin, 'sanctum')->withHeaders($this->headers())
+            $this->actingAs($admin, 'sanctum');
+            if ($role !== 'user') $this->grantAdminStepUp('roles.manage', $admin);
+            $this->withHeaders($this->headers())
                 ->postJson('/api/v1/admin/users', [
                     'name' => 'Created '.ucfirst($role),
                     'email' => $email,
@@ -423,12 +425,14 @@ class UserManagementTest extends TestCase
             ->getJson('/api/v1/admin/users?search='.$smallToken.'&per_page=10')
             ->assertOk()->assertJsonPath('meta.total', 10)->assertJsonPath('meta.last_page', 1);
 
+        $this->grantAdminStepUp('users.manage', $admin);
         $this->actingAs($admin, 'sanctum')->withHeaders($this->headers())
             ->deleteJson('/api/v1/admin/users/'.$filteredIds[10])->assertOk();
         $afterDeletePageTwo = $this->actingAs($admin, 'sanctum')->withHeaders($this->headers())
             ->getJson($filterQuery.'&page=2')->assertOk()->assertJsonPath('meta.total', 10)->assertJsonPath('meta.last_page', 1);
         $this->assertCount(0, $afterDeletePageTwo->json('data'));
 
+        $this->grantAdminStepUp('users.manage', $admin);
         $this->actingAs($admin, 'sanctum')->withHeaders($this->headers())
             ->postJson('/api/v1/admin/users/'.$filteredIds[10].'/restore')->assertOk();
         $restoredPageTwo = $this->actingAs($admin, 'sanctum')->withHeaders($this->headers())
@@ -442,15 +446,18 @@ class UserManagementTest extends TestCase
         $target = User::factory()->create(['role' => 'user']);
         $base = '/api/v1/admin/users/'.$target->id;
 
+        $this->grantAdminStepUp('roles.manage', $admin);
         $this->actingAs($admin, 'sanctum')->withHeaders($this->headers())
             ->patchJson($base.'/role', ['role' => 'moderator', 'moderator_permissions' => ['users.view', 'activity.view']])
             ->assertOk()->assertJsonPath('user.role', 'moderator')->assertJsonPath('user.moderator_permissions.0', 'users.view');
         $this->assertDatabaseHas('user_activity_logs', ['user_id' => $target->id, 'actor_id' => $admin->id, 'event' => 'user.role_changed']);
 
+        $this->grantAdminStepUp('roles.manage', $admin);
         $this->actingAs($admin, 'sanctum')->withHeaders($this->headers())
             ->putJson($base.'/permissions', ['permissions' => ['users.view', 'activity.view', 'users.status.manage']])
             ->assertOk()->assertJsonPath('user.moderator_permissions.2', 'users.status.manage');
 
+        $this->grantAdminStepUp('users.manage', $admin);
         $this->actingAs($admin, 'sanctum')->withHeaders($this->headers())
             ->patchJson($base.'/status', ['status' => 'suspended', 'reason' => 'Repeated policy violations'])
             ->assertOk()->assertJsonPath('user.status', 'suspended')->assertJsonPath('user.status_reason', 'Repeated policy violations');
@@ -489,6 +496,7 @@ class UserManagementTest extends TestCase
         $admin = $this->admin();
         $user = User::factory()->create(['role' => 'user', 'password' => Hash::make('Member-Password-123')]);
 
+        $this->grantAdminStepUp('users.manage', $admin);
         $this->actingAs($admin, 'sanctum')->withHeaders($this->headers())
             ->patchJson('/api/v1/admin/users/'.$user->id.'/status', ['status' => 'banned', 'reason' => 'Confirmed abuse'])
             ->assertOk();
@@ -500,6 +508,7 @@ class UserManagementTest extends TestCase
             'email' => $user->email, 'password' => 'Member-Password-123',
         ])->assertUnprocessable()->assertJsonValidationErrors('email');
 
+        $this->grantAdminStepUp('users.manage', $admin);
         $this->actingAs($admin, 'sanctum')->withHeaders($this->headers())
             ->patchJson('/api/v1/admin/users/'.$user->id.'/status', ['status' => 'active'])
             ->assertOk()->assertJsonPath('user.status', 'active');
@@ -510,10 +519,13 @@ class UserManagementTest extends TestCase
         $admin = $this->admin();
         $base = '/api/v1/admin/users/'.$admin->id;
 
+        $this->grantAdminStepUp('roles.manage', $admin);
         $this->actingAs($admin, 'sanctum')->withHeaders($this->headers())
             ->patchJson($base.'/role', ['role' => 'user'])->assertForbidden();
+        $this->grantAdminStepUp('users.manage', $admin);
         $this->actingAs($admin, 'sanctum')->withHeaders($this->headers())
             ->patchJson($base.'/status', ['status' => 'suspended', 'reason' => 'test reason'])->assertForbidden();
+        $this->grantAdminStepUp('users.manage', $admin);
         $this->actingAs($admin, 'sanctum')->withHeaders($this->headers())
             ->deleteJson($base)->assertForbidden();
     }
@@ -529,10 +541,13 @@ class UserManagementTest extends TestCase
             ->assertOk()->assertJsonPath('user.name', 'Updated Admin')->assertJsonPath('user.email', $newEmail);
         $this->assertDatabaseHas('users', ['id' => $admin->id, 'phone' => '5550101', 'role' => 'admin', 'status' => 'active']);
 
+        $this->grantAdminStepUp('roles.manage', $admin);
         $this->actingAs($admin, 'sanctum')->withHeaders($this->headers())
             ->patchJson($base.'/role', ['role' => 'user'])->assertForbidden();
+        $this->grantAdminStepUp('users.manage', $admin);
         $this->actingAs($admin, 'sanctum')->withHeaders($this->headers())
             ->patchJson($base.'/status', ['status' => 'suspended', 'reason' => 'Self change attempt'])->assertForbidden();
+        $this->grantAdminStepUp('users.manage', $admin);
         $this->actingAs($admin, 'sanctum')->withHeaders($this->headers())
             ->deleteJson($base)->assertForbidden();
         $this->assertDatabaseHas('users', ['id' => $admin->id, 'role' => 'admin', 'status' => 'active', 'deleted_at' => null]);
@@ -543,6 +558,7 @@ class UserManagementTest extends TestCase
         $admin = User::factory()->create(['role' => 'admin', 'password' => Hash::make('Current-Password-123')]);
         $otherAdmin = User::factory()->create(['role' => 'admin', 'password' => Hash::make('Current-Password-123')]);
 
+        $this->grantAdminStepUp('users.manage', $admin);
         $this->actingAs($admin, 'sanctum')->withHeaders($this->headers())
             ->postJson('/api/v1/admin/users/'.$admin->id.'/password', [
                 'current_password' => 'incorrect-password',
@@ -551,6 +567,7 @@ class UserManagementTest extends TestCase
             ])->assertUnprocessable()->assertJsonValidationErrors('current_password');
         $this->assertTrue(Hash::check('Current-Password-123', $admin->fresh()->password));
 
+        $this->grantAdminStepUp('users.manage', $admin);
         $this->actingAs($admin, 'sanctum')->withHeaders($this->headers())
             ->postJson('/api/v1/admin/users/'.$admin->id.'/password', [
                 'current_password' => 'Current-Password-123',
@@ -559,6 +576,7 @@ class UserManagementTest extends TestCase
             ])->assertOk();
         $this->assertTrue(Hash::check('New-Password-123', $admin->fresh()->password));
 
+        $this->grantAdminStepUp('users.manage', $admin);
         $this->actingAs($admin, 'sanctum')->withHeaders($this->headers())
             ->postJson('/api/v1/admin/users/'.$otherAdmin->id.'/password', [
                 'current_password' => 'Current-Password-123',
@@ -573,11 +591,13 @@ class UserManagementTest extends TestCase
         $actor = $this->admin();
         $subject = User::factory()->create(['role' => 'admin', 'status' => 'active']);
 
+        $this->grantAdminStepUp('users.manage', $actor);
         $this->actingAs($actor, 'sanctum')->withHeaders($this->headers())
             ->patchJson('/api/v1/admin/users/'.$subject->id.'/status', ['status' => 'inactive'])
             ->assertOk()->assertJsonPath('user.status', 'inactive');
         $this->assertDatabaseHas('users', ['id' => $actor->id, 'role' => 'admin', 'status' => 'active']);
 
+        $this->grantAdminStepUp('users.manage', $actor);
         $this->actingAs($actor, 'sanctum')->withHeaders($this->headers())
             ->deleteJson('/api/v1/admin/users/'.$subject->id)->assertOk();
         $this->assertSoftDeleted('users', ['id' => $subject->id]);
@@ -624,11 +644,13 @@ class UserManagementTest extends TestCase
         $admin = $this->admin();
         $user = User::factory()->create(['role' => 'user']);
 
+        $this->grantAdminStepUp('users.manage', $admin);
         $this->actingAs($admin, 'sanctum')->withHeaders($this->headers())
             ->deleteJson('/api/v1/admin/users/'.$user->id)->assertOk();
         $this->assertSoftDeleted('users', ['id' => $user->id]);
         $this->assertDatabaseHas('user_activity_logs', ['user_id' => $user->id, 'event' => 'user.deleted']);
 
+        $this->grantAdminStepUp('users.manage', $admin);
         $this->actingAs($admin, 'sanctum')->withHeaders($this->headers())
             ->postJson('/api/v1/admin/users/'.$user->id.'/restore')->assertOk()->assertJsonPath('user.status', 'active');
         $this->assertDatabaseHas('users', ['id' => $user->id, 'deleted_at' => null]);

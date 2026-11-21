@@ -3,6 +3,7 @@
     <template v-else>
         <RouterView />
         <LogoutConfirmationDialog />
+        <AdminStepUpDialog />
     </template>
 </template>
 
@@ -10,7 +11,8 @@
 import { defineAsyncComponent, onBeforeUnmount, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import LogoutConfirmationDialog from './shared/components/LogoutConfirmationDialog.vue';
-const AdminLogin = defineAsyncComponent(() => import('./features/auth/components/AdminLogin.vue'));
+import AdminStepUpDialog from './shared/components/AdminStepUpDialog.vue';
+const AdminLogin = defineAsyncComponent(() => import('./features/auth/admin/components/AdminLogin.vue'));
 import { useAuthStore } from './features/auth/stores/authStore.js';
 import { moderatorCanAccessAdminRoute, moderatorLandingRoute } from './features/auth/managementAccess.js';
 

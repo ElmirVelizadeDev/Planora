@@ -1,13 +1,14 @@
 .notification-menu { position: relative; }
 .notification-trigger { position: relative; }
 .notification-badge { position: absolute; top: 1px; right: 0; display: grid; min-width: 17px; height: 17px; place-items: center; padding: 0 4px; border: 2px solid var(--color-surface); border-radius: 999px; color: var(--color-accent-foreground); background: var(--color-accent); font-size: 8px; font-weight: 700; line-height: 1; }
-.notification-popover { position: absolute; top: calc(100% + 10px); right: 0; z-index: 40; width: min(360px, calc(100vw - 32px)); max-height: min(520px, calc(100dvh - 92px)); overflow: hidden; padding: 0; border: 1px solid var(--color-border); border-radius: 14px; background: var(--color-surface); box-shadow: var(--shadow-soft); }
+.notification-popover { z-index: 1100; display: flex; flex-direction: column; min-width: 0; overflow: hidden; padding: 0; border: 1px solid var(--color-border); border-radius: 14px; background: var(--color-surface); box-shadow: var(--shadow-soft); }
+.notification-popover.is-admin { border-color: var(--admin-dropdown-border, var(--color-border)); border-radius: var(--admin-dropdown-radius, 14px); background: var(--admin-dropdown-surface, var(--color-surface)); box-shadow: var(--admin-dropdown-shadow, var(--shadow-soft)); }
 .notification-popover-heading { display: flex; min-height: 54px; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 15px; border-bottom: 1px solid var(--color-border); }
 .notification-popover-heading strong { color: var(--color-text); font-size: 13px; font-weight: 650; }
 .notification-heading-count { color: var(--color-text-secondary); font-size: 10px; }
 .notification-mark-all { display: block; margin: 9px 13px 5px auto; padding: 4px 2px; border: 0; color: var(--color-accent-text); background: transparent; cursor: pointer; font: inherit; font-size: 10px; font-weight: 600; }
 .notification-mark-all:disabled { cursor: wait; opacity: .6; }
-.notification-items { display: grid; max-height: 360px; overflow-y: auto; overscroll-behavior: contain; }
+.notification-items { display: grid; min-height: 0; flex: 1 1 auto; overflow-y: auto; overscroll-behavior: contain; }
 .notification-item { display: flex; width: 100%; min-width: 0; align-items: flex-start; gap: 10px; padding: 12px 14px; border: 0; border-bottom: 1px solid var(--color-border); color: var(--color-text); background: var(--color-surface); cursor: pointer; font: inherit; text-align: left; transition: background-color 120ms ease; }
 .notification-item:hover,
 .notification-item:focus-visible { background: var(--color-surface-hover); outline: none; }
@@ -62,7 +63,6 @@
 .notifications-pagination button { min-height: 32px; }
 
 @media (max-width: 560px) {
-    .notification-popover { right: -4px; }
     .notifications-page-header { align-items: flex-start; flex-direction: column; gap: 14px; }
     .notifications-page-actions { width: 100%; justify-content: space-between; }
     .notifications-page .notification-item { padding: 12px; }

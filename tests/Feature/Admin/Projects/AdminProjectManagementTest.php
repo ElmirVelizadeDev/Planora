@@ -55,6 +55,7 @@ class AdminProjectManagementTest extends TestCase
         $this->assertDatabaseHas('user_activity_logs', ['event' => 'project.status_changed', 'actor_id' => $admin->id, 'subject_id' => $id]);
         $this->postJson('/api/v1/admin/projects', ['name' => '', 'status' => 'blocked', 'due_date' => '2026-01-01', 'start_date' => '2026-02-01'])
             ->assertUnprocessable()->assertJsonValidationErrors(['name', 'status', 'due_date']);
+        $this->grantAdminStepUp('users.manage', $admin);
         $this->deleteJson('/api/v1/admin/projects/'.$id)->assertOk();
         $this->assertDatabaseHas('user_activity_logs', ['event' => 'project.deleted', 'actor_id' => $admin->id, 'subject_id' => $id]);
         $this->assertDatabaseMissing('projects', ['id' => $id]);

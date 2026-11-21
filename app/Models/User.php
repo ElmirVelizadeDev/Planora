@@ -43,6 +43,10 @@ class User extends Authenticatable
     protected $hidden = [
         'password',
         'remember_token',
+        'mfa_secret',
+        'mfa_enabled_at',
+        'mfa_enrollment_expires_at',
+        'mfa_last_counter',
     ];
 
     /**
@@ -56,6 +60,8 @@ class User extends Authenticatable
         'status_changed_at' => 'datetime',
         'password' => 'hashed',
         'moderator_permissions' => 'array',
+        'mfa_enabled_at' => 'datetime',
+        'mfa_enrollment_expires_at' => 'datetime',
     ];
 
     public function activity(): \Illuminate\Database\Eloquent\Relations\HasMany

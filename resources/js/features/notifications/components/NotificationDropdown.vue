@@ -13,7 +13,8 @@
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4" /></svg>
             <span v-if="store.unreadCount" class="notification-badge" aria-hidden="true">{{ badgeCount }}</span>
         </button>
-        <section :id="popoverId" ref="popover" v-show="open" class="header-popover notification-popover" role="dialog" aria-label="Notifications" :aria-hidden="!open">
+        <Teleport to="body">
+        <section :id="popoverId" ref="popover" v-show="open" :style="popoverStyle" class="header-popover notification-popover" :class="{ 'is-admin': variant === 'admin' }" role="dialog" aria-label="Notifications" :aria-hidden="!open" @keydown.esc.stop.prevent="close(true)">
             <div class="notification-popover-heading">
                 <strong>Notifications</strong>
                 <span v-if="store.unreadCount" class="notification-heading-count">{{ store.unreadCount }} unread</span>
@@ -38,6 +39,7 @@
             </div>
             <RouterLink class="notification-view-all" :to="viewAllRoute" @click="close">View all notifications</RouterLink>
         </section>
+        </Teleport>
     </div>
 </template>
 
@@ -46,6 +48,7 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, useId, watch } fro
 import { RouterLink, useRouter } from 'vue-router';
 import { useAuthStore } from '../../auth/stores/authStore.js';
 import { useNotificationStore } from '../stores/notificationStore.js';
+import { getAnchoredPopoverStyle } from '../../../shared/composables/getAnchoredPopoverStyle.js';
 import NotificationItem from './NotificationItem.vue';
 
 const props = defineProps({ variant: { type: String, required: true } });
@@ -56,6 +59,7 @@ const open = ref(false);
 const menu = ref(null);
 const trigger = ref(null);
 const popover = ref(null);
+const popoverStyle = ref({});
 const popoverId = `notification-popover-${useId()}`;
 const canReceiveNotifications = computed(() => auth.hasRole('user') || auth.hasRole('admin'));
 const badgeCount = computed(() => store.unreadCount > 99 ? '99+' : store.unreadCount);
@@ -70,7 +74,7 @@ watch(() => auth.user?.id, (id) => {
 function close(restoreFocus = false) {
     const focusWasInside = popover.value?.contains(document.activeElement) ?? false;
     open.value = false;
-    if (restoreFocus && focusWasInside) nextTick(() => trigger.value?.focus());
+    if (restoreFocus && focusWasInside) nextTick(() => trigger.value?.focus({ preventScroll: true }));
 }
 async function toggle() {
     if (open.value) {
@@ -81,10 +85,16 @@ async function toggle() {
     open.value = true;
     store.loadRecent();
     await nextTick();
-    popover.value?.querySelector('button:not(:disabled), a[href]')?.focus();
+    positionPopover();
+    await nextTick();
+    popover.value?.querySelector('button:not(:disabled), a[href]')?.focus({ preventScroll: true });
+}
+function positionPopover() {
+    if (!open.value || !trigger.value || !popover.value) return;
+    popoverStyle.value = getAnchoredPopoverStyle(trigger.value, { width: 360, maxHeight: 520, viewportAware: props.variant === 'admin' });
 }
 function onOutside(event) {
-    if (!menu.value?.contains(event.target)) close();
+    if (!menu.value?.contains(event.target) && !popover.value?.contains(event.target)) close();
 }
 async function openNotification(notification) {
     const updated = await store.markRead(notification.id);
@@ -102,8 +112,18 @@ async function openNotification(notification) {
 
 onMounted(() => {
     document.addEventListener('pointerdown', onOutside);
+    window.addEventListener('resize', positionPopover, { passive: true });
+    window.addEventListener('scroll', positionPopover, { passive: true, capture: true });
+    window.visualViewport?.addEventListener('resize', positionPopover, { passive: true });
+    window.visualViewport?.addEventListener('scroll', positionPopover, { passive: true });
 });
-onBeforeUnmount(() => document.removeEventListener('pointerdown', onOutside));
+onBeforeUnmount(() => {
+    document.removeEventListener('pointerdown', onOutside);
+    window.removeEventListener('resize', positionPopover);
+    window.removeEventListener('scroll', positionPopover, true);
+    window.visualViewport?.removeEventListener('resize', positionPopover);
+    window.visualViewport?.removeEventListener('scroll', positionPopover);
+});
 </script>
 
 <style src="../../../../css/components/notifications.css"></style>

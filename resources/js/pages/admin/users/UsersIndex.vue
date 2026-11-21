@@ -1,5 +1,5 @@
 <template>
-    <main class="admin-users" :aria-busy="loading">
+    <main ref="pageRoot" class="admin-users" :aria-busy="loading">
         <header class="admin-users-header">
             <div>
                 <p class="admin-users-eyebrow">Administration</p>
@@ -78,18 +78,7 @@
                                 <td data-label="Registered"><time :datetime="user.created_at">{{ formatDate(user.created_at) }}</time></td>
                                 <td data-label="Last active"><time v-if="user.last_login_at" :datetime="user.last_login_at">{{ formatRelativeDate(user.last_login_at) }}</time><span v-else class="admin-users-muted">Never</span></td>
                                 <td data-label="Actions">
-                                    <details class="admin-users-actions">
-                                        <summary :aria-label="`Actions for ${user.name}`" :title="`Actions for ${user.name}`"><span aria-hidden="true">···</span></summary>
-                                        <div class="admin-users-action-menu" role="group" :aria-label="`Manage ${user.name}`">
-                                            <template v-if="deletedView"><button type="button" @click="openRestoreDialog(user)">Restore user</button></template>
-                                            <template v-else>
-                                                <button type="button" @click="openViewDialog(user)">View profile</button>
-                                                <button v-if="isAdmin" type="button" @click="openEditDialog(user)">Edit user</button>
-                                                <button v-if="isAdmin || (canManageStatus && user.role === 'user')" type="button" :disabled="Boolean(statusActionDisabledReason(user))" :title="statusActionDisabledReason(user)" @click="openStatusDialog(user)">Change status</button>
-                                                <button v-if="isAdmin" class="is-danger" type="button" :disabled="Boolean(deleteActionDisabledReason(user))" :title="deleteActionDisabledReason(user)" @click="openDeleteDialog(user)">Delete user</button>
-                                            </template>
-                                        </div>
-                                    </details>
+                                    <AdminActionDropdown :active-key="activeActionUserId" :item-key="user.id" :label="`Actions for ${user.name}`" :items="actionItemsForUser(user)" @update:active-key="setActiveActionUserId" />
                                 </td>
                             </tr>
                         </tbody>
@@ -258,6 +247,7 @@
 
 <script setup>
 import UserAvatar from '../../../shared/components/UserAvatar.vue';
+import AdminActionDropdown from '../../../features/admin/components/AdminActionDropdown.vue';
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from '../../../features/auth/stores/authStore.js';
@@ -290,6 +280,7 @@ const dialog = reactive({
     avatarFile: null, avatarPreview: '', removeAvatar: false,
     originalStatus: '', reason: '', confirmed: false, deleteConfirmation: '',
 });
+const activeActionUserId = ref(null);
 let searchTimer;
 let noticeTimer;
 let loadRequestSequence = 0;
@@ -303,13 +294,29 @@ const statusDescriptions = {
     suspended: 'Temporarily restricts account access.',
     banned: 'Blocks access to the account.',
 };
+
+function setActiveActionUserId(value) { activeActionUserId.value = value === null ? null : String(value); }
+
+function actionItemsForUser(user) {
+    if (deletedView.value) return [{ key: 'restore', label: 'Restore user', icon: 'restore', onSelect: () => openRestoreDialog(user) }];
+    const items = [{ key: 'view', label: 'View profile', icon: 'view', onSelect: () => openViewDialog(user) }];
+    if (isAdmin.value) items.push({ key: 'edit', label: 'Edit user', icon: 'edit', onSelect: () => openEditDialog(user) });
+    if (isAdmin.value || (canManageStatus.value && user.role === 'user')) {
+        const disabledReason = statusActionDisabledReason(user);
+        items.push({ key: 'status', label: 'Change status', icon: 'status', disabled: Boolean(disabledReason), onSelect: () => openStatusDialog(user) });
+    }
+    if (isAdmin.value) {
+        const disabledReason = deleteActionDisabledReason(user);
+        items.push({ key: 'delete', label: 'Delete user', icon: 'delete', danger: true, separatorBefore: true, disabled: Boolean(disabledReason), onSelect: () => openDeleteDialog(user) });
+    }
+    return items;
+}
 const dialogTitleId = 'admin-users-dialog-title';
 const isAdmin = computed(() => auth.hasRole('admin'));
 const canManageStatus = computed(() => isAdmin.value
     || (auth.hasManagementPermission('users.view') && auth.hasManagementPermission('users.status.manage')));
 const usersPerPage = 10;
 const editAvatarPreview = computed(() => dialog.avatarPreview || (dialog.removeAvatar ? '' : dialog.user?.avatar || ''));
-
 const hasFilters = computed(() => Boolean(deletedView.value || search.value || filters.role || filters.status || filters.registered_from || filters.registered_to));
 const stats = computed(() => [
     { label: 'Total users', value: statsData.value.total_users, icon: 'users', tone: 'primary' },
@@ -784,8 +791,12 @@ watch(() => route.query.view, (userId) => {
     if (!userId || !/^\d+$/.test(String(userId))) return;
     openViewDialog({ id: Number(userId), name: 'Loading profile…', email: '' });
 }, { immediate: true });
-onMounted(() => { loadUsers(); loadAccessOptions(); });
+onMounted(() => {
+    loadUsers();
+    loadAccessOptions();
+});
 onBeforeUnmount(() => {
+    activeActionUserId.value = null;
     clearTimeout(searchTimer);
     clearTimeout(noticeTimer);
     if (dialog.avatarPreview) URL.revokeObjectURL(dialog.avatarPreview);

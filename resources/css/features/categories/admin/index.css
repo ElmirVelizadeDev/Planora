@@ -365,39 +365,6 @@
     text-align: right;
 }
 
-.ac-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 3px;
-}
-
-.ac-actions button {
-    padding: 5px 7px;
-    border: 0;
-    border-radius: 6px;
-    color: var(--color-text-secondary);
-    background: transparent;
-    font: inherit;
-    font-size: 9px;
-    font-weight: 650;
-    cursor: pointer;
-}
-
-.ac-actions button:hover {
-    color: var(--color-accent-text);
-    background: var(--color-accent-subtle);
-}
-
-.ac-actions button.is-danger:hover {
-    color: var(--color-danger);
-    background: var(--color-danger-subtle);
-}
-
-.ac-actions button:disabled {
-    cursor: not-allowed;
-    opacity: .42;
-}
-
 .ac-pagination {
     display: flex;
     min-height: 54px;
@@ -677,6 +644,7 @@
     .ac-header {
         align-items: flex-start;
         flex-direction: column;
+        gap: 14px;
     }
 
     .ac-header h1 {
@@ -685,6 +653,14 @@
 
     .ac-primary {
         width: 100%;
+    }
+
+    .ac-header > .ac-primary {
+        align-self: flex-start;
+        width: fit-content;
+        min-height: 35px;
+        padding: 0 10px;
+        white-space: nowrap;
     }
 
     .ac-stats {
@@ -743,11 +719,6 @@
     .ac-description-cell {
         max-width: none;
         text-align: right;
-    }
-
-    .ac-actions {
-        flex-wrap: wrap;
-        justify-content: flex-end;
     }
 
     .ac-pagination {

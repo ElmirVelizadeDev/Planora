@@ -50,6 +50,7 @@ class SystemMaintenanceManagementTest extends TestCase
         $user = $this->account('user', 504);
 
         try {
+            $this->grantAdminStepUp('system.maintenance', $admin);
             $this->actingAs($admin, 'sanctum')->postJson('/api/v1/admin/system-maintenance/enable', [
                 'message' => 'Planora is receiving a scheduled update.',
                 'estimated_at' => '2099-01-01T18:00:00+00:00',
@@ -92,6 +93,7 @@ class SystemMaintenanceManagementTest extends TestCase
                 ->assertJsonPath('data.active', true)
                 ->assertJsonPath('data.native_active', false);
 
+            $this->grantAdminStepUp('system.maintenance', $admin);
             $this->postJson('/api/v1/admin/system-maintenance/disable')
                 ->assertOk()
                 ->assertJsonPath('data.active', false);
@@ -111,8 +113,9 @@ class SystemMaintenanceManagementTest extends TestCase
     public function test_invalid_enable_requests_and_non_admin_changes_are_rejected_without_enabling_maintenance(): void
     {
         $admin = $this->account('admin', 505);
-        $this->actingAs($admin, 'sanctum')
-            ->postJson('/api/v1/admin/system-maintenance/enable', [
+        $this->actingAs($admin, 'sanctum');
+        $this->grantAdminStepUp('system.maintenance', $admin);
+        $this->postJson('/api/v1/admin/system-maintenance/enable', [
                 'message' => '',
                 'retry_after' => 2,
             ])->assertUnprocessable()
@@ -134,8 +137,9 @@ class SystemMaintenanceManagementTest extends TestCase
         $moderator = $this->account('moderator', 511);
         $user = $this->account('user', 512);
 
-        $this->actingAs($admin, 'sanctum')
-            ->patchJson('/api/v1/admin/system-maintenance/scopes/public-website', [
+        $this->actingAs($admin, 'sanctum');
+        $this->grantAdminStepUp('system.maintenance', $admin);
+        $this->patchJson('/api/v1/admin/system-maintenance/scopes/public-website', [
                 'enabled' => true,
                 'message' => 'The public site is being updated.',
                 'retry_after' => 45,
@@ -145,6 +149,7 @@ class SystemMaintenanceManagementTest extends TestCase
             ->assertJsonPath('data.scopes.dashboard_workspace', false)
             ->assertJsonPath('data.overall', 'partially_under_maintenance');
 
+        $this->grantAdminStepUp('system.maintenance', $admin);
         $this->patchJson('/api/v1/admin/system-maintenance/preferences', [
             'message' => 'A new public maintenance notice.',
             'estimated_at' => null,
@@ -156,6 +161,7 @@ class SystemMaintenanceManagementTest extends TestCase
             ->assertJsonPath('data.scopes.authentication', false)
             ->assertJsonPath('data.scopes.dashboard_workspace', false);
 
+        $this->grantAdminStepUp('system.maintenance', $admin);
         $this->patchJson('/api/v1/admin/system-maintenance/scopes/authentication', [
             'enabled' => true,
             'message' => 'The authentication service is being updated.',
@@ -164,6 +170,7 @@ class SystemMaintenanceManagementTest extends TestCase
             ->assertJsonPath('data.scopes.authentication', true)
             ->assertJsonPath('data.scopes.dashboard_workspace', false);
 
+        $this->grantAdminStepUp('system.maintenance', $admin);
         $this->patchJson('/api/v1/admin/system-maintenance/scopes/public-website', [
             'enabled' => false,
         ])->assertOk()
@@ -374,8 +381,8 @@ class SystemMaintenanceManagementTest extends TestCase
                 ->assertSee('We will be back soon');
             $this->getJson('/api/v1/admin/dashboard')->assertStatus(503);
 
-            $this->actingAs($admin, 'sanctum')
-                ->postJson('/api/v1/admin/system-maintenance/disable')
+            $this->grantAdminStepUp('system.maintenance', $admin);
+            $this->actingAs($admin, 'sanctum')->postJson('/api/v1/admin/system-maintenance/disable')
                 ->assertOk()
                 ->assertJsonPath('data.active', false);
 

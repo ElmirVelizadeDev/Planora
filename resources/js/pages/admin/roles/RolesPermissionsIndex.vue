@@ -24,21 +24,36 @@
                         <label v-for="item in group.items" :key="item.key" class="access-permission" :class="{ 'is-sensitive': item.permission.sensitive, 'is-unassignable': !item.permission.assignable }"><input v-model="draft" type="checkbox" :value="item.key" :disabled="!item.permission.assignable || (!draft.includes(item.key) && missingRequirements(item.permission).length > 0)"><span><strong>{{ item.permission.name }}</strong><small>{{ item.permission.description }}</small><small v-if="item.permission.requires?.length">Requires {{ requirementNames(item.permission) }}</small><small v-if="!item.permission.assignable">Not assignable to Moderators</small></span><span class="access-module">{{ item.permission.module }}</span><span v-if="item.permission.sensitive" class="access-sensitive-badge">Sensitive</span></label>
                     </section>
                 </fieldset>
-                <div class="access-save-row"><span v-if="changedPermissions.length">Changes: {{ changedPermissions.join(', ') }}</span><span v-else>No changes to save</span><button type="button" :disabled="saving || !changedPermissions.length" @click="save">{{ saving ? 'Saving…' : 'Save permissions' }}</button></div>
+                <div class="access-save-row"><span v-if="changedPermissions.length">Changes: {{ changedPermissions.join(', ') }}</span><span v-else>No changes to save</span><button type="button" :disabled="saving || !changedPermissions.length" @click="requestSave">{{ saving ? 'Saving…' : 'Save permissions' }}</button></div>
             </section>
             <section class="access-panel"><div class="access-panel-heading"><div><h2>Recent access changes</h2><p>Latest permission assignment events</p></div><RouterLink :to="{ name: 'admin.activity-logs.index', query: { event: 'moderator.permissions_changed' } }">View Activity Logs →</RouterLink></div><ul v-if="recentChanges.length" class="access-change-list"><li v-for="event in recentChanges" :key="event.id"><span><strong>{{ event.moderator || 'Moderator account' }}</strong> · {{ event.description }}</span><small>{{ event.actor || 'Administrator' }} · {{ dateTime(event.created_at) }}</small></li></ul><p v-else class="access-message">No access changes have been recorded.</p></section>
         </template>
+        <SettingsResetConfirmationDialog
+            :open="confirmation.open"
+            :loading="saving"
+            :error="confirmation.error"
+            :title="confirmation.title"
+            :message="confirmation.message"
+            :confirm-label="confirmation.confirmLabel"
+            :loading-label="confirmation.loadingLabel"
+            :cancel-label="confirmation.mode === 'leave' ? 'Stay on page' : 'Cancel'"
+            @cancel="cancelConfirmation"
+            @confirm="confirmConfirmation"
+        />
     </main>
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, reactive, ref } from 'vue';
+import SettingsResetConfirmationDialog from '../settings/components/SettingsResetConfirmationDialog.vue';
 import api from '../../../shared/services/api.js';
+import { useUnsavedChangesConfirmation } from '../../../shared/composables/useUnsavedChangesConfirmation.js';
 
 const loading = ref(true); const loaded = ref(false); const saving = ref(false); const error = ref(''); const success = ref('');
 const search = ref(''); const moderators = ref([]); const meta = ref({ current_page: 1, last_page: 1, total: 0 });
 const roleCounts = ref({ admin: 0, moderator: 0, user: 0 }); const roles = ref({}); const catalog = ref({}); const recentChanges = ref([]);
 const selected = ref(null); const selectedId = computed(() => selected.value?.id ?? null); const draft = ref([]); const original = ref([]);
+const confirmation = reactive({ open: false, mode: '', title: '', message: '', confirmLabel: '', loadingLabel: '', error: '' });
 let searchTimer;
 let requestActive = false;
 const roleCards = computed(() => [
@@ -56,6 +71,8 @@ const permissionGroups = computed(() => {
     return [...groups.values()];
 });
 const changedPermissions = computed(() => [...new Set([...draft.value, ...original.value])].filter((key) => draft.value.includes(key) !== original.value.includes(key)).map((key) => catalog.value[key]?.name || key));
+const hasUnsavedChanges = computed(() => changedPermissions.value.length > 0);
+const { settleNavigation } = useUnsavedChangesConfirmation({ dirty: hasUnsavedChanges, saving, confirmation });
 async function load(page = 1) {
     if (requestActive) return;
     requestActive = true;
@@ -79,20 +96,48 @@ async function load(page = 1) {
 function refresh() { return load(meta.value.current_page || 1); }
 function searchModerators() { clearTimeout(searchTimer); searchTimer = setTimeout(() => load(1), 250); }
 function selectModerator(person) { selected.value = person; original.value = [...(person.moderator_permissions || [])]; draft.value = [...original.value]; success.value = ''; }
-async function save() {
+function requestSave() {
     if (!selected.value || !changedPermissions.value.length || saving.value) return;
     const before = original.value.map((key) => catalog.value[key]?.name || key);
     const after = draft.value.map((key) => catalog.value[key]?.name || key);
-    const summary = `Update permissions for ${selected.value.name}?\n\nBefore: ${before.join(', ') || 'None'}\nAfter: ${after.join(', ') || 'None'}`;
-    if (!window.confirm(summary)) return;
+    confirmation.open = true;
+    confirmation.mode = 'save';
+    confirmation.title = 'Save changes?';
+    confirmation.message = `Update permissions for ${selected.value.name}?\n\nBefore: ${before.join(', ') || 'None'}\nAfter: ${after.join(', ') || 'None'}`;
+    confirmation.confirmLabel = 'Save changes';
+    confirmation.loadingLabel = 'Saving…';
+    confirmation.error = '';
+}
+function cancelConfirmation() {
+    if (confirmation.mode === 'leave') {
+        settleNavigation(false);
+        return;
+    }
+    confirmation.open = false;
+    confirmation.mode = '';
+    confirmation.error = '';
+}
+async function confirmConfirmation() {
+    if (saving.value || !confirmation.open) return;
+    if (confirmation.mode === 'leave') {
+        settleNavigation(true);
+        return;
+    }
+    if (confirmation.mode !== 'save' || !selected.value || !changedPermissions.value.length) return;
     saving.value = true; error.value = ''; success.value = '';
     try {
         const { data } = await api.put(`/admin/roles-permissions/moderators/${selected.value.id}`, { permissions: draft.value });
         const updated = data.user; selected.value = updated; original.value = [...(updated.moderator_permissions || [])]; draft.value = [...original.value];
         moderators.value = moderators.value.map((person) => person.id === updated.id ? updated : person);
-        success.value = `Permissions for ${updated.name} were updated.`;
         await load(meta.value.current_page);
-    } catch (cause) { error.value = cause.response?.data?.message || 'Permissions could not be saved. Review the selected access and try again.'; }
+        success.value = `Permissions for ${updated.name} were updated.`;
+        confirmation.open = false;
+        confirmation.mode = '';
+        confirmation.error = '';
+    } catch (cause) {
+        error.value = cause.response?.data?.message || 'Permissions could not be saved. Review the selected access and try again.';
+        confirmation.error = error.value;
+    }
     finally { saving.value = false; }
 }
 function permissionSummary(person) { const names = (person.moderator_permissions || []).map((key) => catalog.value[key]?.name || key); return names.join(', ') || 'No permissions assigned'; }

@@ -67,6 +67,7 @@ class AdminSettingsTest extends TestCase
             'default_language' => 'en', 'timezone' => 'Asia/Baku', 'date_format' => 'd/m/Y', 'time_format' => '24h',
         ])->assertOk();
 
+        $this->grantAdminStepUp('settings.security', $admin);
         $this->putJson('/api/v1/admin/settings/security', [
             'minimum_password_length' => 12, 'require_uppercase' => true, 'require_lowercase' => true,
             'require_number' => true, 'require_special_character' => false, 'max_login_attempts' => 6,
@@ -79,6 +80,7 @@ class AdminSettingsTest extends TestCase
         $this->assertDatabaseHas('settings', ['key' => 'workspace_name', 'value' => 'Product Studio']);
 
         $defaults = app(\App\Services\Settings\SettingsRegistry::class)->group('security');
+        $this->grantAdminStepUp('settings.security', $admin);
         $this->postJson('/api/v1/admin/settings/security/reset')
             ->assertOk()->assertJsonPath('data.minimum_password_length', $defaults['minimum_password_length']['default']);
         $this->getJson('/api/v1/admin/settings/security')->assertOk()
@@ -88,7 +90,10 @@ class AdminSettingsTest extends TestCase
 
     public function test_security_policy_is_persisted_and_used_for_registration_password_validation(): void
     {
-        $this->actingAs($this->admin(), 'sanctum')->putJson('/api/v1/admin/settings/security', [
+        $admin = $this->admin();
+        $this->actingAs($admin, 'sanctum');
+        $this->grantAdminStepUp('settings.security', $admin);
+        $this->putJson('/api/v1/admin/settings/security', [
             'minimum_password_length' => 12, 'require_uppercase' => true, 'require_lowercase' => true,
             'require_number' => true, 'require_special_character' => false, 'max_login_attempts' => 6,
             'login_lockout_minutes' => 5, 'otp_expiration_minutes' => 8, 'otp_max_attempts' => 4,
@@ -108,16 +113,20 @@ class AdminSettingsTest extends TestCase
     public function test_security_policy_applies_to_authenticated_admin_password_changes(): void
     {
         $admin = $this->admin();
-        $this->actingAs($admin, 'sanctum')->putJson('/api/v1/admin/settings/security', [
+        $this->actingAs($admin, 'sanctum');
+        $this->grantAdminStepUp('settings.security', $admin);
+        $this->putJson('/api/v1/admin/settings/security', [
             'minimum_password_length' => 14, 'require_uppercase' => false, 'require_lowercase' => false,
             'require_number' => false, 'require_special_character' => true, 'max_login_attempts' => 10,
             'login_lockout_minutes' => 1, 'otp_expiration_minutes' => 5, 'otp_max_attempts' => 5,
             'otp_resend_cooldown_seconds' => 60,
         ])->assertOk();
 
+        $this->grantAdminStepUp('users.manage', $admin);
         $this->postJson('/api/v1/admin/users/'.$admin->id.'/password', [
             'current_password' => 'password', 'password' => 'NewPassword123', 'password_confirmation' => 'NewPassword123',
         ])->assertUnprocessable()->assertJsonValidationErrors('password');
+        $this->grantAdminStepUp('users.manage', $admin);
         $this->postJson('/api/v1/admin/users/'.$admin->id.'/password', [
             'current_password' => 'password', 'password' => 'NewPassword123!', 'password_confirmation' => 'NewPassword123!',
         ])->assertOk();
