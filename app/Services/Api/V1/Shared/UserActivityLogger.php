@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services\Api\V1\Admin;
+namespace App\Services\Api\V1\Shared;
 
 use App\Models\Category;
 use App\Models\Project;

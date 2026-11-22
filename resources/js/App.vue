@@ -1,5 +1,6 @@
 <template>
-    <AdminLogin v-if="adminAuthEntry" />
+    <Error500 v-if="hasRuntimeError" />
+    <AdminLogin v-else-if="adminAuthEntry" />
     <template v-else>
         <RouterView />
         <LogoutConfirmationDialog />
@@ -12,6 +13,8 @@ import { defineAsyncComponent, onBeforeUnmount, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import LogoutConfirmationDialog from './shared/components/LogoutConfirmationDialog.vue';
 import AdminStepUpDialog from './shared/components/AdminStepUpDialog.vue';
+const Error500 = defineAsyncComponent(() => import('./pages/errors/Error500.vue'));
+import { hasRuntimeError } from './shared/utils/runtimeErrors.js';
 const AdminLogin = defineAsyncComponent(() => import('./features/auth/admin/components/AdminLogin.vue'));
 import { useAuthStore } from './features/auth/stores/authStore.js';
 import { moderatorCanAccessAdminRoute, moderatorLandingRoute } from './features/auth/managementAccess.js';
@@ -57,12 +60,23 @@ async function handleMaintenanceResponse(event) {
         : { name: 'error.503' });
 }
 
+async function handleExpiredSession(event) {
+    if (event.detail?.kind !== 'unauthenticated' || !auth.isAuthenticated) return;
+    const routeName = String(router.currentRoute.value.name || '');
+    if (routeName === 'login' || routeName.startsWith('admin.secret')) return;
+
+    auth.clearUser();
+    await router.replace({ name: 'login', query: { redirect: router.currentRoute.value.fullPath } });
+}
+
 onMounted(() => {
     window.addEventListener('planora:api-error', refreshModeratorAccess);
     window.addEventListener('planora:api-error', handleMaintenanceResponse);
+    window.addEventListener('planora:api-error', handleExpiredSession);
 });
 onBeforeUnmount(() => {
     window.removeEventListener('planora:api-error', refreshModeratorAccess);
     window.removeEventListener('planora:api-error', handleMaintenanceResponse);
+    window.removeEventListener('planora:api-error', handleExpiredSession);
 });
 </script>

@@ -1,11 +1,13 @@
 import { computed, onBeforeUnmount, reactive, ref } from 'vue';
 import { getUserTaskReport } from '../../../tasks/user/services/userTaskApi.js';
-
-const dateKey = (date) => [date.getFullYear(), String(date.getMonth() + 1).padStart(2, '0'), String(date.getDate()).padStart(2, '0')].join('-');
+import { utcDateKey } from '../../../../shared/utils/dateOnly.js';
 
 export function useUserTaskReport() {
     const today = new Date();
-    const filters = reactive({ start_date: dateKey(new Date(today.getFullYear(), today.getMonth(), today.getDate() - 29)), end_date: dateKey(today), status: '', priority: '' });
+    const utcToday = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()));
+    const initialStart = new Date(utcToday);
+    initialStart.setUTCDate(initialStart.getUTCDate() - 29);
+    const filters = reactive({ start_date: utcDateKey(initialStart), end_date: utcDateKey(utcToday), status: '', priority: '' });
     const report = ref(null), loading = ref(false), error = ref('');
     const periodLabel = computed(() => `${filters.start_date} – ${filters.end_date}`);
     let requestId = 0, controller;
@@ -27,13 +29,14 @@ export function useUserTaskReport() {
     }
 
     function setPreset(preset) {
-        const end = new Date();
-        const start = new Date(end.getFullYear(), end.getMonth(), end.getDate());
-        if (preset === '7') start.setDate(start.getDate() - 6);
-        else if (preset === '30') start.setDate(start.getDate() - 29);
-        else if (preset === 'month') start.setDate(1);
-        filters.start_date = dateKey(start);
-        filters.end_date = dateKey(end);
+        const now = new Date();
+        const end = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+        const start = new Date(end);
+        if (preset === '7') start.setUTCDate(start.getUTCDate() - 6);
+        else if (preset === '30') start.setUTCDate(start.getUTCDate() - 29);
+        else if (preset === 'month') start.setUTCDate(1);
+        filters.start_date = utcDateKey(start);
+        filters.end_date = utcDateKey(end);
         load();
     }
 

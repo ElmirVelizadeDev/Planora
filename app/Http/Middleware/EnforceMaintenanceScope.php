@@ -46,7 +46,7 @@ class EnforceMaintenanceScope
             'description' => $message,
             'estimatedAt' => $maintenance['estimated_at'],
             'retryAfter' => $retryAfter,
-            'scope' => $scope,
+            'maintenanceScopes' => $maintenance['scopes'],
         ], 503)->header('Retry-After', (string) $retryAfter);
     }
 }

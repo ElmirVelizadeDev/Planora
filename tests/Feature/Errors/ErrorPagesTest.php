@@ -92,6 +92,72 @@ class ErrorPagesTest extends TestCase
         }
     }
 
+    public function test_scoped_maintenance_navigation_never_sends_visitors_back_to_a_blocked_public_home(): void
+    {
+        $store = app(MaintenanceScopeStore::class);
+        $store->disableAll();
+        $store->set('public_website', true);
+
+        auth()->logout();
+        $guestResponse = $this->get('/');
+        $guestResponse->assertStatus(503)
+            ->assertSee('Check again')
+            ->assertDontSee('Go to Planora');
+
+        $user = new User();
+        $user->forceFill([
+            'id' => 881,
+            'name' => 'Maintenance QA',
+            'email' => 'maintenance-nav-qa@planora.test',
+            'password' => Hash::make('maintenance-test-password'),
+            'role' => 'user',
+            'status' => 'active',
+            'moderator_permissions' => [],
+        ]);
+
+        $this->withSession(['password_hash_web' => $user->getAuthPassword()])
+            ->actingAs($user, 'web')
+            ->get('/')
+            ->assertStatus(503)
+            ->assertSee('Go to dashboard');
+        $this->withSession(['password_hash_web' => $user->getAuthPassword()])
+            ->actingAs($user, 'web')
+            ->get('/dashboard')
+            ->assertOk();
+
+        $store->set('dashboard_workspace', true);
+        $this->withSession(['password_hash_web' => $user->getAuthPassword()])
+            ->actingAs($user, 'web')
+            ->get('/')
+            ->assertStatus(503)
+            ->assertDontSee('Go to dashboard')
+            ->assertDontSee('Go to Planora');
+
+        $admin = new User();
+        $admin->forceFill([
+            'id' => 882,
+            'name' => 'Maintenance Admin',
+            'email' => 'maintenance-admin-nav-qa@planora.test',
+            'password' => Hash::make('maintenance-test-password'),
+            'role' => 'admin',
+            'status' => 'active',
+            'moderator_permissions' => [],
+        ]);
+        $this->withSession(['password_hash_web' => $admin->getAuthPassword()])
+            ->actingAs($admin, 'web')
+            ->get('/')
+            ->assertStatus(503)
+            ->assertSee('Go to Admin dashboard');
+        $this->withSession(['password_hash_web' => $admin->getAuthPassword()])
+            ->actingAs($admin, 'web')
+            ->get('/admin/dashboard')
+            ->assertOk();
+
+        $store->disableAll();
+        auth()->logout();
+        $this->get('/')->assertOk();
+    }
+
     public function test_unauthorized_and_unknown_frontend_entry_routes_load_the_spa_shell(): void
     {
         $this->get('/401')->assertOk()->assertSee('id="app"', false);
@@ -110,6 +176,56 @@ class ErrorPagesTest extends TestCase
         $this->assertStringContainsString('Scheduled maintenance in progress.', $html);
         $this->assertStringContainsString('Nov 14, 2026 6:00 PM AZT', $html);
         $this->assertStringNotContainsString('@vite', $html);
+    }
+
+    public function test_maintenance_error_only_offers_navigation_that_is_open_for_the_current_role_and_scopes(): void
+    {
+        $maintenanceView = fn (array $scopes): string => view('errors.page', [
+            'code' => 503,
+            'title' => 'Service temporarily unavailable',
+            'description' => 'Planora is temporarily unavailable.',
+            'retryAfter' => 60,
+            'maintenanceScopes' => $scopes,
+        ])->render();
+
+        auth()->logout();
+        $guestDuringPublicMaintenance = $maintenanceView([
+            'public_website' => true,
+            'authentication' => false,
+            'dashboard_workspace' => false,
+        ]);
+        $this->assertStringNotContainsString('Go to Planora', $guestDuringPublicMaintenance);
+        $this->assertStringNotContainsString('Go to dashboard', $guestDuringPublicMaintenance);
+        $this->assertStringContainsString('Check again', $guestDuringPublicMaintenance);
+
+        $user = new User();
+        $user->forceFill(['id' => 879, 'name' => 'Maintenance QA', 'email' => 'maintenance-qa@planora.test', 'password' => Hash::make('maintenance-test-password'), 'role' => 'user', 'status' => 'active']);
+        $this->actingAs($user, 'web');
+        $userDashboardAvailable = $maintenanceView([
+            'public_website' => true,
+            'authentication' => false,
+            'dashboard_workspace' => false,
+        ]);
+        $this->assertStringContainsString('Go to dashboard', $userDashboardAvailable);
+        $this->assertStringNotContainsString('Go to Planora', $userDashboardAvailable);
+
+        $userDashboardBlocked = $maintenanceView([
+            'public_website' => true,
+            'authentication' => false,
+            'dashboard_workspace' => true,
+        ]);
+        $this->assertStringNotContainsString('Go to dashboard', $userDashboardBlocked);
+        $this->assertStringNotContainsString('Go to Planora', $userDashboardBlocked);
+
+        $admin = new User();
+        $admin->forceFill(['id' => 880, 'name' => 'Admin QA', 'email' => 'admin-maintenance-qa@planora.test', 'password' => Hash::make('maintenance-test-password'), 'role' => 'admin', 'status' => 'active']);
+        $this->actingAs($admin, 'web');
+        $adminDashboardAvailable = $maintenanceView([
+            'public_website' => true,
+            'authentication' => true,
+            'dashboard_workspace' => true,
+        ]);
+        $this->assertStringContainsString('Go to Admin dashboard', $adminDashboardAvailable);
     }
 
     public function test_guest_theme_cookie_controls_standalone_error_page_theme_safely(): void

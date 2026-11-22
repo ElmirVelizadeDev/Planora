@@ -15,7 +15,8 @@ class RequireAdminStepUp
             && ! in_array($request->input('role'), ['admin', 'moderator'], true)) return $next($request);
         $user = $request->user();
         if ($user?->role === 'moderator') return $next($request);
-        $grant = $request->session()->get('admin_step_up_grant');
+        $hasSession = $request->hasSession();
+        $grant = $hasSession ? $request->session()->get('admin_step_up_grant') : null;
         $valid = $user && $user->role === 'admin' && is_array($grant)
             && ($grant['purpose'] ?? null) === $purpose
             && (int) ($grant['user_id'] ?? 0) === (int) $user->id
@@ -23,7 +24,7 @@ class RequireAdminStepUp
             && hash_equals((string) ($grant['session_hash'] ?? ''), hash('sha256', $request->session()->getId()));
 
         if (! $valid) {
-            $request->session()->forget('admin_step_up_grant');
+            if ($hasSession) $request->session()->forget('admin_step_up_grant');
             return response()->json(['message' => 'Recent identity verification is required.', 'step_up_required' => true, 'purpose' => $purpose], 428);
         }
 

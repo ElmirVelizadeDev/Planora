@@ -1,7 +1,15 @@
 const authPage = (page) => () => import(`../pages/auth/${page}.vue`);
 const userPage = (folder, page) => () => import(`../pages/user/${folder}/${page}.vue`);
 const adminPage = (folder, page) => () => import(`../pages/admin/${folder ? `${folder}/` : ''}${page}.vue`);
-const errorPage = (page) => () => import(`../pages/errors/${page}.vue`);
+const errorPages = {
+    401: () => import('../pages/errors/Error401.vue'),
+    403: () => import('../pages/errors/Error403.vue'),
+    404: () => import('../pages/errors/Error404.vue'),
+    419: () => import('../pages/errors/Error419.vue'),
+    429: () => import('../pages/errors/Error429.vue'),
+    500: () => import('../pages/errors/Error500.vue'),
+    503: () => import('../pages/errors/Error503.vue'),
+};
 
 export const routes = [
     { path: '/', name: 'home', component: () => import('../pages/public/Home.vue'), meta: { initializeAuth: true, maintenanceScopes: ['public_website'] } },
@@ -113,11 +121,11 @@ export const routes = [
             { path: 'system-maintenance', name: 'admin.system-maintenance', component: () => import('../pages/admin/system-maintenance/SystemMaintenanceIndex.vue'), meta: { requiresRole: 'admin' } },
         ],
     },
-    { path: '/401', name: 'error.401', component: errorPage('Error401') },
-    { path: '/403', name: 'error.403', component: errorPage('Error403') },
-    { path: '/419', name: 'error.419', component: errorPage('Error419') },
-    { path: '/429', name: 'error.429', component: errorPage('Error429') },
-    { path: '/500', name: 'error.500', component: errorPage('Error500') },
-    { path: '/503', name: 'error.503', component: errorPage('Error503') },
-    { path: '/:pathMatch(.*)*', name: 'not-found', component: errorPage('Error404') },
+    { path: '/401', name: 'error.401', component: errorPages[401] },
+    { path: '/403', name: 'error.403', component: errorPages[403] },
+    { path: '/419', name: 'error.419', component: errorPages[419] },
+    { path: '/429', name: 'error.429', component: errorPages[429] },
+    { path: '/500', name: 'error.500', component: errorPages[500] },
+    { path: '/503', name: 'error.503', component: errorPages[503] },
+    { path: '/:pathMatch(.*)*', name: 'not-found', component: errorPages[404] },
 ];

@@ -9,7 +9,7 @@ use App\Http\Requests\Api\V1\Auth\ResendRegistrationOtpRequest;
 use App\Http\Requests\Api\V1\Auth\VerifyRegistrationOtpRequest;
 use App\Http\Resources\Api\V1\Shared\Users\UserResource;
 use App\Services\Api\V1\Auth\RegistrationService;
-use App\Services\Api\V1\Admin\UserActivityLogger;
+use App\Services\Api\V1\Shared\UserActivityLogger;
 use App\Services\Api\V1\Admin\AdminMfaService;
 use App\Services\Settings\SettingsService;
 use Illuminate\Http\JsonResponse;

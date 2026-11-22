@@ -6,7 +6,7 @@ use App\Mail\RegistrationOtpMail;
 use App\Models\EmailVerificationOtp;
 use App\Models\PendingRegistration;
 use App\Models\User;
-use App\Services\Api\V1\Admin\UserActivityLogger;
+use App\Services\Api\V1\Shared\UserActivityLogger;
 use App\Services\Api\V1\Notifications\NotificationService;
 use App\Services\Settings\SettingsService;
 use Illuminate\Support\Facades\DB;

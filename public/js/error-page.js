@@ -1,36 +1,56 @@
 (() => {
-    const scope = document.body.dataset.maintenanceScope || '';
-    const retryAfter = document.body.dataset.retryAfter || '60';
+    const retryLink = document.getElementById('error-retry');
     const retryNote = document.getElementById('retry-note');
-    const pollInterval = Math.max(15, Number.parseInt(retryAfter, 10) || 60) * 1000;
+    const retryAfter = Number.parseInt(document.body.dataset.retryAfter || '', 10);
+    const intervalMs = Math.max(15_000, (Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter : 60) * 1000);
+    const maxAutomaticChecks = 8;
+    let automaticChecks = 0;
     let requestPending = false;
+    let automaticTimer = null;
 
-    async function checkAvailability() {
-        if (requestPending) return;
+    async function checkCurrentPage(automatic = false) {
+        if (requestPending || (automatic && automaticChecks >= maxAutomaticChecks)) return;
         requestPending = true;
+        if (automatic) automaticChecks += 1;
+        if (retryLink) retryLink.setAttribute('aria-disabled', 'true');
+        if (retryNote) retryNote.textContent = 'Checking whether this page is available…';
 
         try {
-            const response = scope
-                ? await fetch('/api/v1/maintenance/status', {
-                    cache: 'no-store',
-                    credentials: 'same-origin',
-                    headers: { Accept: 'application/json' },
-                })
-                : await fetch('/', { method: 'GET', cache: 'no-store', credentials: 'same-origin' });
+            const response = await fetch(window.location.href, {
+                method: 'GET',
+                cache: 'no-store',
+                credentials: 'same-origin',
+                headers: { Accept: 'text/html' },
+            });
 
-            if (scope) {
-                const status = await response.json();
-                if (response.ok && status.data?.scopes?.[scope] === false) window.location.assign('/');
+            if (response.ok) {
+                // Navigate with GET so a page reached after a form submission is never resubmitted.
+                window.location.assign(window.location.href);
                 return;
             }
 
-            if (response.ok) window.location.assign('/');
+            if (retryNote) {
+                retryNote.textContent = automatic && automaticChecks >= maxAutomaticChecks
+                    ? 'Automatic checks are paused. Select Check again whenever you are ready.'
+                    : 'This page is still unavailable. We will check again later.';
+            }
         } catch {
-            if (retryNote) retryNote.textContent = 'We will check availability automatically.';
+            if (retryNote) {
+                retryNote.textContent = automatic && automaticChecks >= maxAutomaticChecks
+                    ? 'Automatic checks are paused. Select Check again whenever you are ready.'
+                    : 'The availability check could not connect. We will try again later.';
+            }
         } finally {
             requestPending = false;
+            if (retryLink) retryLink.removeAttribute('aria-disabled');
+            if (automaticChecks >= maxAutomaticChecks) window.clearInterval(automaticTimer);
         }
     }
 
-    window.setInterval(checkAvailability, pollInterval);
+    retryLink?.addEventListener('click', (event) => {
+        event.preventDefault();
+        checkCurrentPage(false);
+    });
+
+    automaticTimer = window.setInterval(() => checkCurrentPage(true), intervalMs);
 })();

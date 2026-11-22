@@ -42,6 +42,7 @@
 import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '../../stores/authStore.js';
+import { rateLimitMessage } from '../../../../shared/utils/httpError.js';
 
 const router = useRouter();
 const auth = useAuthStore();
@@ -94,7 +95,7 @@ async function submit() {
             verificationCode.value = '';
             errorMessage.value = 'That verification challenge expired. Sign in again to continue.';
         } else if (error.response?.status === 429) {
-            errorMessage.value = 'Too many sign-in attempts. Please wait and try again.';
+            errorMessage.value = rateLimitMessage(error, 'Too many sign-in attempts. Please wait before trying again.');
         } else {
             errorMessage.value = 'We could not verify this administrator account. Check your details and try again.';
         }

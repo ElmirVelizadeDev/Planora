@@ -60,6 +60,7 @@
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '../../features/auth/stores/authStore.js';
+import { classifyHttpError } from '../../shared/utils/httpError.js';
 
 const router = useRouter();
 const auth = useAuthStore();
@@ -163,7 +164,14 @@ async function resendCode() {
         inputRefs.value[0]?.focus();
     } catch (error) {
         errorMessage.value = error.response?.data?.message || 'We could not resend the code. Please try again.';
-        if (error.response?.status === 429) startCountdown(60);
+        if (error.response?.status === 429) {
+            const retryAfter = classifyHttpError(error).retryAfterSeconds;
+            if (retryAfter > 0) {
+                const cooldown = Math.ceil(retryAfter);
+                sessionStorage.setItem('planora.pending-registration-resend', String(cooldown));
+                startCountdown(cooldown);
+            }
+        }
     } finally {
         resending.value = false;
     }

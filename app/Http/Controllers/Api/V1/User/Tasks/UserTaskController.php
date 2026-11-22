@@ -10,7 +10,7 @@ use App\Http\Requests\Api\V1\User\Tasks\UpdateUserTaskRequest;
 use App\Http\Requests\Api\V1\User\Tasks\UpdateUserTaskStatusRequest;
 use App\Http\Resources\Api\V1\User\Tasks\UserTaskResource;
 use App\Models\Task;
-use App\Services\Api\V1\Tasks\UserTaskService;
+use App\Services\Api\V1\User\Tasks\UserTaskService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 

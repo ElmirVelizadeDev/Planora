@@ -7,7 +7,7 @@ use App\Models\User;
 use App\Models\UserNotification;
 use App\Services\Api\V1\Notifications\NotificationService;
 use App\Services\Api\V1\Tasks\TaskService;
-use App\Services\Api\V1\Tasks\UserTaskService;
+use App\Services\Api\V1\User\Tasks\UserTaskService;
 use App\Services\Api\V1\Admin\UserManagementService;
 use App\Services\Api\V1\Admin\SystemMaintenance\MaintenanceScopeStore;
 use Illuminate\Foundation\Testing\DatabaseTransactions;

@@ -4,8 +4,8 @@ namespace App\Http\Controllers\Api\V1\User\Profile;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Api\V1\User\Profile\CurrentUserOverviewResource;
-use App\Services\Api\V1\Projects\UserProjectService;
-use App\Services\Api\V1\Tasks\UserTaskService;
+use App\Services\Api\V1\User\Projects\UserProjectService;
+use App\Services\Api\V1\User\Tasks\UserTaskService;
 use App\Http\Resources\Api\V1\Shared\Users\UserResource;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;

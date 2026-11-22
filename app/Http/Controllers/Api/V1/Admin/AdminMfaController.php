@@ -7,7 +7,7 @@ use App\Http\Requests\Api\V1\Admin\VerifyAdminStepUpRequest;
 use App\Models\User;
 use App\Services\Api\V1\Admin\AdminMfaService;
 use App\Services\Api\V1\Admin\AdminMfaQrCodeService;
-use App\Services\Api\V1\Admin\UserActivityLogger;
+use App\Services\Api\V1\Shared\UserActivityLogger;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -92,6 +92,10 @@ class AdminMfaController extends Controller
 
     public function verifyStepUp(VerifyAdminStepUpRequest $request, AdminMfaService $mfa, UserActivityLogger $logger): JsonResponse
     {
+        if (! $request->hasSession()) {
+            return response()->json(['message' => 'A first-party administrator session is required for this verification.'], 409);
+        }
+
         $user = $request->user();
         $data = $request->validated();
         $usedRecoveryCode = $mfa->isEnabled($user) && ! isset($data['code']) && isset($data['recovery_code']);

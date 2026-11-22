@@ -1,3 +1,5 @@
+import { localDateForUtcDay, utcDateKey } from '../../../../shared/utils/dateOnly.js';
+
 const parse = value => {
     if (value instanceof Date) return new Date(value.getFullYear(), value.getMonth(), value.getDate());
     if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
@@ -27,4 +29,5 @@ export const monthGrid = value => {
 export const formatDate = (value, options = { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }) =>
     parse(value).toLocaleDateString(undefined, options);
 export const isSameDay = (a, b) => dateKey(a) === dateKey(b);
-export const todayKey = () => dateKey(new Date());
+export const todayKey = () => utcDateKey();
+export const todayDate = () => localDateForUtcDay();

@@ -33,6 +33,8 @@
 import TaskPriorityBadge from './TaskPriorityBadge.vue';
 import TaskStatusBadge from './TaskStatusBadge.vue';
 
+import { utcDateKey } from '../../../../shared/utils/dateOnly.js';
+
 defineProps({ task: { type: Object, required: true }, pending: { type: Boolean, default: false } });
 defineEmits(['status-change', 'delete']);
 
@@ -42,6 +44,6 @@ function formatDate(value) {
 }
 
 function isOverdue(task) {
-    return task.status !== 'completed' && task.due_date && new Date(`${task.due_date}T00:00:00`) < new Date(new Date().toDateString());
+    return task.status !== 'completed' && task.due_date && task.due_date < utcDateKey();
 }
 </script>

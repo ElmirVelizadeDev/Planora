@@ -4,6 +4,7 @@ namespace App\Services\Api\V1\Admin;
 
 use App\Models\Category;
 use App\Models\User;
+use App\Services\Api\V1\Shared\UserActivityLogger;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;

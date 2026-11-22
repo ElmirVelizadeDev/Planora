@@ -1,4 +1,6 @@
 import axios from 'axios';
+import { classifyHttpError } from '../utils/httpError.js';
+import { recordRateLimit } from '../utils/rateLimitState.js';
 
 const api = axios.create({
     baseURL: import.meta.env.VITE_API_BASE_URL || '/api/v1',
@@ -13,11 +15,14 @@ const api = axios.create({
 api.interceptors.response.use(
     (response) => response,
     (error) => {
-        if (error.response) {
-            window.dispatchEvent(new CustomEvent('planora:api-error', {
-                detail: { status: error.response.status, data: error.response.data },
-            }));
-        }
+        const classification = classifyHttpError(error);
+        if (classification.kind === 'rate-limited') recordRateLimit(classification.retryAfterSeconds);
+        window.dispatchEvent(new CustomEvent('planora:api-error', {
+            detail: {
+                ...classification,
+                data: error.response?.data,
+            },
+        }));
 
         if (error.response?.status === 428 && error.response.data?.step_up_required && !error.config?._planoraStepUpRetried) {
             return new Promise((resolve, reject) => {

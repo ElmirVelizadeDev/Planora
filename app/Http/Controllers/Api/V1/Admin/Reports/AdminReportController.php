@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Admin\Reports\AdminReportFilterOptionsRequest;
 use App\Http\Requests\Api\V1\Admin\Reports\AdminReportsRequest;
 use App\Services\Api\V1\Admin\AdminReportService;
-use App\Services\Api\V1\Admin\UserActivityLogger;
+use App\Services\Api\V1\Shared\UserActivityLogger;
 use Illuminate\Http\JsonResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 

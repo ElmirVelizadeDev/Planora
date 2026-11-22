@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Api\V1\User\Reports;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\User\Reports\UserTaskReportRequest;
 use App\Http\Resources\Api\V1\User\Tasks\UserTaskResource;
-use App\Services\Api\V1\Tasks\UserTaskReportService;
+use App\Services\Api\V1\User\Tasks\UserTaskReportService;
 use Illuminate\Http\JsonResponse;
 
 class UserTaskReportController extends Controller

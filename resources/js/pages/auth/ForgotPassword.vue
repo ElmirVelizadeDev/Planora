@@ -38,6 +38,7 @@
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { requestPasswordRecovery, resendPasswordRecovery, verifyPasswordRecovery } from '../../features/auth/services/authApi.js';
+import { rateLimitMessage } from '../../shared/utils/httpError.js';
 
 const router = useRouter();
 const step = ref('email');
@@ -89,7 +90,7 @@ async function submitEmail() {
         window.setTimeout(() => inputRefs.value[0]?.focus(), 0);
     } catch (error) {
         fieldErrors.value = error.response?.data?.errors || {};
-        errorMessage.value = fieldErrors.value.email ? '' : (error.response?.status === 429 ? (error.response.data.message || 'Please wait before trying again.') : (error.response?.status === 503 ? error.response.data.message : 'We could not check this email address. Please try again.'));
+        errorMessage.value = fieldErrors.value.email ? '' : (error.response?.status === 429 ? rateLimitMessage(error, 'Too many requests. Please wait before trying again.') : (error.response?.status === 503 ? error.response.data.message : 'We could not check this email address. Please try again.'));
     } finally { loading.value = false; }
 }
 async function resend() {
@@ -99,7 +100,9 @@ async function resend() {
         localDevelopment.value = response.data.delivery_mode === 'local';
         digits.value = ['', '', '', '', '', '']; secondsLeft.value = Number(response.data.expires_in) || 300; resendSeconds.value = Number(response.data.resend_in) || 60;
     } catch (error) {
-        errorMessage.value = error.response?.data?.message || 'We could not resend the code. Please try again.';
+        errorMessage.value = error.response?.status === 429
+            ? rateLimitMessage(error, 'Too many requests. Please wait before trying again.')
+            : error.response?.data?.message || 'We could not resend the code. Please try again.';
     } finally { loading.value = false; }
 }
 async function submitCode() {
@@ -110,7 +113,7 @@ async function submitCode() {
     } catch (error) {
         fieldErrors.value = error.response?.data?.errors || {};
         errorMessage.value = error.response?.data?.status === 429 || error.response?.status === 429
-            ? (error.response.data.message || 'Too many attempts. Request a new code.')
+            ? rateLimitMessage(error, error.response.data.message || 'Too many attempts. Request a new code.')
             : '';
         digits.value = ['', '', '', '', '', '']; inputRefs.value[0]?.focus();
         if (!errorMessage.value && !fieldErrors.value.code) fieldErrors.value = { code: ['This code could not be verified. Request a new one and try again.'] };

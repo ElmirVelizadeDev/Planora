@@ -8,7 +8,7 @@ use App\Services\Api\V1\Admin\CategoryManagementService;
 use App\Services\Api\V1\Admin\UserManagementService;
 use App\Services\Api\V1\Projects\ProjectService;
 use App\Services\Api\V1\Tasks\TaskService;
-use App\Services\Api\V1\Admin\UserActivityLogger;
+use App\Services\Api\V1\Shared\UserActivityLogger;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Str;
 use RuntimeException;

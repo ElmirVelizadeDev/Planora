@@ -22,7 +22,7 @@
         <div v-if="error" class="user-report__feedback is-error" role="alert"><span>{{ error }}</span><button type="button" @click="load">Try again</button></div>
         <div v-else-if="loading && !report" class="user-report__feedback" role="status"><span class="user-report__spinner" aria-hidden="true"></span>Loading your report…</div>
         <template v-else-if="report">
-            <p class="user-report__scope">Showing tasks created {{ periodLabel }}<template v-if="filters.status || filters.priority"> with the selected status and priority filters</template>. Owned and assigned tasks are included once.</p>
+            <p class="user-report__scope">Showing tasks created {{ periodLabel }} UTC<template v-if="filters.status || filters.priority"> with the selected status and priority filters</template>. Owned and assigned tasks are included once.</p>
 
             <section class="user-report__kpis" aria-label="Task report metrics">
                 <article><span>Tasks in period</span><strong>{{ number(report.metrics.total) }}</strong><small>Created in selected dates</small></article>

@@ -4,7 +4,7 @@ namespace App\Services\Api\V1\Projects;
 
 use App\Models\Project;
 use App\Models\User;
-use App\Services\Api\V1\Admin\UserActivityLogger;
+use App\Services\Api\V1\Shared\UserActivityLogger;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 

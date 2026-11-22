@@ -5,7 +5,7 @@ namespace App\Services\Api\V1\Auth;
 use App\Mail\PasswordRecoveryOtpMail;
 use App\Models\PasswordResetOtp;
 use App\Models\User;
-use App\Services\Api\V1\Admin\UserActivityLogger;
+use App\Services\Api\V1\Shared\UserActivityLogger;
 use App\Services\Settings\SettingsService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;

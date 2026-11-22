@@ -1,9 +1,9 @@
 import { computed, ref, watch } from 'vue';
 import { getUserCalendarTasks } from '../../../tasks/user/services/userTaskApi.js';
-import { addDays, addMonths, dateKey, monthGrid, mondayStart } from '../utils/calendarDateUtils.js';
+import { addDays, addMonths, dateKey, monthGrid, mondayStart, todayDate } from '../utils/calendarDateUtils.js';
 
 export function useCalendar() {
-    const selectedDate = ref(new Date()), view = ref('month'), tasks = ref([]), loading = ref(false), error = ref('');
+    const selectedDate = ref(todayDate()), view = ref('month'), tasks = ref([]), loading = ref(false), error = ref('');
     const status = ref(''), priority = ref('');
     const range = computed(() => {
         if (view.value === 'month') {

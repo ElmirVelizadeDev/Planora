@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Admin\Settings\TestSettingsEmailRequest;
 use App\Http\Requests\Api\V1\Admin\Settings\UpdateSettingsRequest;
 use App\Http\Requests\Api\V1\Admin\Settings\UploadSettingsLogoRequest;
-use App\Services\Api\V1\Admin\UserActivityLogger;
+use App\Services\Api\V1\Shared\UserActivityLogger;
 use App\Services\Settings\SettingsRegistry;
 use App\Services\Settings\SettingsService;
 use Illuminate\Http\JsonResponse;

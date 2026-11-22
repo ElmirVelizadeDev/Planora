@@ -18,7 +18,7 @@
             <button type="button" aria-label="Dismiss notification" @click="errorMessage = ''">×</button>
         </div>
 
-        <section v-if="loading" class="profile-loading" aria-live="polite" aria-label="Loading account settings">
+        <section v-if="loading && !profile" class="profile-loading" aria-live="polite" aria-label="Loading account settings">
             <span class="profile-loading__bar profile-loading__bar--wide" />
             <span class="profile-loading__bar" />
             <span class="profile-loading__bar profile-loading__bar--short" />
@@ -29,7 +29,13 @@
             <button class="profile-button profile-button--primary" type="button" @click="loadAccount">Try again</button>
         </section>
 
-        <div v-else-if="profile" class="account-settings-layout">
+        <template v-else-if="profile">
+        <div v-if="loadError" class="profile-message profile-message--error" role="alert">
+            <span aria-hidden="true">!</span>
+            <span>{{ loadError }} Your current account details are still shown.</span>
+            <button class="account-settings-retry" type="button" :disabled="loading" @click="loadAccount">{{ loading ? 'Retrying…' : 'Try again' }}</button>
+        </div>
+        <div class="account-settings-layout">
             <nav class="account-settings-navigation" aria-label="Account settings sections">
                 <p>ACCOUNT</p>
                 <RouterLink v-for="section in sections" :key="section.id" :to="{ hash: `#${section.id}` }" :class="{ 'is-active': activeSection === section.id }" :aria-current="activeSection === section.id ? 'location' : undefined">
@@ -79,6 +85,7 @@
                 </section>
             </div>
         </div>
+        </template>
     </main>
 </template>
 
@@ -124,7 +131,7 @@ async function loadAccount() {
         await nextTick();
         if (route.hash) document.getElementById(activeSection.value)?.scrollIntoView({ block: 'start' });
     } catch {
-        errorMessage.value = '';
+        // useCurrentProfile retains the last loaded profile and exposes loadError.
     }
 }
 

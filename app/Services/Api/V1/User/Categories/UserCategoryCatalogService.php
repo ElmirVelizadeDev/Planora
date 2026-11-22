@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services\Api\V1\Categories;
+namespace App\Services\Api\V1\User\Categories;
 
 use App\Models\Category;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;

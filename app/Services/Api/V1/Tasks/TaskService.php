@@ -4,7 +4,7 @@ namespace App\Services\Api\V1\Tasks;
 
 use App\Models\Task;
 use App\Models\User;
-use App\Services\Api\V1\Admin\UserActivityLogger;
+use App\Services\Api\V1\Shared\UserActivityLogger;
 use App\Services\Api\V1\Notifications\NotificationService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;

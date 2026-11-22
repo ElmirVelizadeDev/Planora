@@ -22,6 +22,12 @@ test('the existing User Settings route renders the reusable account settings pag
     assert.match(accountPage, /<ProfilePersonalInformation/);
     assert.match(accountPage, /<ProfileSecurity/);
     assert.match(accountPage, /<ProfileDangerZone\s*\/>/);
+    assert.match(accountPage, /v-if="loading && !profile"/);
+    assert.match(accountPage, /v-if="loadError" class="profile-message profile-message--error" role="alert"/);
+    assert.match(accountPage, /Your current account details are still shown\./);
+    assert.match(accountPage, /:disabled="loading" @click="loadAccount"/);
+    assert.match(accountPage, /useCurrentProfile retains the last loaded profile and exposes loadError/);
+    assert.match(readSource('../../resources/css/pages/account-settings.css'), /\.account-settings-retry:focus-visible/);
     assert.match(accountPage, /:to="\{ hash: `#\$\{section\.id\}` \}"/);
     assert.match(accountPage, /const activeSection = computed\(\(\) => sections\.find\(\(section\) => `#\$\{section\.id\}` === route\.hash\)/);
     assert.doesNotMatch(accountPage, /IntersectionObserver/);

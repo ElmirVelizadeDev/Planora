@@ -2,7 +2,7 @@
 
 namespace Tests\Feature\Admin\Backups;
 
-use App\Services\Api\V1\Admin\UserActivityLogger;
+use App\Services\Api\V1\Shared\UserActivityLogger;
 use App\Services\Backups\ApplicationFilesBackup;
 use App\Services\Backups\BackupCipher;
 use App\Services\Backups\BackupManager;

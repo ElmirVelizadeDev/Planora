@@ -93,13 +93,13 @@ import { computed, defineComponent, h } from 'vue';
 import { useRouter } from 'vue-router';
 import CalendarHeader from '../../../features/calendar/user/components/CalendarHeader.vue';
 import { useCalendar } from '../../../features/calendar/user/composables/useCalendar.js';
-import { addDays, dateKey, formatDate, isSameDay, mondayStart, monthGrid, todayKey } from '../../../features/calendar/user/utils/calendarDateUtils.js';
+import { addDays, dateKey, formatDate, isSameDay, mondayStart, monthGrid, todayDate, todayKey } from '../../../features/calendar/user/utils/calendarDateUtils.js';
 import TaskPriorityBadge from '../../../features/tasks/user/components/TaskPriorityBadge.vue';
 import TaskStatusBadge from '../../../features/tasks/user/components/TaskStatusBadge.vue';
 
 const router = useRouter();
 const calendar = useCalendar();
-const today = new Date();
+const today = todayDate();
 const views = [{ label: 'Month', value: 'month' }, { label: 'Week', value: 'week' }, { label: 'Day', value: 'day' }, { label: 'Agenda', value: 'agenda' }];
 const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const monthWeeks = computed(() => {
@@ -160,7 +160,7 @@ function tasksFor(day) {
 function statusCount(value) { return selectedTasks.value.filter(task => task.status === value).length; }
 function label(value) { return String(value || '').replaceAll('_', ' ').replace(/\b\w/g, character => character.toUpperCase()); }
 function taskLabel(task, action) { return `${action} ${task.title}. Priority ${label(task.priority)}. Status ${label(task.status)}.`; }
-function goToday() { calendar.selectedDate.value = new Date(); }
+function goToday() { calendar.selectedDate.value = todayDate(); }
 function addTask(date = dateKey(calendar.selectedDate.value)) { router.push({ name: 'tasks.create', query: { due_date: date } }); }
 function clearFilters() { calendar.status.value = ''; calendar.priority.value = ''; }
 function showMore(day) { calendar.selectedDate.value = day; calendar.view.value = 'day'; }

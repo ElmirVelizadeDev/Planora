@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Api\V1\User\Categories;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\User\Categories\IndexUserCategoryRequest;
 use App\Http\Resources\Api\V1\User\Categories\UserCategoryResource;
-use App\Services\Api\V1\Categories\UserCategoryCatalogService;
+use App\Services\Api\V1\User\Categories\UserCategoryCatalogService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 

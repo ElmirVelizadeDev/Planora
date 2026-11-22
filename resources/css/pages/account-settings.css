@@ -1,5 +1,10 @@
 @import "./profile.css";
 
+.account-settings-retry { flex: 0 0 auto; margin-left: auto; padding: 5px 9px; border: 1px solid var(--color-border-subtle); border-radius: 7px; color: var(--color-accent-text); background: var(--color-surface); font: inherit; font-size: 10px; font-weight: 650; cursor: pointer; }
+.account-settings-retry:hover:not(:disabled) { border-color: var(--color-accent-border); background: var(--color-accent-subtle); }
+.account-settings-retry:focus-visible { outline: 3px solid var(--color-focus-ring); outline-offset: 2px; }
+.account-settings-retry:disabled { opacity: .65; cursor: wait; }
+
 .account-settings-layout { display: grid; grid-template-columns: minmax(190px, 225px) minmax(0, 1fr); align-items: start; gap: 18px; }
 .account-settings-navigation { position: sticky; top: 92px; display: grid; gap: 5px; min-width: 0; padding: 13px 10px 10px; border: 1px solid var(--color-border-subtle); border-radius: 15px; background: var(--color-surface); box-shadow: var(--shadow-soft); }
 .account-settings-navigation > p { margin: 2px 9px 7px; color: var(--color-text-muted); font-size: 9px; font-weight: 750; letter-spacing: .12em; }

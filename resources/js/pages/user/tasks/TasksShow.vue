@@ -23,10 +23,11 @@ import { computed, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import TaskDetails from '../../../features/tasks/user/components/TaskDetails.vue';
 import { deleteUserTask, getUserTask, updateUserTaskStatus } from '../../../features/tasks/user/services/userTaskApi.js';
+import { utcDateKey } from '../../../shared/utils/dateOnly.js';
 
 const route = useRoute(), router = useRouter();
 const task = ref(null), loading = ref(false), deleting = ref(false), statusSaving = ref(false), loadError = ref(''), actionError = ref(''), notice = ref(''), showDelete = ref(false);
-const isOverdue = computed(() => task.value?.status !== 'completed' && task.value?.due_date && new Date(`${task.value.due_date}T00:00:00`) < new Date(new Date().toDateString()));
+const isOverdue = computed(() => task.value?.status !== 'completed' && task.value?.due_date && task.value.due_date < utcDateKey());
 
 async function loadTask() {
     loading.value = true;

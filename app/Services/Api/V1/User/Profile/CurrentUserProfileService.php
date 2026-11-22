@@ -3,7 +3,7 @@
 namespace App\Services\Api\V1\User\Profile;
 
 use App\Models\User;
-use App\Services\Api\V1\Admin\UserActivityLogger;
+use App\Services\Api\V1\Shared\UserActivityLogger;
 use App\Services\Api\V1\Shared\UserAvatarStorage;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;

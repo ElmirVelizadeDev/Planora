@@ -7,7 +7,7 @@ use App\Http\Requests\Api\V1\Admin\ActivityLogs\AdminActivityLogsRequest;
 use App\Http\Resources\Api\V1\Admin\ActivityLogs\ActivityLogResource;
 use App\Models\UserActivityLog;
 use App\Services\Api\V1\Admin\ActivityLogService;
-use App\Services\Api\V1\Admin\UserActivityLogger;
+use App\Services\Api\V1\Shared\UserActivityLogger;
 use Illuminate\Http\JsonResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 

@@ -4,6 +4,7 @@ namespace App\Services\Api\V1\Admin;
 
 use App\Models\User;
 use App\Services\Api\V1\Notifications\NotificationService;
+use App\Services\Api\V1\Shared\UserActivityLogger;
 use App\Services\Api\V1\Shared\UserAvatarStorage;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;

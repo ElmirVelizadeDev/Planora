@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services\Api\V1\Tasks;
+namespace App\Services\Api\V1\User\Tasks;
 
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;

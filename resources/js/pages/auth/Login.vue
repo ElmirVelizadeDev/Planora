@@ -49,10 +49,13 @@
 
 <script setup>
 import { ref } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from '../../features/auth/stores/authStore.js';
+import { safeInternalRedirect } from '../../shared/utils/safeRedirect.js';
+import { rateLimitMessage } from '../../shared/utils/httpError.js';
 
 const router = useRouter();
+const route = useRoute();
 const auth = useAuthStore();
 const email = ref('');
 const password = ref('');
@@ -78,11 +81,12 @@ async function submit() {
     loading.value = true;
     errorMessage.value = '';
     fieldErrors.value = {};
+    const requestedDestination = safeInternalRedirect(route.query.redirect, router);
 
     try {
         if (challenge.value) {
             const result = await auth.verifyAdminMfaLogin(recoveryMode.value ? { recovery_code: verificationCode.value } : { code: verificationCode.value });
-            await router.replace(result.redirectTo || '/admin/dashboard');
+            await router.replace(requestedDestination || result.redirectTo || { name: 'admin.dashboard' });
             return;
         }
         const result = await auth.login({ email: email.value, password: password.value, remember: remember.value });
@@ -91,13 +95,15 @@ async function submit() {
             password.value = '';
             return;
         }
-        await router.replace(result.redirectTo || '/403');
+        await router.replace(requestedDestination || result.redirectTo || { name: 'error.403' });
     } catch (error) {
         fieldErrors.value = error.response?.data?.errors || {};
         if (challenge.value && error.response?.status === 401) {
             challenge.value = false;
             verificationCode.value = '';
             errorMessage.value = 'That verification challenge expired. Sign in again to continue.';
+        } else if (error.response?.status === 429) {
+            errorMessage.value = rateLimitMessage(error, 'Too many sign-in attempts.');
         } else errorMessage.value = error.response?.status === 403
             ? (error.response.data.message || 'This account is not authorized to sign in.')
             : (error.response?.data?.message === 'The given data was invalid.'

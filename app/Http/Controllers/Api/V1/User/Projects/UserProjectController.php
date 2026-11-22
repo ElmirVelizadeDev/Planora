@@ -8,8 +8,8 @@ use App\Http\Requests\Api\V1\User\Projects\IndexUserProjectTaskRequest;
 use App\Http\Resources\Api\V1\Shared\Projects\ProjectResource;
 use App\Http\Resources\Api\V1\User\Tasks\UserTaskResource;
 use App\Models\Project;
-use App\Services\Api\V1\Projects\UserProjectService;
-use App\Services\Api\V1\Tasks\UserTaskService;
+use App\Services\Api\V1\User\Projects\UserProjectService;
+use App\Services\Api\V1\User\Tasks\UserTaskService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 

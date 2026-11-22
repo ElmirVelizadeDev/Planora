@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { addMonths, dateKey } from '../../resources/js/features/calendar/user/utils/calendarDateUtils.js';
+import { addMonths, dateKey, todayKey } from '../../resources/js/features/calendar/user/utils/calendarDateUtils.js';
+import { localDateForUtcDay, utcDateKey } from '../../resources/js/shared/utils/dateOnly.js';
 
 const cases = [
     ['March 31 to February', '2025-03-31', -1, '2025-02-28'],
@@ -21,3 +22,11 @@ for (const [description, selectedDate, direction, expectedDate] of cases) {
         assert.equal(result.getFullYear(), Number(expectedDate.slice(0, 4)));
     });
 }
+
+test('date-only current-day calculations follow the application UTC day', () => {
+    const instant = new Date('2026-11-22T01:30:00+04:00');
+
+    assert.equal(utcDateKey(instant), '2026-11-21');
+    assert.equal(dateKey(localDateForUtcDay(instant)), '2026-11-21');
+    assert.equal(todayKey(), utcDateKey());
+});
