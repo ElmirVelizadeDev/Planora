@@ -2,7 +2,15 @@
 
 ## Error responses
 
-Laravel renders the branded Blade error page in `resources/views/errors/page.blade.php` for HTTP errors. It is standalone HTML and does not depend on Vite or a database. Server errors are sanitized by the exception handler even when debug mode is enabled. API server errors return a safe JSON message and keep the original HTTP status. The Vue application uses dedicated error pages for 401, 403, 404, 419, 429, 500, and 503; its catch-all route renders the 404 page.
+Laravel renders status-specific branded Blade pages under `resources/views/errors/` through the shared `page.blade.php` presentation. They are standalone HTML and do not depend on Vite or a database. The exception handler replaces 5xx messages with safe copy even when debug mode is enabled; API 5xx responses remain JSON and preserve the HTTP status. The Vue application has routes for 401, 403, 419, 429, 500, and 503; the catch-all route renders the 404 page. Those status components share `AppErrorPage.vue` but supply status-specific copy, icon variants, and recovery actions.
+
+## Frontend error handling
+
+`resources/js/shared/utils/httpError.js` classifies API failures as unauthenticated, forbidden, not found, session expired, validation, rate limited, service unavailable, server error, generic HTTP error, or network failure. The Axios response interceptor in `resources/js/shared/services/api.js` emits `planora:api-error`; it records reliable `Retry-After` information for rate limits and invokes the explicit Admin step-up flow for protected mutations. It does not convert ordinary validation or network errors into a full-page error route. Forms retain their own validation/error feedback. The application shell handles session expiration, maintenance responses, delegated Moderator access changes, and unexpected runtime errors separately.
+
+Unhandled Vue/browser runtime failures are logged for developers and replace the SPA view with the generic 500 page; technical exception details are not rendered into that page. Laravel 401/403/404/419/429/500/503 Blade templates provide standalone HTTP presentations, while browser SPA routes provide Vue presentations. API endpoints keep JSON semantics. The JavaScript error handling regression coverage is in `tests/js/error-pages.test.js` and `tests/js/http-error-classification.test.js`; backend standalone page behavior is covered by `tests/Feature/Errors/ErrorPagesTest.php`.
+
+The 429 page uses a countdown only when a reliable server `Retry-After` value is available. The 503 Vue page checks the public maintenance status with safe GET requests every 30 seconds, stops after eight automatic checks, and leaves a manual check action available. The standalone Blade page checks the current URL with a safe GET at the configured retry interval and also stops after eight automatic checks. Neither flow replays the original failed request. Role- and scope-aware recovery destinations are resolved by `resources/js/shared/utils/errorDestinations.js`; if no destination is known to be accessible, the page avoids presenting a misleading dashboard/home action.
 
 Unauthenticated access to protected web routes continues to use the existing login redirect, while API authentication failures return JSON. `/401` is a public SPA entry point for an explicit unauthorized page. Planora scope middleware returns JSON 503 responses for API/JSON requests and the branded HTML 503 page for browser requests.
 
@@ -16,11 +24,11 @@ Laravel's native `down` mechanism remains available as an emergency **global** m
 
 ```powershell
 php artisan planora:maintenance-status
-php artisan planora:maintenance-down --message="Planora is receiving a scheduled update." --estimated-at="2026-11-16 18:00:00 Asia/Baku" --retry=60
+php artisan planora:maintenance-down --message="Planora is receiving a scheduled update." --retry=60
 php artisan planora:maintenance-up
 ```
 
-`planora:maintenance-status` reports the global Laravel gate, each configured scope, and the overall state. `planora:maintenance-down` activates Laravel's global gate and accepts message, estimate, retry, and optional secret flags for the prerendered page. The Admin page configures scope state and shared visitor message/estimate without activating Laravel's global gate. Retry values are bounded to 15 seconds through 24 hours; messages are limited to 500 characters. Estimated times must parse and be in the future.
+`planora:maintenance-status` reports the global Laravel gate, each configured scope, and the overall state. `planora:maintenance-down` activates Laravel's global gate and accepts message, an optional future estimated-availability time, retry, and optional secret flags for the prerendered page. Omit `--estimated-at` when no reliable estimate is available; estimates must parse and be in the future. The Admin page configures scope state and shared visitor message/estimate without activating Laravel's global gate. Retry values are bounded to 15 seconds through 24 hours; messages are limited to 500 characters.
 
 For a controlled operator bypass, pass Laravel's `--with-secret` or `--secret=...` to `planora:maintenance-down`. Laravel prints the bypass URL only in command output and sets its signed maintenance cookie when that URL is opened. Treat that URL as a credential: share it only through an approved operator channel, never put it in client code or API responses, and keep it out of public deployment logs. The Admin UI does not issue or expose this bypass secret. It remains an operational fallback for trusted deployment operators.
 

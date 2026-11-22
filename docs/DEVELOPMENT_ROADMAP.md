@@ -13,12 +13,13 @@ This document records implementation boundaries visible in the current repositor
 - Admin Task soft-delete recovery with an audited restore flow; Project deletion remains permanent and detaches linked Tasks.
 - Server-configured administrator entry, independently enforced maintenance scopes, and persisted User/Admin notifications for task and administrative events.
 - Role-aware Global Search backed by scoped database queries, and Admin-only encrypted Backup & Recovery with verification, retention, and guarded restore.
+- Optional Admin authenticator-based MFA, single-use recovery codes, and one-use step-up verification for sensitive Admin actions.
 - Account appearance preferences and guest light/dark theme persistence.
 - Local-only idempotent demo seeders for Categories, Projects, linked Project Tasks, and standalone Tasks. The account seeder is invoked unconditionally by `DatabaseSeeder`; do not use `db:seed` or `migrate --seed` outside a disposable local database. See [seeder notes](../database/seeders/README.md).
 
 ## Planned
 
-- Complete the remaining Tags and productivity workflows as product scope requires. The User Calendar is implemented with month, week, day, and agenda views backed by the authorized Task range endpoint. Notifications have persisted APIs and history views; notification-preference settings and other scaffolded screens should not be mistaken for delivered workflows.
+- Define whether a dedicated Tag workflow is required; current Tag URLs redirect to Categories and there is no Tag model or API. Extend productivity reporting only when product requirements are defined; the current User productivity report is API-backed. Notifications have persisted APIs and history views, while notification-preference screens are not a separate implemented workflow.
 - Add additional Moderator module permissions only when business purpose, object-level rules, backend authorization, UI behavior, and tests are defined together.
 - Expand automated coverage and browser verification for the current feature set.
 

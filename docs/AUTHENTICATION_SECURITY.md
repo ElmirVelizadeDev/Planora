@@ -11,6 +11,14 @@ This note describes the current authentication and authorization boundaries impl
 - Email remains read-only in My Profile until an authenticated email-change verification flow exists. Account deletion stays Admin-managed under the existing soft-delete and last-active-administrator protections.
 - Vue route guards mirror the permission-enabled Moderator destinations, but Laravel independently enforces every role and permission check. A Moderator role does not grant module access by itself.
 
+## Administrator multi-factor authentication and step-up
+
+Administrators can optionally enroll an authenticator-based TOTP factor from **Admin → Settings → Security**. Enrollment requires the current password, creates a short-lived setup secret, and requires a valid six-digit code before enabling MFA. The secret is encrypted at rest. Enabling MFA creates ten recovery codes; only their hashes are stored, and each code can be consumed once. Recovery codes are shown when generated and are not retrievable afterward.
+
+When MFA is enabled, a valid Admin password starts a five-minute, session-bound login challenge instead of authenticating the session. The challenge is completed with a six-digit TOTP code or a recovery code. Successful verification regenerates the session and completes sign-in; invalid or expired challenges do not establish an authenticated session. MFA enrollment, login verification, recovery-code regeneration, and disable operations are exposed through Admin-only routes under `/api/v1/admin/mfa` and `/api/v1/auth/admin/mfa/verify-login`.
+
+Sensitive Admin mutations use purpose-bound, one-use step-up grants. An Admin verifies their password, TOTP code, or single-use recovery code through `/api/v1/admin/step-up/verify`; the grant is tied to the current session and purpose and expires after 60 seconds. The mutation middleware consumes the grant. Some operations such as MFA disable/recovery regeneration require this additional verification. Step-up verification requires a first-party session; it is not an authentication bypass. The enforced purposes are maintained in `VerifyAdminStepUpRequest` and the route middleware declarations, so consult those as the source of truth when they change.
+
 ## Moderator permissions
 
 An Admin assigns permissions per Moderator from the fixed catalog in `config/user_management.php`. The catalog currently defines:

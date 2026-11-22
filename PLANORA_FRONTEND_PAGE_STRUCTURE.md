@@ -19,7 +19,9 @@ This document maps active Vue route groups and their implementation boundaries. 
 | User Categories | `/categories`, `/categories/:categoryId` | Read-only active Category catalog with search, sorting, pagination, accessible usage counts, and User-scoped related Projects/Tasks. Create/edit paths redirect to the catalog. |
 | User notifications | `/notifications` | Persisted notification history for active Users, with unread filtering, pagination, read actions, and authorized task navigation. |
 | Shared Global Search | Header search; `GET /api/v1/search` | Debounced, grouped results for entities visible to the current role. Admin and permitted Moderators can search authorized management records; Users receive only owned/assigned Tasks, owned Projects, and active Categories. |
-| Other User pages | `/calendar`, `/tags`, `/settings`, `/statistics`, `/productivity` | Routes exist; Calendar, Tags, and several productivity/settings screens remain partial or scaffolded. |
+| User Calendar | `/calendar` | Implemented month, week, day, and agenda views backed by the date-range Task API; supports status/priority filtering, date selection, and Task navigation. |
+| User productivity reports | `/productivity/reports` | API-backed Task metrics, status/priority breakdowns, creation trend, date presets/custom ranges, and recent-task navigation. `/productivity` and `/statistics` redirect here. |
+| Legacy User routes | `/tags`, `/settings`, `/settings/account`, `/settings/notifications`, `/settings/security` | Tags redirects to Categories; settings redirects to current account settings; account/security subroutes redirect to account settings and notifications subroutes redirect to notification history. These do not represent separate Tag or preference APIs. |
 | Appearance | `/settings/appearance` | Authenticated appearance preferences; public navigation also provides persistent guest light/dark theme selection. |
 | Shared account profile | `/profile` | Shared profile, personal information, avatar, account details, and password management experience for User, Moderator, and Admin. Email and account deletion remain Admin-managed under existing verification and account-lifecycle rules. |
 | Admin workspace | `/admin/dashboard`, `/admin/users`, `/admin/tasks`, `/admin/projects`, `/admin/backups` | Database-backed operational dashboard and account, Task, Project, and backup workflows. Backup & Recovery is Admin-only. Moderators receive only individually permitted views and status actions. Task recovery is available to Admins from the deleted-task filter. |
@@ -27,7 +29,7 @@ This document maps active Vue route groups and their implementation boundaries. 
 | Admin reporting and audit | `/admin/reports`, `/admin/activity-logs` | Reports & Analytics is readable by Admins and Moderators with `reports.view`; CSV export is Admin-only. Activity history is searchable and exportable, with Moderator records restricted by permission and account scope. |
 | Admin access and settings | `/admin/roles-permissions`, `/admin/settings`, `/admin/system-maintenance` | Fixed role overview with per-Moderator permission assignment; General, Security, Email, and scoped maintenance controls. |
 | Admin notifications | `/admin/notifications` | Persisted notification history for active Admins, with unread filtering, pagination, read actions, and authorized task navigation. |
-| Errors | `/403`, `/419`, `/429`, `/500`, `/503`, unknown-path fallback | Dedicated error pages are registered. |
+| Errors | `/401`, `/403`, `/419`, `/429`, `/500`, `/503`, unknown-path fallback | Dedicated status pages share `AppErrorPage.vue`; unknown frontend paths render the 404 component. Laravel also serves standalone HTML error responses, while APIs keep JSON error behavior. |
 
 The administrator sign-in page is rendered at the server-configured web entry path and selected by a Blade shell marker. It is intentionally not registered in Vue Router.
 

@@ -18,6 +18,8 @@ The GET route serves the normal Vite shell with a server-rendered `data-planora-
 
 Successful administrator sign-in uses the existing `web` guard and `User` record. Credentials, the database role, active status, and verified email are checked on the server. The controller regenerates the session after authentication, returns the existing `UserResource`, and redirects to `/admin/dashboard`. A valid non-admin account is rejected. The entry page and login response are marked private and non-cacheable, use `Referrer-Policy: no-referrer`, and login audit records replace the path with `[protected-admin-entry]`.
 
+Administrators can optionally enroll authenticator-based MFA from **Admin → Settings → Security**. MFA-enabled password login creates a five-minute challenge in the first-party session; successful TOTP or single-use recovery-code verification completes login. Sensitive Admin actions that declare step-up middleware require a separate purpose-bound verification grant. See [authentication and security](AUTHENTICATION_SECURITY.md) and [API documentation](API_DOCUMENTATION.md) for behavior and endpoints.
+
 ## Maintenance modes
 
 Planora stores three independent flags in `MaintenanceScopeStore`:
@@ -48,6 +50,7 @@ Run focused checks from a configured development environment. PHPUnit feature te
 
 ```sh
 php artisan test tests/Feature/Auth/AdministratorEntryTest.php
+php artisan test tests/Feature/Admin/Mfa
 php artisan test tests/Feature/Admin/SystemMaintenance/SystemMaintenanceManagementTest.php
 node --test tests/js/system-maintenance.test.js
 npm run build

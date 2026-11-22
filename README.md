@@ -11,10 +11,11 @@ Planora is a project and task management application built with Laravel 10 and V
 - Role-aware Global Search across records each signed-in User, Moderator, or Admin may access.
 - Admin-only encrypted database, managed-file, and full backups with integrity verification and a guarded restore workflow.
 - Session authentication with verified registration, one-time-code password recovery, active-account checks, and role-based authorization.
+- Optional administrator authenticator-based multi-factor authentication, recovery codes, and short-lived step-up verification for sensitive operations.
 - A server-configured administrator sign-in route, independent maintenance scopes, and recipient-scoped notifications for task and administrative events.
 - Per-account appearance preferences and persistent guest light/dark theme selection.
 
-User Category details and related-record counts are limited to Projects owned by the signed-in User and Tasks owned by or assigned to that User; Admin usage counts are global. Calendar, Tags, and some productivity and settings screens remain partial or scaffolded. A Vue route alone does not imply a persisted, API-backed workflow.
+User Category details and related-record counts are limited to Projects owned by the signed-in User and Tasks owned by or assigned to that User; Admin usage counts are global. The User Calendar provides month, week, day, and agenda views backed by the authorized Task calendar API. Productivity reports and account appearance preferences are implemented; Tags routes redirect to Categories because a separate Tag workflow is not implemented. Some legacy settings URLs redirect to the current account, notification, or report pages. A Vue route alone does not imply a separate persisted workflow.
 
 ## Technology stack
 
@@ -44,8 +45,16 @@ npm ci
 
 Copy `.env.example` to `.env`, set `APP_URL`, and configure `DB_CONNECTION=mysql` with the host, port, database name, username, and password for a local MySQL database. Create that database, then generate the application key, migrate the schema, and link public storage:
 
+```powershell
+Copy-Item .env.example .env
+php artisan key:generate
+php artisan migrate
+php artisan storage:link
+```
+
+On macOS/Linux, use `cp .env.example .env` in place of the PowerShell copy command, then run:
+
 ```sh
-cp .env.example .env
 php artisan key:generate
 php artisan migrate
 php artisan storage:link
@@ -82,11 +91,10 @@ npm run build
 
 PHPUnit feature tests require the isolated MySQL database configured in `.env.testing`. JavaScript tests use Node's built-in test runner with Node's experimental module-mocking flag; no separate test script is defined in `package.json`. A production build does not replace either test suite.
 
-At this documentation audit, the JavaScript suite reported 30 passing tests and one failure: `tests/js/error-pages.test.js` expects `public/js/error-page.js`, which is absent from the repository, while `resources/views/errors/page.blade.php` references that path. This task did not change the error-page implementation or test.
-
 ## Documentation
 
 - [API documentation](docs/API_DOCUMENTATION.md)
+- [Project overview](docs/PROJECT_OVERVIEW.md)
 - [Authentication and security](docs/AUTHENTICATION_SECURITY.md)
 - [Administrator access and maintenance](docs/ADMIN_ACCESS_AND_MAINTENANCE.md)
 - [Database design](docs/DATABASE_DESIGN.md)
@@ -98,5 +106,7 @@ At this documentation audit, the JavaScript suite reported 30 passing tests and 
 - [Error handling and maintenance operations](docs/ERROR_HANDLING_AND_MAINTENANCE.md)
 - [Backup and disaster recovery](docs/BACKUPS_AND_DISASTER_RECOVERY.md)
 - [Local demo seeders](database/seeders/README.md)
+- [Frontend route and page structure](PLANORA_FRONTEND_PAGE_STRUCTURE.md)
+- [Detailed architecture](PLANORA_ARCHITECTURE.md)
 
 The project declares the MIT license in `composer.json`.

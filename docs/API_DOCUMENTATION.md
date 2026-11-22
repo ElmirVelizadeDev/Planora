@@ -16,6 +16,7 @@ Protected routes require an authenticated active account and the role or policy 
 | `POST` | `/api/v1/auth/password/resend` | Public, resend recovery code |
 | `POST` | `/api/v1/auth/password/verify` | Public, verify recovery code and issue recovery cookie |
 | `POST` | `/api/v1/auth/password/reset` | Public, reset password using verified recovery session |
+| `POST` | `/api/v1/auth/admin/mfa/verify-login` | Complete an authenticated-session Admin MFA challenge after password login; accepts a TOTP code or recovery code |
 | `POST` | `/api/v1/auth/logout` | Authenticated session logout |
 | `GET` | `/api/v1/user` | Authenticated active account profile |
 | `GET` | `/api/v1/user/overview` | Authenticated active account's own Project and Task counts; no additional role is required |
@@ -27,6 +28,24 @@ Protected routes require an authenticated active account and the role or policy 
 These account endpoints accept no user ID and operate only on the authenticated active account. Password changes revoke Sanctum personal access tokens, rotate the remember token, and invalidate other stateful sessions through the stored password hash. Email remains read-only because authenticated email changes do not currently have a verification workflow. Self-service account deletion is not available; account lifecycle remains Admin-managed.
 
 See [authentication and security](AUTHENTICATION_SECURITY.md), [registration OTP lifecycle](REGISTRATION_OTP.md), and [local mail testing](LOCAL_MAIL_TESTING.md) for the authentication flow and development tooling.
+
+If an Admin account has MFA enabled, a successful password login returns `mfa_required` and a challenge expiry instead of an authenticated User. The challenge lasts five minutes and is completed in the same first-party session using `POST /api/v1/auth/admin/mfa/verify-login` with either `code` (six-digit TOTP) or `recovery_code` (ten-character single-use code). Successful verification establishes the Admin session and returns the User resource and `/admin/dashboard` destination. Challenge verification is throttled; an expired challenge requires signing in again.
+
+### Administrator MFA and step-up
+
+These routes require an authenticated, active Admin and the Dashboard & Workspace maintenance scope. MFA management is not available to Moderators or regular Users.
+
+| Method | Endpoint | Purpose |
+|---|---|---|
+| `GET` | `/api/v1/admin/mfa` | Read whether MFA is enabled and its enablement timestamp |
+| `POST` | `/api/v1/admin/mfa/enrollment` | Verify the current password and begin a time-limited enrollment; returns the secret and authenticator URI/QR data with no-store headers |
+| `POST` | `/api/v1/admin/mfa/enrollment/verify` | Verify a six-digit TOTP code, enable MFA, and return newly generated recovery codes once |
+| `DELETE` | `/api/v1/admin/mfa/enrollment` | Cancel a pending enrollment |
+| `POST` | `/api/v1/admin/mfa/disable` | Disable MFA after purpose-specific step-up verification |
+| `POST` | `/api/v1/admin/mfa/recovery-codes` | Replace recovery codes after purpose-specific step-up verification; old codes are invalidated |
+| `POST` | `/api/v1/admin/step-up/verify` | Verify Admin identity for an allowed sensitive-operation purpose; returns a one-use, 60-second session grant |
+
+Enrollment start requires `password`; enrollment verification requires `code`. The step-up endpoint accepts `purpose` plus either the current password when MFA is disabled, or a six-digit TOTP `code` / ten-character `recovery_code` when MFA is enabled. Supported purposes are validated in `VerifyAdminStepUpRequest`. Step-up grants are bound to the current Admin and session, expire after one minute, and are consumed by the protected operation. Routes declare which mutations require step-up; consult `routes/api/v1.php` for the current coverage. Do not store, log, or share enrollment secrets or recovery codes.
 
 `GET /api/v1/user/overview` has no query parameters. Its response is `data.projects` (`total`, `completed`) and `data.tasks` (`total`, `completed`, `pending`). Project counts include Projects owned by the signed-in account; Task counts include its owned or assigned Tasks.
 
