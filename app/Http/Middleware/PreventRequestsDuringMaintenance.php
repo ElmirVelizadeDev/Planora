@@ -23,6 +23,9 @@ class PreventRequestsDuringMaintenance extends Middleware
         'api/v1/admin/system-maintenance/preferences',
         'api/v1/admin/system-maintenance/scopes/*',
         'api/v1/user',
+        'api/v1/auth/admin/mfa/verify-login',
+        'api/v1/auth/admin/mfa/enroll-login',
+        'api/v1/auth/admin/mfa/enroll-login/verify',
     ];
 
     public function getExcludedPaths()

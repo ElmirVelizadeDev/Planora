@@ -31,6 +31,28 @@ class AdminMfaTest extends TestCase
         $this->assertNotSame($admin->id, auth('web')->id());
     }
 
+    public function test_admin_without_mfa_is_not_authenticated_and_repeated_failures_invalidate_challenge(): void
+    {
+        $secret = 'GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ';
+        $admin = User::factory()->create(['role' => 'admin', 'status' => 'active', 'email_verified_at' => now(), 'password' => 'Mfa-test-password-123!']);
+        $headers = ['Origin' => 'http://planora.test', 'Referer' => 'http://planora.test/'];
+
+        $this->withHeaders($headers)->postJson('/api/v1/auth/login', ['email' => $admin->email, 'password' => 'Mfa-test-password-123!'])
+            ->assertOk()->assertJsonPath('mfa_enrollment_required', true)->assertJsonMissingPath('user');
+        $this->assertGuest('web');
+        $this->getJson('/api/v1/user')->assertUnauthorized();
+
+        $admin->forceFill(['mfa_secret' => Crypt::encryptString($secret), 'mfa_enabled_at' => now()])->save();
+        $this->withHeaders($headers)->postJson('/api/v1/auth/login', ['email' => $admin->email, 'password' => 'Mfa-test-password-123!'])
+            ->assertJsonPath('mfa_required', true);
+        for ($attempt = 1; $attempt < 5; $attempt++) {
+            $this->postJson('/api/v1/auth/admin/mfa/verify-login', ['code' => '000000'])->assertUnprocessable();
+        }
+        $this->postJson('/api/v1/auth/admin/mfa/verify-login', ['code' => '000000'])->assertStatus(429);
+        $this->assertGuest('web');
+        $this->postJson('/api/v1/auth/admin/mfa/verify-login', ['code' => $this->totp($secret)])->assertUnauthorized();
+    }
+
     public function test_totp_completes_admin_login_once_and_rejects_replay(): void
     {
         $secret = 'GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ';
@@ -45,6 +67,26 @@ class AdminMfaTest extends TestCase
 
         $this->withHeaders($headers)->postJson('/api/v1/auth/login', ['email' => $admin->email, 'password' => 'Mfa-test-password-123!'])->assertJsonPath('mfa_required', true);
         $this->withHeaders($headers)->postJson('/api/v1/auth/admin/mfa/verify-login', ['code' => $code])->assertUnprocessable();
+        $this->assertGuest('web');
+    }
+
+    public function test_recovery_codes_remain_hashed_single_use_and_authenticate_once(): void
+    {
+        $secret = 'GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ';
+        $admin = User::factory()->create(['role' => 'admin', 'status' => 'active', 'email_verified_at' => now(), 'password' => 'Mfa-test-password-123!']);
+        $admin->forceFill(['mfa_secret' => Crypt::encryptString($secret), 'mfa_enabled_at' => now()])->save();
+        $recovery = 'A1B2C3D4E5';
+        DB::table('admin_mfa_recovery_codes')->insert(['user_id' => $admin->id, 'code_hash' => Hash::make($recovery), 'created_at' => now(), 'updated_at' => now()]);
+
+        $login = ['email' => $admin->email, 'password' => 'Mfa-test-password-123!'];
+        $headers = ['Origin' => 'http://planora.test', 'Referer' => 'http://planora.test/'];
+        $this->withHeaders($headers)->postJson('/api/v1/auth/login', $login)->assertJsonPath('mfa_required', true);
+        $this->withHeaders($headers)->postJson('/api/v1/auth/admin/mfa/verify-login', ['recovery_code' => $recovery])->assertOk()->assertJsonPath('user.role', 'admin');
+        $this->assertNotNull(DB::table('admin_mfa_recovery_codes')->where('user_id', $admin->id)->value('used_at'));
+        $this->postJson('/api/v1/auth/logout')->assertOk();
+
+        $this->withHeaders($headers)->postJson('/api/v1/auth/login', $login)->assertJsonPath('mfa_required', true);
+        $this->withHeaders($headers)->postJson('/api/v1/auth/admin/mfa/verify-login', ['recovery_code' => $recovery])->assertUnprocessable();
         $this->assertGuest('web');
     }
 
@@ -65,30 +107,27 @@ class AdminMfaTest extends TestCase
             ->postJson('/api/v1/admin/mfa/enrollment', ['password' => 'Mfa-test-password-123!'])->assertForbidden();
 
         $user = User::factory()->create(['role' => 'user', 'status' => 'active', 'password' => 'Mfa-test-password-123!']);
-        $this->actingAs($user, 'sanctum')->withHeaders($headers)
-            ->postJson('/api/v1/admin/mfa/enrollment', ['password' => 'Mfa-test-password-123!'])->assertForbidden();
+        $this->actingAs($user, 'web')->withHeaders($headers)
+            ->postJson('/api/v1/admin/mfa/enrollment', ['password' => 'Mfa-test-password-123!'])->assertUnauthorized();
     }
 
-    public function test_enrollment_encrypts_secret_and_recovery_codes_are_only_returned_when_enabled(): void
+    public function test_admin_without_mfa_must_complete_private_enrollment_before_authentication(): void
     {
         $admin = User::factory()->create(['role' => 'admin', 'status' => 'active', 'password' => 'Mfa-test-password-123!']);
-        $started = $this->actingAs($admin, 'sanctum')->postJson('/api/v1/admin/mfa/enrollment', ['password' => 'Mfa-test-password-123!'])
-            ->assertOk()->assertHeader('Cache-Control', 'no-store, private')
-            ->assertJsonStructure(['secret', 'otpauth_uri', 'qr_code_data_uri', 'expires_at']);
-        $secret = $started->json('secret');
+        $this->withHeaders(['Origin' => 'http://planora.test', 'Referer' => 'http://planora.test/'])
+            ->postJson('/api/v1/auth/login', ['email' => $admin->email, 'password' => 'Mfa-test-password-123!'])
+            ->assertOk()->assertJsonPath('mfa_enrollment_required', true)->assertJsonMissingPath('user');
+        $started = $this->postJson('/api/v1/auth/admin/mfa/enroll-login')->assertOk()->assertHeader('Cache-Control', 'no-store, private')
+            ->assertJsonStructure(['qr_code_data_uri', 'expires_at'])->assertJsonMissingPath('secret')->assertJsonMissingPath('otpauth_uri');
         $this->assertStringStartsWith('data:image/png;base64,', $started->json('qr_code_data_uri'));
-        $this->assertSame(
-            app(\App\Services\Api\V1\Admin\AdminMfaQrCodeService::class)->toPngDataUri($started->json('otpauth_uri')),
-            $started->json('qr_code_data_uri'),
-            'The returned QR must encode the exact URI returned for this enrollment.'
-        );
+        $secret = Crypt::decryptString($admin->fresh()->getRawOriginal('mfa_secret'));
         $this->assertNotSame($secret, $admin->fresh()->getRawOriginal('mfa_secret'));
-        $this->assertSame($secret, Crypt::decryptString($admin->fresh()->getRawOriginal('mfa_secret')));
+        $this->assertNotSame($admin->email, $started->json('qr_code_data_uri'));
 
-        $this->postJson('/api/v1/admin/mfa/enrollment/verify', ['code' => '000000'])->assertUnprocessable();
+        $this->postJson('/api/v1/auth/admin/mfa/enroll-login/verify', ['code' => '000000'])->assertUnprocessable();
         $this->assertNull($admin->fresh()->mfa_enabled_at);
-        $enabled = $this->postJson('/api/v1/admin/mfa/enrollment/verify', ['code' => $this->totp($secret)])
-            ->assertOk()->assertJsonPath('enabled', true)->assertJsonCount(10, 'recovery_codes');
+        $enabled = $this->postJson('/api/v1/auth/admin/mfa/enroll-login/verify', ['code' => $this->totp($secret)])
+            ->assertOk()->assertJsonPath('user.role', 'admin')->assertJsonPath('redirect_to', '/admin/dashboard')->assertJsonCount(10, 'recovery_codes');
         $codes = $enabled->json('recovery_codes');
         $this->assertDatabaseCount('admin_mfa_recovery_codes', 10);
         $this->assertTrue(Hash::check($codes[0], DB::table('admin_mfa_recovery_codes')->where('user_id', $admin->id)->value('code_hash')));
@@ -108,9 +147,14 @@ class AdminMfaTest extends TestCase
 
     public function test_step_up_grant_is_one_use_and_bound_to_the_current_session_and_purpose(): void
     {
+        $headers = ['Origin' => 'http://planora.test', 'Referer' => 'http://planora.test/'];
         $admin = User::factory()->create(['role' => 'admin', 'status' => 'active', 'password' => 'Mfa-test-password-123!']);
-        $this->actingAs($admin, 'sanctum');
-        $this->postJson('/api/v1/admin/step-up/verify', ['purpose' => 'roles.manage', 'password' => 'Mfa-test-password-123!'])->assertOk();
+        $this->actingAs($admin, 'web')->withHeaders($headers)->withCredentials();
+        $secret = 'GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ';
+        $admin->forceFill(['mfa_secret' => Crypt::encryptString($secret), 'mfa_enabled_at' => now()])->save();
+        $this->postJson('/api/v1/admin/step-up/verify', ['purpose' => 'roles.manage', 'code' => $this->totp($secret)])->assertOk();
+        $this->grantAdminStepUp('roles.manage', $admin);
+        $this->actingAs($admin, 'sanctum')->withHeaders($headers)->withCredentials();
         $target = User::factory()->create(['role' => 'user', 'status' => 'active']);
         $this->patchJson('/api/v1/admin/users/'.$target->id.'/role', ['role' => 'moderator'])->assertOk();
         $this->patchJson('/api/v1/admin/users/'.$target->id.'/role', ['role' => 'admin'])->assertStatus(428);

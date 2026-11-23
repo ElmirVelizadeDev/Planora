@@ -20,6 +20,7 @@ class PasswordController extends Controller
 
     public function requestCode(ForgotPasswordRequest $request, PasswordRecoveryService $recovery, SettingsService $settings): JsonResponse
     {
+        $startedAt = hrtime(true);
         $recovery->issue($request->validated('email'));
 
         $payload = [
@@ -29,12 +30,14 @@ class PasswordController extends Controller
             'delivery_mode' => app()->environment('local') ? 'local' : 'email',
         ];
 
+        $this->padEmailResponse($startedAt);
         return response()->json($payload, 202)
             ->withCookie(Cookie::forget(self::RECOVERY_COOKIE, self::RECOVERY_COOKIE_PATH, config('session.domain')));
     }
 
     public function resendCode(ForgotPasswordRequest $request, PasswordRecoveryService $recovery, SettingsService $settings): JsonResponse
     {
+        $startedAt = hrtime(true);
         $recovery->issue($request->validated('email'));
 
         $payload = [
@@ -44,6 +47,7 @@ class PasswordController extends Controller
             'delivery_mode' => app()->environment('local') ? 'local' : 'email',
         ];
 
+        $this->padEmailResponse($startedAt);
         return response()->json($payload)
             ->withCookie(Cookie::forget(self::RECOVERY_COOKIE, self::RECOVERY_COOKIE_PATH, config('session.domain')));
     }
@@ -76,5 +80,13 @@ class PasswordController extends Controller
 
         return response()->json(['message' => 'Your password has been reset. You can now sign in.'])
             ->withCookie(Cookie::forget(self::RECOVERY_COOKIE, self::RECOVERY_COOKIE_PATH, config('session.domain')));
+    }
+
+    private function padEmailResponse(int $startedAt): void
+    {
+        if (app()->environment('testing')) return;
+        $minimum = max(0, (int) config('auth.email_enumeration_min_response_ms', 250));
+        $remainingNs = ($minimum * 1_000_000) - (hrtime(true) - $startedAt);
+        if ($remainingNs > 0) usleep((int) ceil($remainingNs / 1000));
     }
 }

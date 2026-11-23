@@ -91,6 +91,7 @@ class AdminSettingsTest extends TestCase
     public function test_security_policy_is_persisted_and_used_for_registration_password_validation(): void
     {
         $admin = $this->admin();
+        $email = 'security-policy-'.\Illuminate\Support\Str::uuid().'@gmail.com';
         $this->actingAs($admin, 'sanctum');
         $this->grantAdminStepUp('settings.security', $admin);
         $this->putJson('/api/v1/admin/settings/security', [
@@ -100,12 +101,12 @@ class AdminSettingsTest extends TestCase
             'otp_resend_cooldown_seconds' => 90,
         ])->assertOk();
 
-        $this->postJson('/api/v1/auth/register', [
-            'name' => 'Test Account', 'email' => 'security-policy@gmail.com',
+        $this->withHeaders(['Origin' => 'http://planora.test', 'Referer' => 'http://planora.test/'])->postJson('/api/v1/auth/register', [
+            'name' => 'Test Account', 'email' => $email,
             'password' => 'lowercase1234', 'password_confirmation' => 'lowercase1234', 'terms_accepted' => true,
         ])->assertUnprocessable()->assertJsonValidationErrors('password');
-        $this->postJson('/api/v1/auth/register', [
-            'name' => 'Test Account', 'email' => 'security-policy@gmail.com',
+        $this->withHeaders(['Origin' => 'http://planora.test', 'Referer' => 'http://planora.test/'])->postJson('/api/v1/auth/register', [
+            'name' => 'Test Account', 'email' => $email,
             'password' => 'Uppercase1234', 'password_confirmation' => 'Uppercase1234', 'terms_accepted' => true,
         ])->assertAccepted();
     }

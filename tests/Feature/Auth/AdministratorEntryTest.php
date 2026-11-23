@@ -8,6 +8,7 @@ use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 use Tests\TestCase;
@@ -65,14 +66,18 @@ class AdministratorEntryTest extends TestCase
             'password' => Hash::make('Admin-entry-password-123'),
             'role' => 'admin',
         ]);
+        $secret = 'GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ';
+        $admin->forceFill(['mfa_secret' => Crypt::encryptString($secret), 'mfa_enabled_at' => now()])->save();
         $store = app(MaintenanceScopeStore::class);
         $path = '/'.config('planora.admin_entry_path');
 
-        // Start in the normal state, then enable every independent Planora scope.
+        // Sign in before enabling every independent Planora scope.
         $this->withHeaders($this->statefulHeaders())->postJson('/api/v1/auth/login', [
             'email' => $admin->email,
             'password' => 'Admin-entry-password-123',
-        ])->assertOk();
+        ])->assertOk()->assertJsonPath('mfa_required', true);
+        $this->withHeaders($this->statefulHeaders())->postJson('/api/v1/auth/admin/mfa/verify-login', ['code' => $this->currentTotpCode($secret)])->assertOk();
+        $this->assertAuthenticatedAs($admin, 'web');
         $store->setAll(true);
 
         $this->get('/')->assertStatus(503);
@@ -88,17 +93,27 @@ class AdministratorEntryTest extends TestCase
 
         $this->get($path)->assertOk();
         $anonymousSessionId = app('session')->driver()->getId();
-        $login = $this->postJson($path, [
+        $this->postJson($path, [
             'email' => $admin->email,
             'password' => 'Admin-entry-password-123',
-        ])->assertOk()
-            ->assertJsonPath('user.role', 'admin')
-            ->assertJsonPath('redirect_to', '/admin/dashboard')
-            ->assertDontSee($path);
+        ])->assertOk()->assertJsonPath('mfa_required', true)->assertJsonMissingPath('user');
+        $this->postJson('/api/v1/auth/admin/mfa/verify-login', ['code' => $this->currentTotpCode($secret)])->assertStatus(503);
+        $this->assertGuest('web');
+
+        // Authentication maintenance continues to block MFA verification; a
+        // scoped outage can be lifted without changing global maintenance state.
+        $store->setAll(false);
+        $this->postJson($path, ['email' => $admin->email, 'password' => 'Admin-entry-password-123'])
+            ->assertOk()->assertJsonPath('mfa_required', true);
+        $this->travel(31)->seconds();
+        $login = $this->withHeaders($this->statefulHeaders())->postJson('/api/v1/auth/admin/mfa/verify-login', ['code' => $this->currentTotpCode($secret)])
+            ->assertOk()->assertJsonPath('user.role', 'admin')->assertJsonPath('redirect_to', '/admin/dashboard')->assertDontSee($path);
 
         $this->assertAuthenticatedAs($admin, 'web');
         $this->assertNotSame($anonymousSessionId, app('session')->driver()->getId());
         $this->assertNotNull($login->getCookie(config('session.cookie'), false));
+        $this->travelBack();
+        $store->setAll(true);
         // Simulate Laravel's fresh AuthManager state on the next browser request.
         Auth::forgetGuards();
         Auth::shouldUse('web');
@@ -116,12 +131,12 @@ class AdministratorEntryTest extends TestCase
         $this->postJson($path, [
             'email' => $admin->email,
             'password' => 'Admin-entry-password-123',
-        ])->assertOk()->assertJsonPath('user.role', 'admin');
-        $this->assertAuthenticatedAs($admin, 'web');
+        ])->assertOk()->assertJsonPath('mfa_required', true)->assertJsonMissingPath('user');
+        $this->assertGuest('web');
         $this->assertSame(true, $store->read()['scopes']['dashboard_workspace']);
 
         $this->assertDatabaseHas('user_activity_logs', [
-            'event' => 'auth.login',
+            'event' => 'auth.admin_mfa_challenge_started',
             'actor_id' => $admin->id,
             'request_path' => '/[protected-admin-entry]',
         ]);
@@ -202,22 +217,27 @@ class AdministratorEntryTest extends TestCase
             'password' => Hash::make('Admin-entry-password-123'),
             'role' => 'admin',
         ]);
+        $secret = 'GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ';
+        $admin->forceFill(['mfa_secret' => Crypt::encryptString($secret), 'mfa_enabled_at' => now()])->save();
         $path = '/'.config('planora.admin_entry_path');
+        $headers = ['Origin' => 'http://planora.test', 'Referer' => 'http://planora.test/'];
         $maintenance = app()->maintenanceMode();
         $maintenance->activate(['retry' => 60]);
 
         try {
-            $this->get($path)->assertOk()->assertSee('data-planora-view="admin-auth"', false);
-            $this->postJson($path, [
+            $this->withHeaders($headers)->withCredentials()->get($path)->assertOk()->assertSee('data-planora-view="admin-auth"', false);
+            $this->withHeaders($headers)->withCredentials()->postJson($path, [
                 'email' => $admin->email,
                 'password' => 'not-the-password',
             ])->assertUnprocessable();
             $this->assertGuest('web');
 
-            $this->postJson($path, [
+            $this->withHeaders($headers)->withCredentials()->postJson($path, [
                 'email' => $admin->email,
                 'password' => 'Admin-entry-password-123',
-            ])->assertOk()->assertJsonPath('user.role', 'admin');
+            ])->assertOk()->assertJsonPath('mfa_required', true)->assertJsonMissingPath('user');
+            $this->withHeaders($headers)->withCredentials()->postJson('/api/v1/auth/admin/mfa/verify-login', ['code' => $this->currentTotpCode($secret)])
+                ->assertOk()->assertJsonPath('user.role', 'admin');
             $this->assertAuthenticatedAs($admin, 'web');
         } finally {
             if ($maintenance->active()) {

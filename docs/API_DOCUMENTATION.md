@@ -16,7 +16,9 @@ Protected routes require an authenticated active account and the role or policy 
 | `POST` | `/api/v1/auth/password/resend` | Public, resend recovery code |
 | `POST` | `/api/v1/auth/password/verify` | Public, verify recovery code and issue recovery cookie |
 | `POST` | `/api/v1/auth/password/reset` | Public, reset password using verified recovery session |
-| `POST` | `/api/v1/auth/admin/mfa/verify-login` | Complete an authenticated-session Admin MFA challenge after password login; accepts a TOTP code or recovery code |
+| `POST` | `/api/v1/auth/admin/mfa/verify-login` | Complete an Admin TOTP or recovery-code challenge without creating a session before verification |
+| `POST` | `/api/v1/auth/admin/mfa/enroll-login` | Begin mandatory enrollment using the short-lived pre-authentication enrollment challenge; returns only a no-store QR image |
+| `POST` | `/api/v1/auth/admin/mfa/enroll-login/verify` | Confirm first TOTP and establish the first Admin session; recovery codes are returned once |
 | `POST` | `/api/v1/auth/logout` | Authenticated session logout |
 | `GET` | `/api/v1/user` | Authenticated active account profile |
 | `GET` | `/api/v1/user/overview` | Authenticated active account's own Project and Task counts; no additional role is required |
@@ -29,7 +31,7 @@ These account endpoints accept no user ID and operate only on the authenticated 
 
 See [authentication and security](AUTHENTICATION_SECURITY.md), [registration OTP lifecycle](REGISTRATION_OTP.md), and [local mail testing](LOCAL_MAIL_TESTING.md) for the authentication flow and development tooling.
 
-If an Admin account has MFA enabled, a successful password login returns `mfa_required` and a challenge expiry instead of an authenticated User. The challenge lasts five minutes and is completed in the same first-party session using `POST /api/v1/auth/admin/mfa/verify-login` with either `code` (six-digit TOTP) or `recovery_code` (ten-character single-use code). Successful verification establishes the Admin session and returns the User resource and `/admin/dashboard` destination. Challenge verification is throttled; an expired challenge requires signing in again.
+Every Admin password login requires MFA. An enabled account returns `mfa_required`; a legacy account without MFA returns `mfa_enrollment_required`. Neither response contains an authenticated User. An MFA challenge is completed in the same first-party session with `code` (six-digit TOTP) or `recovery_code` (ten-character single-use code). Enrollment requires `POST /enroll-login`, followed by a valid six-digit code at `/enroll-login/verify`. Only then is the Admin session established. MFA attempt limits are configurable, tracked per account and challenge in SQL, and supplemented by shared-cache IP limits.
 
 ### Administrator MFA and step-up
 
@@ -38,14 +40,14 @@ These routes require an authenticated, active Admin and the Dashboard & Workspac
 | Method | Endpoint | Purpose |
 |---|---|---|
 | `GET` | `/api/v1/admin/mfa` | Read whether MFA is enabled and its enablement timestamp |
-| `POST` | `/api/v1/admin/mfa/enrollment` | Verify the current password and begin a time-limited enrollment; returns the secret and authenticator URI/QR data with no-store headers |
+| `POST` | `/api/v1/admin/mfa/enrollment` | Begin a time-limited setup for legacy/maintenance use; returns only the QR image and expiry, never raw secret or URI |
 | `POST` | `/api/v1/admin/mfa/enrollment/verify` | Verify a six-digit TOTP code, enable MFA, and return newly generated recovery codes once |
 | `DELETE` | `/api/v1/admin/mfa/enrollment` | Cancel a pending enrollment |
-| `POST` | `/api/v1/admin/mfa/disable` | Disable MFA after purpose-specific step-up verification |
+| `POST` | `/api/v1/admin/mfa/disable` | Retained route; rejects requests because Admin MFA is mandatory |
 | `POST` | `/api/v1/admin/mfa/recovery-codes` | Replace recovery codes after purpose-specific step-up verification; old codes are invalidated |
 | `POST` | `/api/v1/admin/step-up/verify` | Verify Admin identity for an allowed sensitive-operation purpose; returns a one-use, 60-second session grant |
 
-Enrollment start requires `password`; enrollment verification requires `code`. The step-up endpoint accepts `purpose` plus either the current password when MFA is disabled, or a six-digit TOTP `code` / ten-character `recovery_code` when MFA is enabled. Supported purposes are validated in `VerifyAdminStepUpRequest`. Step-up grants are bound to the current Admin and session, expire after one minute, and are consumed by the protected operation. Routes declare which mutations require step-up; consult `routes/api/v1.php` for the current coverage. Do not store, log, or share enrollment secrets or recovery codes.
+Authenticated enrollment start requires `password`; enrollment verification requires `code`. Step-up accepts `purpose` plus a six-digit TOTP `code` or ten-character `recovery_code`; password-only verification is not accepted. Supported purposes are validated in `VerifyAdminStepUpRequest`. Step-up grants are bound to the current Admin and session, expire after one minute, and are consumed by the protected operation. Routes declare which mutations require step-up; consult `routes/api/v1.php` for current coverage. Do not store, log, or share recovery codes.
 
 `GET /api/v1/user/overview` has no query parameters. Its response is `data.projects` (`total`, `completed`) and `data.tasks` (`total`, `completed`, `pending`). Project counts include Projects owned by the signed-in account; Task counts include its owned or assigned Tasks.
 

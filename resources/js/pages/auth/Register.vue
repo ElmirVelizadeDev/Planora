@@ -20,7 +20,7 @@
                 <div class="auth-field">
                     <label for="register-password">Password</label>
                     <div class="auth-password-control">
-                        <input id="register-password" v-model="password" :type="showPassword ? 'text' : 'password'" name="password" autocomplete="new-password" minlength="8" maxlength="128" required :aria-describedby="fieldErrors.password ? 'password-guidance password-error' : 'password-guidance'" :aria-invalid="Boolean(fieldErrors.password)" @input="clearFieldError('password')">
+                        <input id="register-password" v-model="password" :type="showPassword ? 'text' : 'password'" name="password" autocomplete="new-password" minlength="12" maxlength="128" required :aria-describedby="fieldErrors.password ? 'password-guidance password-error' : 'password-guidance'" :aria-invalid="Boolean(fieldErrors.password)" @input="clearFieldError('password')">
                         <button class="auth-password-toggle" type="button" :aria-label="showPassword ? 'Hide password' : 'Show password'" :aria-pressed="showPassword" @click="showPassword = !showPassword">
                             <svg v-if="!showPassword" viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12s3.4-6 9.5-6 9.5 6 9.5 6-3.4 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.6"/></svg>
                             <svg v-else viewBox="0 0 24 24" aria-hidden="true"><path d="m3 3 18 18M10.6 6.2A10.8 10.8 0 0 1 12 6c6.1 0 9.5 6 9.5 6a15 15 0 0 1-3.1 3.6M6.2 6.2C3.8 7.7 2.5 12 2.5 12s3.4 6 9.5 6c1.2 0 2.3-.2 3.3-.6"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>
@@ -33,7 +33,7 @@
                         <span>{{ passwordAssessment.label }}</span>
                     </div>
                     <ul id="password-guidance" class="auth-password-guidance">
-                        <li :class="{ 'is-met': password.length >= 8 }">At least 8 characters (up to 128).</li>
+                        <li :class="{ 'is-met': password.length >= 12 }">At least 12 characters (up to 128).</li>
                         <li :class="{ 'is-met': password && !passwordAssessment.predictable }">Avoid easy-to-guess passwords.</li>
                         <li :class="{ 'is-met': password.length >= 12 && passwordAssessment.score >= 2 }">Choose a long, unique password.</li>
                     </ul>
@@ -42,7 +42,7 @@
                 <div class="auth-field">
                     <label for="register-password-confirmation">Confirm password</label>
                     <div class="auth-password-control">
-                        <input id="register-password-confirmation" v-model="passwordConfirmation" :type="showPasswordConfirmation ? 'text' : 'password'" name="password_confirmation" autocomplete="new-password" minlength="8" maxlength="128" required :aria-invalid="Boolean(fieldErrors.password_confirmation || confirmationMismatch)" aria-describedby="password-confirmation-feedback" @input="clearFieldError('password_confirmation')">
+                        <input id="register-password-confirmation" v-model="passwordConfirmation" :type="showPasswordConfirmation ? 'text' : 'password'" name="password_confirmation" autocomplete="new-password" minlength="12" maxlength="128" required :aria-invalid="Boolean(fieldErrors.password_confirmation || confirmationMismatch)" aria-describedby="password-confirmation-feedback" @input="clearFieldError('password_confirmation')">
                         <button class="auth-password-toggle" type="button" :aria-label="showPasswordConfirmation ? 'Hide password confirmation' : 'Show password confirmation'" :aria-pressed="showPasswordConfirmation" @click="showPasswordConfirmation = !showPasswordConfirmation">
                             <svg v-if="!showPasswordConfirmation" viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12s3.4-6 9.5-6 9.5 6 9.5 6-3.4 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.6"/></svg>
                             <svg v-else viewBox="0 0 24 24" aria-hidden="true"><path d="m3 3 18 18M10.6 6.2A10.8 10.8 0 0 1 12 6c6.1 0 9.5 6 9.5 6a15 15 0 0 1-3.1 3.6M6.2 6.2C3.8 7.7 2.5 12 2.5 12s3.4 6 9.5 6c1.2 0 2.3-.2 3.3-.6"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>
@@ -176,8 +176,8 @@ async function submit() {
         loading.value = false;
         return;
     }
-    if (password.value.length < 8 || password.value.length > 128) {
-        fieldErrors.value = { password: ['Password must be between 8 and 128 characters.'] };
+    if (password.value.length < 12 || password.value.length > 128) {
+        fieldErrors.value = { password: ['Password must be between 12 and 128 characters.'] };
         loading.value = false;
         return;
     }

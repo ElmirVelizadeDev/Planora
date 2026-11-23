@@ -1,6 +1,6 @@
 import { computed, ref } from 'vue';
 import { defineStore } from 'pinia';
-import { getCurrentUser, login as loginRequest, loginAsAdministrator as loginAdministratorRequest, verifyAdminMfaLogin as verifyAdminMfaLoginRequest, logout as logoutRequest, register as registerRequest, resendRegistrationCode as resendRegistrationCodeRequest, verifyRegistration as verifyRegistrationRequest } from '../services/authApi.js';
+import { getCurrentUser, login as loginRequest, loginAsAdministrator as loginAdministratorRequest, verifyAdminMfaLogin as verifyAdminMfaLoginRequest, beginAdminMfaLoginEnrollment as beginAdminMfaLoginEnrollmentRequest, verifyAdminMfaLoginEnrollment as verifyAdminMfaLoginEnrollmentRequest, logout as logoutRequest, register as registerRequest, resendRegistrationCode as resendRegistrationCodeRequest, verifyRegistration as verifyRegistrationRequest } from '../services/authApi.js';
 import { initializeAppearancePreferences, resetAppearanceSession } from '../../appearance/composables/appearancePreferences.js';
 
 export const useAuthStore = defineStore('auth', () => {
@@ -53,6 +53,7 @@ export const useAuthStore = defineStore('auth', () => {
         const response = await loginRequest(credentials);
         const payload = response.data.data ?? response.data;
         if (payload.mfa_required) return { mfaRequired: true, expiresIn: payload.expires_in };
+        if (payload.mfa_enrollment_required) return { mfaEnrollmentRequired: true, expiresIn: payload.expires_in };
         user.value = payload.user ?? payload;
         initializeAppearancePreferences(user.value.id);
         initialized.value = true;
@@ -63,6 +64,7 @@ export const useAuthStore = defineStore('auth', () => {
         const response = await loginAdministratorRequest(credentials);
         const payload = response.data.data ?? response.data;
         if (payload.mfa_required) return { mfaRequired: true, expiresIn: payload.expires_in };
+        if (payload.mfa_enrollment_required) return { mfaEnrollmentRequired: true, expiresIn: payload.expires_in };
         user.value = payload.user ?? payload;
         initializeAppearancePreferences(user.value.id);
         initialized.value = true;
@@ -76,6 +78,20 @@ export const useAuthStore = defineStore('auth', () => {
         initializeAppearancePreferences(user.value.id);
         initialized.value = true;
         return { user: user.value, redirectTo: payload.redirect_to || '/admin/dashboard' };
+    }
+
+    async function beginAdminMfaLoginEnrollment() {
+        const response = await beginAdminMfaLoginEnrollmentRequest();
+        return response.data.data ?? response.data;
+    }
+
+    async function verifyAdminMfaLoginEnrollment(code) {
+        const response = await verifyAdminMfaLoginEnrollmentRequest(code);
+        const payload = response.data.data ?? response.data;
+        user.value = payload.user;
+        initializeAppearancePreferences(user.value.id);
+        initialized.value = true;
+        return { user: user.value, redirectTo: payload.redirect_to || '/admin/dashboard', recoveryCodes: payload.recovery_codes || [] };
     }
 
     async function register(attributes) {
@@ -109,5 +125,5 @@ export const useAuthStore = defineStore('auth', () => {
         resetAppearanceSession();
     }
 
-    return { user, initialized, loading, isAuthenticated, roles, fetchCurrentUser, login, loginAsAdministrator, verifyAdminMfaLogin, register, verifyRegistration, resendRegistrationCode, logout, hasRole, hasManagementPermission, clearUser };
+    return { user, initialized, loading, isAuthenticated, roles, fetchCurrentUser, login, loginAsAdministrator, verifyAdminMfaLogin, beginAdminMfaLoginEnrollment, verifyAdminMfaLoginEnrollment, register, verifyRegistration, resendRegistrationCode, logout, hasRole, hasManagementPermission, clearUser };
 });

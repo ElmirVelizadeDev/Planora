@@ -4,18 +4,22 @@ import { readFileSync } from 'node:fs';
 
 const source = (path) => readFileSync(new URL(path, import.meta.url), 'utf8');
 
-test('Admin MFA setup keeps setup secrets in component memory and exposes status-only API separately', () => {
+test('Admin MFA is mandatory, QR and recovery codes stay in page memory, and disable is absent from settings', () => {
     const securityPage = source('../../resources/js/pages/admin/settings/AdminSettingsSecurity.vue');
     const api = source('../../resources/js/features/auth/admin/services/adminMfaApi.js');
-    assert.match(securityPage, /setup\.secret/);
-    assert.match(securityPage, /<img class="admin-mfa-qr" :src="setup\.qrCodeDataUri"/);
-    assert.match(securityPage, /onBeforeUnmount\(\(\) => \{ Object\.assign\(setup/);
+    const adminLogin = source('../../resources/js/features/auth/admin/components/AdminLogin.vue');
+    assert.match(securityPage, /MFA is mandatory for all administrator sign-ins/);
+    assert.doesNotMatch(securityPage, /Disable MFA|setup\.secret|setup\.otpauthUri/);
+    assert.match(securityPage, /onBeforeUnmount\(\(\) => \{ recoveryCodes\.value = \[\]; \}\)/);
+    assert.match(adminLogin, /mfaEnrollmentRequired/);
+    assert.match(adminLogin, /beginAdminMfaLoginEnrollment/);
+    assert.match(adminLogin, /verifyAdminMfaLoginEnrollment/);
+    assert.doesNotMatch(adminLogin, /localStorage|sessionStorage/);
     assert.match(securityPage, /recovery_codes/);
-    assert.match(securityPage, /cancelAdminMfaEnrollment/);
     assert.doesNotMatch(securityPage, /v-html/);
     assert.doesNotMatch(securityPage, /localStorage|sessionStorage|console\.(log|debug)/);
     assert.match(api, /fetchAdminMfaStatus/);
-    assert.match(api, /verifyAdminMfaEnrollment/);
+    assert.match(api, /regenerateAdminMfaRecoveryCodes/);
 });
 
 test('both Admin login entry points require the server MFA challenge before setting the auth user', () => {
@@ -23,6 +27,7 @@ test('both Admin login entry points require the server MFA challenge before sett
     const login = source('../../resources/js/pages/auth/Login.vue');
     const adminLogin = source('../../resources/js/features/auth/admin/components/AdminLogin.vue');
     assert.match(store, /if \(payload\.mfa_required\) return \{ mfaRequired: true/);
+    assert.match(store, /payload\.mfa_enrollment_required/);
     assert.match(login, /auth\.verifyAdminMfaLogin/);
     assert.match(adminLogin, /auth\.verifyAdminMfaLogin/);
 });

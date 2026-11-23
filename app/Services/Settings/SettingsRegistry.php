@@ -33,7 +33,7 @@ class SettingsRegistry
                 'application_logo' => ['type' => 'string', 'default' => null, 'rules' => ['prohibited']],
             ],
             'security' => [
-                'minimum_password_length' => ['type' => 'integer', 'default' => 8, 'rules' => ['required', 'integer', 'min:8', 'max:64']],
+                'minimum_password_length' => ['type' => 'integer', 'default' => 12, 'rules' => ['required', 'integer', 'min:12', 'max:64']],
                 'require_uppercase' => ['type' => 'boolean', 'default' => false, 'rules' => ['required', 'boolean']],
                 'require_lowercase' => ['type' => 'boolean', 'default' => false, 'rules' => ['required', 'boolean']],
                 'require_number' => ['type' => 'boolean', 'default' => false, 'rules' => ['required', 'boolean']],

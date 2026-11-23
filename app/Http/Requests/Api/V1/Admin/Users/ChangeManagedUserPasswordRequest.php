@@ -3,11 +3,10 @@
 namespace App\Http\Requests\Api\V1\Admin\Users;
 
 use App\Models\User;
-use App\Rules\ConfiguredPasswordPolicy;
+use App\Support\PasswordPolicy;
 use App\Services\Settings\SettingsService;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\Rules\Password;
 use Illuminate\Validation\Validator;
 
 class ChangeManagedUserPasswordRequest extends FormRequest
@@ -19,10 +18,9 @@ class ChangeManagedUserPasswordRequest extends FormRequest
 
     public function rules(SettingsService $settings): array
     {
-        $minimum = max(12, (int) ($settings->passwordPolicy()['minimum_password_length'] ?? 12));
         return [
             'current_password' => ['required', 'string'],
-            'password' => ['required', 'string', 'max:128', 'confirmed', Password::min($minimum)->mixedCase()->numbers(), new ConfiguredPasswordPolicy()],
+            'password' => [...PasswordPolicy::rules($settings), 'confirmed'],
         ];
     }
 

@@ -2,7 +2,7 @@
 
 namespace App\Services\Api\V1\Auth;
 
-use App\Mail\PasswordRecoveryOtpMail;
+use App\Jobs\DeliverAuthenticationOtp;
 use App\Models\PasswordResetOtp;
 use App\Models\User;
 use App\Services\Api\V1\Shared\UserActivityLogger;
@@ -10,10 +10,9 @@ use App\Services\Settings\SettingsService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
-use Throwable;
 
 class PasswordRecoveryService
 {
@@ -73,8 +72,8 @@ class PasswordRecoveryService
         }
 
         try {
-            Mail::to($email)->send(new PasswordRecoveryOtpMail($code));
-        } catch (Throwable $exception) {
+            DeliverAuthenticationOtp::dispatch('recovery', $email, Crypt::encryptString($code), $otpHash, $user->id, $cooldown);
+        } catch (\Throwable $exception) {
             PasswordResetOtp::query()->where('user_id', $user->id)->where('otp_hash', $otpHash)->delete();
             Log::warning('Password recovery email delivery failed.', [
                 'exception_type' => get_class($exception),
@@ -153,6 +152,7 @@ class PasswordRecoveryService
             }
 
             $user->password = $password;
+            $user->auth_version = (int) ($user->auth_version ?? 1) + 1;
             $user->setRememberToken(Str::random(60));
             $user->save();
             $user->tokens()->delete();

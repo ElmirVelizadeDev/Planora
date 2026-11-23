@@ -2,7 +2,7 @@
 
 namespace App\Services\Api\V1\Auth;
 
-use App\Mail\RegistrationOtpMail;
+use App\Jobs\DeliverAuthenticationOtp;
 use App\Models\EmailVerificationOtp;
 use App\Models\PendingRegistration;
 use App\Models\User;
@@ -12,9 +12,8 @@ use App\Services\Settings\SettingsService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Validation\ValidationException;
-use Throwable;
 
 class RegistrationService
 {
@@ -67,7 +66,7 @@ class RegistrationService
         });
 
         if (! $developmentMode && $issueStatus === 'issued') {
-            $this->sendCode($email, $code, $otpHash);
+            $this->queueCode($email, $code, $otpHash, $cooldown);
         }
 
         return $developmentMode;
@@ -103,7 +102,7 @@ class RegistrationService
         });
 
         if (! $developmentMode && $shouldSend) {
-            $this->sendCode($email, $code, $otpHash);
+            $this->queueCode($email, $code, $otpHash, $cooldown);
         }
 
         return $developmentMode;
@@ -167,14 +166,14 @@ class RegistrationService
         return $result['user'];
     }
 
-    private function sendCode(string $email, string $code, string $otpHash): void
+    private function queueCode(string $email, string $code, string $otpHash, int $cooldown): void
     {
         try {
-            Mail::to($email)->send(new RegistrationOtpMail($code));
-        } catch (Throwable $exception) {
+            DeliverAuthenticationOtp::dispatch('registration', $email, Crypt::encryptString($code), $otpHash, null, $cooldown);
+        } catch (\Throwable $exception) {
             EmailVerificationOtp::query()->where('email', $email)->where('otp_hash', $otpHash)->update([
                 'expires_at' => now(),
-                'last_sent_at' => now()->subSeconds(self::OTP_RESEND_SECONDS),
+                'last_sent_at' => now()->subSeconds($cooldown),
                 'updated_at' => now(),
             ]);
 

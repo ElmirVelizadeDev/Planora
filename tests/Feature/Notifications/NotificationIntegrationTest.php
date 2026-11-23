@@ -97,22 +97,26 @@ class NotificationIntegrationTest extends TestCase
         $regularUser = User::factory()->create(['role' => 'user', 'status' => 'active']);
         $secret = '/never-store-this-admin-entry-secret';
         $payload = ['enabled' => true, 'message' => 'Maintenance notice '.$secret];
+        $existingNotificationIds = UserNotification::query()->pluck('id')->all();
 
         $this->patchJson('/api/v1/admin/system-maintenance/scopes/public-website', $payload)->assertUnauthorized();
         $this->actingAs($regularUser, 'sanctum')
             ->patchJson('/api/v1/admin/system-maintenance/scopes/public-website', $payload)
             ->assertForbidden();
-        $this->assertSame(0, UserNotification::query()->count());
+        $this->assertSame(count($existingNotificationIds), UserNotification::query()->count());
 
+        $this->actingAs($actor, 'sanctum');
+        $this->grantAdminStepUp('system.maintenance', $actor);
         $this->actingAs($actor, 'sanctum')
             ->patchJson('/api/v1/admin/system-maintenance/scopes/public-website', $payload)
             ->assertOk();
 
-        $this->assertSame(0, UserNotification::query()->where('recipient_id', $actor->id)->count());
-        $this->assertSame(1, UserNotification::query()->where('recipient_id', $otherAdmin->id)->where('type', 'admin.maintenance_changed')->count());
-        $this->assertSame(0, UserNotification::query()->where('recipient_id', $inactiveAdmin->id)->count());
-        $this->assertDatabaseMissing('user_notifications', ['description' => 'Maintenance notice '.$secret]);
-        $this->assertStringNotContainsString($secret, UserNotification::query()->pluck('description')->implode(' '));
+        $newNotifications = UserNotification::query()->whereNotIn('id', $existingNotificationIds)->get();
+        $this->assertSame(0, $newNotifications->where('recipient_id', $actor->id)->count());
+        $this->assertSame(1, $newNotifications->where('recipient_id', $otherAdmin->id)->where('type', 'admin.maintenance_changed')->count());
+        $this->assertSame(0, $newNotifications->where('recipient_id', $inactiveAdmin->id)->count());
+        $this->assertFalse($newNotifications->contains('description', 'Maintenance notice '.$secret));
+        $this->assertStringNotContainsString($secret, $newNotifications->pluck('description')->implode(' '));
     }
 
     private function seedPendingRegistration(string $email, string $code, Carbon $expiresAt): void

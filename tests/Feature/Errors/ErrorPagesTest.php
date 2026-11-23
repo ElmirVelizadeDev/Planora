@@ -7,11 +7,14 @@ use App\Services\Api\V1\Admin\SystemMaintenance\MaintenanceScopeStore;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 use Tests\TestCase;
 
 class ErrorPagesTest extends TestCase
 {
+    use DatabaseTransactions;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -104,11 +107,8 @@ class ErrorPagesTest extends TestCase
             ->assertSee('Check again')
             ->assertDontSee('Go to Planora');
 
-        $user = new User();
-        $user->forceFill([
-            'id' => 881,
+        $user = User::factory()->create([
             'name' => 'Maintenance QA',
-            'email' => 'maintenance-nav-qa@planora.test',
             'password' => Hash::make('maintenance-test-password'),
             'role' => 'user',
             'status' => 'active',
@@ -133,11 +133,8 @@ class ErrorPagesTest extends TestCase
             ->assertDontSee('Go to dashboard')
             ->assertDontSee('Go to Planora');
 
-        $admin = new User();
-        $admin->forceFill([
-            'id' => 882,
+        $admin = User::factory()->create([
             'name' => 'Maintenance Admin',
-            'email' => 'maintenance-admin-nav-qa@planora.test',
             'password' => Hash::make('maintenance-test-password'),
             'role' => 'admin',
             'status' => 'active',
@@ -198,8 +195,7 @@ class ErrorPagesTest extends TestCase
         $this->assertStringNotContainsString('Go to dashboard', $guestDuringPublicMaintenance);
         $this->assertStringContainsString('Check again', $guestDuringPublicMaintenance);
 
-        $user = new User();
-        $user->forceFill(['id' => 879, 'name' => 'Maintenance QA', 'email' => 'maintenance-qa@planora.test', 'password' => Hash::make('maintenance-test-password'), 'role' => 'user', 'status' => 'active']);
+        $user = User::factory()->create(['name' => 'Maintenance QA', 'password' => Hash::make('maintenance-test-password'), 'role' => 'user', 'status' => 'active']);
         $this->actingAs($user, 'web');
         $userDashboardAvailable = $maintenanceView([
             'public_website' => true,
@@ -217,8 +213,7 @@ class ErrorPagesTest extends TestCase
         $this->assertStringNotContainsString('Go to dashboard', $userDashboardBlocked);
         $this->assertStringNotContainsString('Go to Planora', $userDashboardBlocked);
 
-        $admin = new User();
-        $admin->forceFill(['id' => 880, 'name' => 'Admin QA', 'email' => 'admin-maintenance-qa@planora.test', 'password' => Hash::make('maintenance-test-password'), 'role' => 'admin', 'status' => 'active']);
+        $admin = User::factory()->create(['name' => 'Admin QA', 'password' => Hash::make('maintenance-test-password'), 'role' => 'admin', 'status' => 'active']);
         $this->actingAs($admin, 'web');
         $adminDashboardAvailable = $maintenanceView([
             'public_website' => true,

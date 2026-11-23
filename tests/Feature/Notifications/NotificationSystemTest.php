@@ -228,6 +228,7 @@ class NotificationSystemTest extends TestCase
         $users->softDelete($actor, $restoredUser);
         $users->restore($actor, $restoredUser);
         $this->assertSame(1, UserNotification::query()->where('recipient_id', $restoredUser->id)->where('type', 'account.restored')->count());
+        $this->grantAdminStepUp('users.manage', $actor);
         $this->actingAs($actor, 'sanctum')->postJson("/api/v1/admin/users/{$restoredUser->id}/restore")->assertStatus(409);
         $this->assertSame(1, UserNotification::query()->where('recipient_id', $restoredUser->id)->where('type', 'account.restored')->count());
     }

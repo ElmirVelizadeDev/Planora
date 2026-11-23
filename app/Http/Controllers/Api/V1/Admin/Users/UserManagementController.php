@@ -66,7 +66,10 @@ class UserManagementController extends Controller
 
     public function changePassword(ChangeManagedUserPasswordRequest $request, User $user, UserManagementService $users): JsonResponse
     {
-        $users->changePassword($request->user(), $user, $request->validated('password'));
+        $updated = $users->changePassword($request->user(), $user, $request->validated('password'));
+        if ($request->user()->is($updated) && $request->hasSession()) {
+            $request->session()->put(['password_hash_web' => $updated->getAuthPassword(), 'auth_version_web' => (int) $updated->auth_version]);
+        }
 
         return response()->json(['message' => 'Password changed successfully.']);
     }

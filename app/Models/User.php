@@ -57,6 +57,7 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
         'last_login_at' => 'datetime',
+        'auth_version' => 'integer',
         'status_changed_at' => 'datetime',
         'password' => 'hashed',
         'moderator_permissions' => 'array',

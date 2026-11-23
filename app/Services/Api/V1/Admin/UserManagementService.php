@@ -109,15 +109,18 @@ class UserManagementService
         return $updated;
     }
 
-    public function changePassword(User $actor, User $user, string $password): void
+    public function changePassword(User $actor, User $user, string $password): User
     {
-        DB::transaction(function () use ($actor, $user, $password) {
+        return DB::transaction(function () use ($actor, $user, $password): User {
             abort_unless($actor->is($user) && $actor->role === 'admin', 403, 'You can only change your own administrator password.');
             $user = User::query()->lockForUpdate()->findOrFail($user->id);
             $user->password = Hash::make($password);
+            $user->auth_version = (int) ($user->auth_version ?? 1) + 1;
             $user->setRememberToken(\Illuminate\Support\Str::random(60));
+            $user->tokens()->delete();
             $user->save();
             $this->activityLogger->record('user.password_changed', 'Administrator changed their account password.', $user, $actor);
+            return $user->fresh();
         });
     }
 
@@ -137,6 +140,7 @@ class UserManagementService
             }
             $user->role = $role;
             $user->moderator_permissions = $newPermissions;
+            $this->revokeAuthentication($user);
             $user->save();
 
             $activity = $this->activityLogger->recordChange('user.role_changed', 'Administrator changed the account role.', $user, $actor,
@@ -156,6 +160,7 @@ class UserManagementService
             $permissions = array_values(array_unique($permissions));
             if ($before === $permissions) return $user;
             $user->moderator_permissions = $permissions;
+            $this->revokeAuthentication($user);
             $user->save();
             $activity = $this->activityLogger->recordChange('moderator.permissions_changed', 'Administrator updated moderator permissions.', $user, $actor,
                 ['permissions' => $before], ['permissions' => $user->moderator_permissions], ['from' => $before, 'to' => $user->moderator_permissions]);
@@ -182,6 +187,7 @@ class UserManagementService
             $user->status_reason = in_array($status, ['suspended', 'banned'], true) ? $reason : null;
             $user->status_changed_by = $actor->id;
             $user->status_changed_at = now();
+            $this->revokeAuthentication($user);
             $user->save();
 
             $event = match ($status) {
@@ -206,6 +212,8 @@ class UserManagementService
             abort_unless($actor->isNot($user), 403, 'You cannot delete your own account.');
             $this->protectLastActiveAdmin($user, false);
             $activity = $this->activityLogger->record('user.deleted', 'Administrator moved the account to soft-deleted recovery.', $user, $actor, ['role' => $user->role]);
+            $this->revokeAuthentication($user);
+            $user->save();
             $user->delete();
             $this->notifications->accountDeleted($user, $actor, $activity->event_id);
         });
@@ -222,6 +230,7 @@ class UserManagementService
             $user->status_reason = null;
             $user->status_changed_by = $actor->id;
             $user->status_changed_at = now();
+            $this->revokeAuthentication($user);
             $user->save();
             $activity = $this->activityLogger->record('account.restored', 'Administrator restored the account.', $user, $actor,
                 ['from' => $previous, 'to' => 'active'], 'Users', 'success', ['status' => $previous], ['status' => 'active']);
@@ -257,6 +266,14 @@ class UserManagementService
             ->orderBy('id')
             ->lockForUpdate()
             ->get(['id']);
+    }
+
+    /** Invalidate this user's existing web sessions, recaller cookies, and Sanctum tokens. */
+    private function revokeAuthentication(User $user): void
+    {
+        $user->auth_version = (int) ($user->auth_version ?? 1) + 1;
+        $user->setRememberToken(\Illuminate\Support\Str::random(60));
+        $user->tokens()->delete();
     }
 
 }

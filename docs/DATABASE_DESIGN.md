@@ -6,7 +6,8 @@ Laravel database settings come from the environment; `.env.example` selects MySQ
 
 | Table | Purpose |
 |---|---|
-| `users` | Accounts, profile, role/status, verification, password hash, login metadata, optional encrypted Admin MFA secret/enrollment state/counter, and soft deletion. |
+| `users` | Accounts, profile, role/status, verification, password hash, login metadata, encrypted Admin MFA state, monotonically increasing authentication version, and soft deletion. |
+| `admin_mfa_attempts` | Per-account and per-challenge MFA failure counters and temporary lockouts; rows cascade with their User. |
 | `admin_mfa_recovery_codes` | Hashed, single-use recovery codes for administrator MFA, with usage timestamps and a cascading User foreign key. |
 | `projects` | Project name and description, lifecycle status, optional dates, nullable User owner, optional Category, and timestamps. |
 | `tasks` | Task content, status, priority, optional due date, optional Project and Category, owner, assignee, creator, timestamps, and soft deletion. |
@@ -64,4 +65,4 @@ The ten CategorySeeder names are inserted only when no case-insensitive active o
 
 The Activity Logs audit-trail migration extends the existing `user_activity_logs` table rather than introducing a duplicate log table. New fields are nullable where necessary so historical rows remain valid. Actor and legacy subject foreign keys use null-on-delete, while safe name/role snapshots, subject labels, and event metadata retain useful history. Activity rows are not soft-deleted or editable through application endpoints. Search/filter indexes cover module, event, status, actor, target, and creation time.
 
-The notification table is created by `2026_11_15_000001_create_user_notifications_table.php`; `2026_11_15_000002_add_notification_recipient_order_index.php` adds its recipient-order index. `2026_11_20_000001_add_admin_mfa_fields_to_users_table.php` adds optional MFA enrollment fields to `users` and creates the recovery-code table. Subtask, tag, and calendar-event tables are not defined by the current migrations; their routes or components do not imply persisted workflows.
+The notification table is created by `2026_11_15_000001_create_user_notifications_table.php`; `2026_11_15_000002_add_notification_recipient_order_index.php` adds its recipient-order index. `2026_11_20_000001_add_admin_mfa_fields_to_users_table.php` adds encrypted MFA state and the recovery-code table. `2026_11_24_000001_add_auth_version_and_admin_mfa_attempts.php` adds session revocation versioning and persistent MFA failure counters. Subtask, tag, and calendar-event tables are not defined by the current migrations; their routes or components do not imply persisted workflows.

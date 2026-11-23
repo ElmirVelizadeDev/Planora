@@ -2,8 +2,7 @@
 
 namespace App\Http\Requests\Api\V1\Auth;
 
-use App\Rules\NotCommonRegistrationPassword;
-use App\Rules\ConfiguredPasswordPolicy;
+use App\Support\PasswordPolicy;
 use App\Rules\PersonName;
 use App\Rules\SupportedEmailDomain;
 use App\Services\Settings\SettingsService;
@@ -18,13 +17,12 @@ class RegisterRequest extends FormRequest
 
     public function rules(SettingsService $settings): array
     {
-        $minimum = max(8, (int) ($settings->passwordPolicy()['minimum_password_length'] ?? 8));
         return [
             'name' => ['required', 'string', new PersonName()],
             // Duplicate-account handling lives in RegistrationService so the API response
             // does not disclose whether an address is already registered.
             'email' => ['required', 'string', 'email:rfc', 'max:255', new SupportedEmailDomain()],
-            'password' => ['required', 'string', 'min:'.$minimum, 'max:128', new NotCommonRegistrationPassword(), new ConfiguredPasswordPolicy(), 'confirmed'],
+            'password' => [...PasswordPolicy::rules($settings), 'confirmed'],
             'terms_accepted' => ['required', 'accepted'],
             'role' => ['prohibited'],
         ];

@@ -26,10 +26,8 @@
             </label>
             <div class="profile-password-guidance" aria-live="polite">
                 <span :class="{ 'is-valid': form.password.length >= 12 }"><i aria-hidden="true">{{ form.password.length >= 12 ? '✓' : '•' }}</i>At least 12 characters</span>
-                <span :class="{ 'is-valid': /[A-Z]/.test(form.password) && /[a-z]/.test(form.password) }"><i aria-hidden="true">{{ /[A-Z]/.test(form.password) && /[a-z]/.test(form.password) ? '✓' : '•' }}</i>Uppercase and lowercase letters</span>
-                <span :class="{ 'is-valid': /[0-9]/.test(form.password) }"><i aria-hidden="true">{{ /[0-9]/.test(form.password) ? '✓' : '•' }}</i>At least one number</span>
                 <span :class="{ 'is-valid': form.password.length > 0 && form.password === form.password_confirmation }"><i aria-hidden="true">{{ form.password.length > 0 && form.password === form.password_confirmation ? '✓' : '•' }}</i>Passwords match</span>
-                <small>Your account may have additional password rules. The server will show any extra requirement.</small>
+                <small>Common or compromised passwords are not accepted. Configured security requirements also apply.</small>
             </div>
             <div class="profile-form__footer">
                 <span class="profile-form__note">Your password is never included in account responses.</span>
@@ -53,7 +51,7 @@ const fields = [
 ];
 const form = reactive({ current_password: '', password: '', password_confirmation: '' });
 const visible = reactive({ current_password: false, password: false, password_confirmation: false });
-const canSubmit = computed(() => form.current_password && form.password.length >= 12 && /[A-Z]/.test(form.password) && /[a-z]/.test(form.password) && /[0-9]/.test(form.password) && form.password === form.password_confirmation);
+const canSubmit = computed(() => form.current_password && form.password.length >= 12 && form.password.length <= 128 && form.password === form.password_confirmation);
 
 watch(() => props.resetKey, () => {
     Object.assign(form, { current_password: '', password: '', password_confirmation: '' });

@@ -3,11 +3,11 @@
 namespace App\Http\Requests\Api\V1\Admin\Users;
 
 use App\Models\User;
+use App\Support\PasswordPolicy;
 use App\Rules\PersonName;
 use App\Rules\SupportedEmailDomain;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
-use Illuminate\Validation\Rules\Password;
 use Illuminate\Validation\Validator;
 use App\Http\Requests\Api\V1\Admin\Users\Concerns\ValidatesModeratorPermissionDependencies;
 
@@ -30,7 +30,7 @@ class StoreManagedUserRequest extends FormRequest
             'username' => ['nullable', 'string', 'max:255', 'unique:users,username'],
             'phone' => ['nullable', 'string', 'max:32', 'regex:/^\+?[0-9().\s-]{7,32}$/'],
             'avatar' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'dimensions:max_width=4096,max_height=4096', 'max:2048'],
-            'password' => ['required', 'string', 'max:128', 'confirmed', Password::min(12)->mixedCase()->numbers()],
+            'password' => [...PasswordPolicy::rules(), 'confirmed'],
             'role' => ['required', Rule::in(User::ROLES)],
             'status' => ['required', Rule::in(['active', 'inactive'])],
             'moderator_permissions' => ['nullable', 'array'],

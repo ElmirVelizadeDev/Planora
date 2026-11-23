@@ -24,7 +24,11 @@ class SettingsService
     public function all(): array
     {
         if (Cache::has(self::CACHE_KEY)) {
-            return Cache::get(self::CACHE_KEY, []);
+            $cached = Cache::get(self::CACHE_KEY, []);
+            if (isset($cached['security']['minimum_password_length'])) {
+                $cached['security']['minimum_password_length'] = max(12, (int) $cached['security']['minimum_password_length']);
+            }
+            return $cached;
         }
 
         $values = $this->defaults();
@@ -43,6 +47,8 @@ class SettingsService
                 if ($row) $values[$group][$key] = $this->decode($row);
             }
         }
+
+        $values['security']['minimum_password_length'] = max(12, (int) ($values['security']['minimum_password_length'] ?? 12));
 
         Cache::put(self::CACHE_KEY, $values, now()->addMinutes(5));
 

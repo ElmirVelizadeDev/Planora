@@ -19,6 +19,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        if ($this->app->environment('production') && config('queue.default') === 'sync') {
+            throw new \RuntimeException('Production authentication email delivery requires a persistent queue connection.');
+        }
         if (! $this->app->runningInConsole()) {
             $this->app->make(SettingsService::class)->applyRuntimeConfig();
         }

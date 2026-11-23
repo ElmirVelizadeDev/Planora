@@ -7,6 +7,7 @@ use App\Models\Project;
 use App\Models\Task;
 use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 class GlobalSearchTest extends TestCase
@@ -23,13 +24,14 @@ class GlobalSearchTest extends TestCase
 
     public function test_admin_searches_supported_entities_and_returns_only_minimal_navigation_results(): void
     {
+        $searchToken = 'search'.Str::lower(Str::random(12));
         $admin = User::factory()->create(['role' => 'admin', 'status' => 'active']);
-        $user = User::factory()->create(['name' => 'Planora Member', 'email' => 'member@planora.test']);
-        $category = Category::create(['name' => 'Planora Work', 'description' => 'Planning category']);
-        $project = Project::create(['name' => 'Planora Launch', 'description' => 'Launch plan', 'owner_id' => $user->id]);
-        $task = Task::create(['title' => 'Planora review', 'description' => 'Review the launch', 'owner_id' => $user->id, 'created_by' => $admin->id, 'project_id' => $project->id]);
+        $user = User::factory()->create(['name' => $searchToken.' Member', 'email' => $searchToken.'@example.test']);
+        $category = Category::create(['name' => $searchToken.' Work', 'description' => 'Planning category']);
+        $project = Project::create(['name' => $searchToken.' Launch', 'description' => 'Launch plan', 'owner_id' => $user->id]);
+        $task = Task::create(['title' => $searchToken.' review', 'description' => 'Review the launch', 'owner_id' => $user->id, 'created_by' => $admin->id, 'project_id' => $project->id]);
 
-        $response = $this->actingAs($admin, 'sanctum')->getJson('/api/v1/search?q=planora')
+        $response = $this->actingAs($admin, 'sanctum')->getJson('/api/v1/search?q='.$searchToken)
             ->assertOk()->assertJsonPath('data.total', 4);
 
         $this->assertEqualsCanonicalizing(['users', 'tasks', 'projects', 'categories'], collect($response->json('data.groups'))->pluck('type')->all());
@@ -40,8 +42,8 @@ class GlobalSearchTest extends TestCase
             ->assertJsonPath('data.groups.2.results.0.to.name', 'admin.projects.show')
             ->assertJsonPath('data.groups.3.results.0.to.name', 'admin.categories.show');
 
-        $this->getJson('/api/v1/search?q=member%40planora.test')->assertOk()
-            ->assertJsonPath('data.groups.0.results.0.title', 'Planora Member');
+        $this->getJson('/api/v1/search?q='.urlencode($searchToken.'@example.test'))->assertOk()
+            ->assertJsonPath('data.groups.0.results.0.title', $searchToken.' Member');
     }
 
     public function test_moderator_search_observes_each_management_permission_and_never_lists_admins(): void
@@ -86,9 +88,10 @@ class GlobalSearchTest extends TestCase
 
     public function test_search_handles_empty_short_queries_limits_and_validation(): void
     {
+        $searchToken = 'limit'.Str::lower(Str::random(12));
         $admin = User::factory()->create(['role' => 'admin', 'status' => 'active']);
         foreach (range(1, 9) as $index) {
-            Task::create(['title' => 'Planora task '.$index]);
+            Task::create(['title' => $searchToken.' task '.$index]);
         }
         $this->actingAs($admin, 'sanctum');
 
@@ -96,9 +99,9 @@ class GlobalSearchTest extends TestCase
         $this->getJson('/api/v1/search?q=%20%20')->assertOk()->assertJsonPath('data.total', 0);
         $this->getJson('/api/v1/search?q=p')->assertOk()->assertJsonPath('data.total', 0);
         $this->getJson('/api/v1/search?q=not-a-match')->assertOk()->assertJsonPath('data.total', 0)->assertJsonCount(0, 'data.groups');
-        $this->getJson('/api/v1/search?q=planora&limit=2')->assertOk()->assertJsonPath('data.total', 2)->assertJsonCount(2, 'data.groups.0.results');
+        $this->getJson('/api/v1/search?q='.$searchToken.'&limit=2')->assertOk()->assertJsonPath('data.total', 2)->assertJsonCount(2, 'data.groups.0.results');
         $this->getJson('/api/v1/search?q='.str_repeat('x', 121))->assertUnprocessable()->assertJsonValidationErrors(['q']);
-        $this->getJson('/api/v1/search?q=planora&limit=9')->assertUnprocessable()->assertJsonValidationErrors(['limit']);
+        $this->getJson('/api/v1/search?q='.$searchToken.'&limit=9')->assertUnprocessable()->assertJsonValidationErrors(['limit']);
     }
 
     public function test_search_matches_case_insensitively_under_the_application_database_collation(): void

@@ -7,10 +7,13 @@ use App\Services\Api\V1\Dashboard\DashboardDataService;
 use App\Services\Api\V1\Admin\SystemMaintenance\MaintenanceScopeStore;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
 
 class SystemMaintenanceManagementTest extends TestCase
 {
+    use DatabaseTransactions;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -19,6 +22,14 @@ class SystemMaintenanceManagementTest extends TestCase
         if (app()->isDownForMaintenance()) {
             Artisan::call('up');
         }
+    }
+
+    protected function tearDown(): void
+    {
+        app(MaintenanceScopeStore::class)->disableAll();
+        if (app()->isDownForMaintenance()) Artisan::call('planora:maintenance-up');
+
+        parent::tearDown();
     }
 
     public function test_only_an_administrator_can_read_maintenance_status(): void
@@ -48,6 +59,7 @@ class SystemMaintenanceManagementTest extends TestCase
 
         $admin = $this->account('admin', 503);
         $user = $this->account('user', 504);
+        $this->actingAs($admin, 'sanctum');
 
         try {
             $this->grantAdminStepUp('system.maintenance', $admin);
@@ -71,7 +83,7 @@ class SystemMaintenanceManagementTest extends TestCase
             $this->get('/')->assertStatus(503);
             $this->get('/login')->assertStatus(503);
             $this->postJson('/api/v1/auth/login', [])->assertStatus(503);
-            $this->get('/admin/dashboard')->assertStatus(503)->assertSee('Dashboard and workspace temporarily unavailable');
+            $this->actingAs($admin, 'web')->get('/admin/dashboard')->assertOk();
 
             $this->actingAs($user, 'sanctum')
                 ->getJson('/api/v1/admin/system-maintenance')
@@ -403,17 +415,12 @@ class SystemMaintenanceManagementTest extends TestCase
 
     private function account(string $role, int $id): User
     {
-        $user = new User();
-        $user->forceFill([
-            'id' => $id,
+        return User::factory()->create([
             'name' => ucfirst($role).' QA',
-            'email' => strtolower($role).$id.'@planora.test',
             'password' => Hash::make('maintenance-test-password'),
             'role' => $role,
             'status' => 'active',
             'moderator_permissions' => [],
         ]);
-
-        return $user;
     }
 }

@@ -42,6 +42,14 @@ class RouteServiceProvider extends ServiceProvider
             ];
         });
 
+        foreach (['admin-mfa-login', 'admin-mfa-enrollment', 'admin-mfa-step-up'] as $name) {
+            RateLimiter::for($name, function (Request $request) use ($name) {
+                $key = str_replace('admin-mfa-', '', $name);
+                $limit = max(1, (int) config('auth.admin_mfa.'.$key.'_ip_attempts_per_minute', 5));
+                return Limit::perMinute($limit)->by($name.':'.$request->ip());
+            });
+        }
+
         $this->routes(function () {
             Route::middleware('api')
                 ->prefix('api')

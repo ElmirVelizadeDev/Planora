@@ -293,7 +293,7 @@ class ActivityLogsTest extends TestCase
     {
         $user = $this->account();
 
-        $this->withHeader('Origin', 'http://localhost')
+        $this->withHeaders(['Origin' => 'http://planora.test', 'Referer' => 'http://planora.test/'])->withCredentials()
             ->postJson('/api/v1/auth/login', ['email' => $user->email, 'password' => 'password'])
             ->assertOk();
 

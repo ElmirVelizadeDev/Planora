@@ -48,6 +48,7 @@ class CurrentUserProfileController extends Controller
         $user = $profile->changePassword($request->user(), $request->validated('password'));
         if ($request->hasSession()) {
             $request->session()->put('password_hash_web', $user->getAuthPassword());
+            $request->session()->put('auth_version_web', (int) ($user->auth_version ?? 1));
         }
 
         return response()->json([

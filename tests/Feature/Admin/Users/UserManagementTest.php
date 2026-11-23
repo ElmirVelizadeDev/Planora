@@ -495,11 +495,15 @@ class UserManagementTest extends TestCase
     {
         $admin = $this->admin();
         $user = User::factory()->create(['role' => 'user', 'password' => Hash::make('Member-Password-123')]);
+        $version = (int) ($user->fresh()->auth_version ?? 1);
+        $user->createToken('status-revocation-test');
 
         $this->grantAdminStepUp('users.manage', $admin);
         $this->actingAs($admin, 'sanctum')->withHeaders($this->headers())
             ->patchJson('/api/v1/admin/users/'.$user->id.'/status', ['status' => 'banned', 'reason' => 'Confirmed abuse'])
             ->assertOk();
+        $this->assertSame($version + 1, (int) $user->fresh()->auth_version);
+        $this->assertDatabaseMissing('personal_access_tokens', ['tokenable_id' => $user->id]);
 
         $this->actingAs($user->fresh(), 'web')->withHeaders($this->headers())
             ->getJson('/api/v1/user')->assertUnauthorized();
@@ -512,6 +516,7 @@ class UserManagementTest extends TestCase
         $this->actingAs($admin, 'sanctum')->withHeaders($this->headers())
             ->patchJson('/api/v1/admin/users/'.$user->id.'/status', ['status' => 'active'])
             ->assertOk()->assertJsonPath('user.status', 'active');
+        $this->assertSame($version + 2, (int) $user->fresh()->auth_version);
     }
 
     public function test_last_active_admin_cannot_be_demoted_suspended_banned_or_deleted(): void
@@ -569,21 +574,21 @@ class UserManagementTest extends TestCase
 
         $this->grantAdminStepUp('users.manage', $admin);
         $this->actingAs($admin, 'sanctum')->withHeaders($this->headers())
-            ->postJson('/api/v1/admin/users/'.$admin->id.'/password', [
-                'current_password' => 'Current-Password-123',
-                'password' => 'New-Password-123',
-                'password_confirmation' => 'New-Password-123',
-            ])->assertOk();
-        $this->assertTrue(Hash::check('New-Password-123', $admin->fresh()->password));
-
-        $this->grantAdminStepUp('users.manage', $admin);
-        $this->actingAs($admin, 'sanctum')->withHeaders($this->headers())
             ->postJson('/api/v1/admin/users/'.$otherAdmin->id.'/password', [
                 'current_password' => 'Current-Password-123',
                 'password' => 'New-Password-123',
                 'password_confirmation' => 'New-Password-123',
             ])->assertForbidden();
         $this->assertTrue(Hash::check('Current-Password-123', $otherAdmin->fresh()->password));
+
+        $this->grantAdminStepUp('users.manage', $admin);
+        $this->actingAs($admin, 'sanctum')->withHeaders($this->headers())
+            ->postJson('/api/v1/admin/users/'.$admin->id.'/password', [
+                'current_password' => 'Current-Password-123',
+                'password' => 'New-Password-123',
+                'password_confirmation' => 'New-Password-123',
+            ])->assertOk();
+        $this->assertTrue(Hash::check('New-Password-123', $admin->fresh()->password));
     }
 
     public function test_admin_can_change_another_admin_status_and_delete_when_another_active_admin_remains(): void

@@ -11,6 +11,7 @@ use App\Http\Resources\Api\V1\Shared\Users\UserResource;
 use App\Services\Api\V1\Auth\RegistrationService;
 use App\Services\Api\V1\Shared\UserActivityLogger;
 use App\Services\Api\V1\Admin\AdminMfaService;
+use App\Services\Api\V1\Admin\AdminMfaAttemptService;
 use App\Services\Settings\SettingsService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -43,6 +44,12 @@ class AuthController extends Controller
 
     private function authenticate(LoginRequest $request, UserActivityLogger $activityLogger, ?string $requiredRole, AdminMfaService $mfa): JsonResponse
     {
+        if (! $request->hasSession()) {
+            $activityLogger->record('auth.login_failed', 'A sign-in attempt was rejected.', status: 'failure');
+            throw ValidationException::withMessages(['email' => [trans('auth.failed')]]);
+        }
+
+        $request->session()->forget(['admin_mfa_login_challenge', 'admin_mfa_enrollment_challenge']);
         $guard = Auth::guard('web');
         $guard->setRememberDuration((int) config('session.remember_lifetime', 43200));
 
@@ -59,18 +66,23 @@ class AuthController extends Controller
             throw ValidationException::withMessages(['email' => [trans('auth.failed')]]);
         }
 
-        if ($user->role === 'admin' && $mfa->isEnabled($user)) {
+        if ($user->role === 'admin') {
             if ($guard->check() || $request->cookies->has($guard->getRecallerName())) $guard->logout();
             $request->session()->invalidate();
             $request->session()->regenerateToken();
             $request->session()->regenerate();
-            $request->session()->put('admin_mfa_login_challenge', [
+            $key = $mfa->isEnabled($user) ? 'admin_mfa_login_challenge' : 'admin_mfa_enrollment_challenge';
+            $request->session()->put($key, [
                 'user_id' => $user->id,
-                'expires_at' => now()->addMinutes(5)->timestamp,
+                'challenge_id' => Str::random(64),
+                'expires_at' => now()->addMinutes(max(1, (int) config('auth.admin_mfa.'.($mfa->isEnabled($user) ? 'login_challenge_minutes' : 'enrollment_challenge_minutes'), 5)))->timestamp,
                 'remember' => $request->boolean('remember'),
             ]);
-            $activityLogger->record('auth.admin_mfa_challenge_started', 'An administrator password was accepted; second-factor verification is required.', $user, null, status: 'success');
-            return response()->json(['mfa_required' => true, 'expires_in' => 300])->header('Cache-Control', 'no-store, private');
+            $activityLogger->record($mfa->isEnabled($user) ? 'auth.admin_mfa_challenge_started' : 'auth.admin_mfa_enrollment_required', 'Administrator password accepted; mandatory second-factor setup or verification is required.', $user, null, status: 'success');
+            return response()->json($mfa->isEnabled($user)
+                ? ['mfa_required' => true, 'expires_in' => max(1, (int) config('auth.admin_mfa.login_challenge_minutes', 5)) * 60]
+                : ['mfa_enrollment_required' => true, 'expires_in' => max(1, (int) config('auth.admin_mfa.enrollment_challenge_minutes', 10)) * 60])
+                ->header('Cache-Control', 'no-store, private');
         }
 
         // Revoke an existing identity only after the replacement credentials are valid.
@@ -86,6 +98,7 @@ class AuthController extends Controller
         $activityLogger->record('auth.login', 'User signed in.', $user, $user);
         $request->session()->regenerate();
         $request->session()->put('password_hash_web', $user->getAuthPassword());
+        $request->session()->put('auth_version_web', (int) ($user->auth_version ?? 1));
 
         $response = response()->json([
             'user' => UserResource::make($user)->resolve(),
@@ -100,10 +113,10 @@ class AuthController extends Controller
         return $response;
     }
 
-    public function verifyAdminMfa(\App\Http\Requests\Api\V1\Auth\VerifyAdminMfaChallengeRequest $request, AdminMfaService $mfa, UserActivityLogger $activityLogger): JsonResponse
+    public function verifyAdminMfa(\App\Http\Requests\Api\V1\Auth\VerifyAdminMfaChallengeRequest $request, AdminMfaService $mfa, UserActivityLogger $activityLogger, AdminMfaAttemptService $attempts): JsonResponse
     {
         $challenge = $request->session()->get('admin_mfa_login_challenge');
-        if (! is_array($challenge) || (int) ($challenge['expires_at'] ?? 0) < now()->timestamp) {
+        if (! is_array($challenge) || (int) ($challenge['expires_at'] ?? 0) <= now()->timestamp) {
             $request->session()->forget('admin_mfa_login_challenge');
             return response()->json(['message' => 'The administrator verification challenge has expired. Sign in again.'], 401);
         }
@@ -116,10 +129,15 @@ class AuthController extends Controller
         }
 
         $usedRecoveryCode = ! $request->validated('code');
-        $valid = ! $usedRecoveryCode
+        $result = $attempts->verify($user, 'login', (string) ($challenge['challenge_id'] ?? ''), fn () => ! $usedRecoveryCode
             ? $mfa->verifyTotp($user, $request->validated('code'))
-            : $mfa->consumeRecoveryCode($user, $request->validated('recovery_code'));
-        if (! $valid) {
+            : $mfa->consumeRecoveryCode($user, $request->validated('recovery_code')));
+        if ($result['status'] === 'locked') {
+            $request->session()->forget('admin_mfa_login_challenge');
+            $activityLogger->record('auth.admin_mfa_locked', 'Repeated administrator MFA failures triggered a temporary lockout.', $user, null, status: 'failure');
+            return response()->json(['message' => 'Verification is temporarily locked. Sign in again later.'], 429)->header('Retry-After', (string) ($result['retry_after'] ?? 300));
+        }
+        if ($result['status'] !== 'verified') {
             $activityLogger->record('auth.admin_mfa_failed', 'Administrator second-factor verification failed.', $user, null, status: 'failure');
             return response()->json(['message' => 'The verification code is invalid or has already been used.'], 422);
         }
@@ -130,6 +148,8 @@ class AuthController extends Controller
         $guard->login($user, (bool) ($challenge['remember'] ?? false));
         $request->session()->regenerate();
         $request->session()->put('password_hash_web', $user->getAuthPassword());
+        $request->session()->put('auth_version_web', (int) ($user->auth_version ?? 1));
+        $user->forceFill(['last_login_at' => now()])->save();
         $activityLogger->record('auth.admin_mfa_verified', 'Administrator completed second-factor verification.', $user, $user);
         if ($usedRecoveryCode) $activityLogger->record('security.mfa_recovery_used', 'Administrator used a single-use MFA recovery code.', $user, $user, module: 'Security');
         return response()->json([
@@ -140,8 +160,10 @@ class AuthController extends Controller
 
     public function register(RegisterRequest $request, RegistrationService $registration, SettingsService $settings): JsonResponse
     {
+        $startedAt = hrtime(true);
         $databaseOtp = $registration->begin($request->validated());
         $policy = $settings->passwordPolicy();
+        $this->padEmailResponse($startedAt);
 
         return response()->json([
             'message' => $databaseOtp
@@ -160,6 +182,7 @@ class AuthController extends Controller
         Auth::guard('web')->login($user);
         $request->session()->regenerate();
         $request->session()->put('password_hash_web', $user->getAuthPassword());
+        $request->session()->put('auth_version_web', (int) ($user->auth_version ?? 1));
 
         return response()->json([
             'user' => UserResource::make($user)->resolve(),
@@ -169,8 +192,10 @@ class AuthController extends Controller
 
     public function resendRegistrationCode(ResendRegistrationOtpRequest $request, RegistrationService $registration, SettingsService $settings): JsonResponse
     {
+        $startedAt = hrtime(true);
         $databaseOtp = $registration->resend($request->validated('email'));
         $policy = $settings->passwordPolicy();
+        $this->padEmailResponse($startedAt);
 
         return response()->json([
             'message' => $databaseOtp
@@ -205,5 +230,13 @@ class AuthController extends Controller
                 : (in_array('activity.view', $user->moderator_permissions ?? [], true) ? '/admin/activity-logs' : '/403'),
             default => '/403',
         };
+    }
+
+    private function padEmailResponse(int $startedAt): void
+    {
+        if (app()->environment('testing')) return;
+        $minimum = max(0, (int) config('auth.email_enumeration_min_response_ms', 250));
+        $remainingNs = ($minimum * 1_000_000) - (hrtime(true) - $startedAt);
+        if ($remainingNs > 0) usleep((int) ceil($remainingNs / 1000));
     }
 }

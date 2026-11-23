@@ -36,6 +36,8 @@ class RolesPermissionsTest extends TestCase
 
     public function test_role_permission_management_is_admin_only_and_returns_catalog_and_moderators(): void
     {
+        $adminCount = User::query()->where('role', 'admin')->count();
+        $moderatorCount = User::query()->where('role', 'moderator')->count();
         $admin = $this->account('admin');
         $moderator = $this->account('moderator', ['users.view']);
         $this->account('user');
@@ -49,7 +51,8 @@ class RolesPermissionsTest extends TestCase
             ->assertJsonFragment(['reports.view']);
         $this->getJson('/api/v1/admin/roles-permissions/moderators?search='.$moderator->name)
             ->assertOk()->assertJsonPath('meta.total', 1)->assertJsonPath('data.0.id', $moderator->id)
-            ->assertJsonPath('meta.role_counts.admin', 1)->assertJsonPath('meta.role_counts.moderator', 1);
+            ->assertJsonPath('meta.role_counts.admin', $adminCount + 1)
+            ->assertJsonPath('meta.role_counts.moderator', $moderatorCount + 1);
 
         $limitedModerator = $this->account('moderator', ['users.view']);
         $this->actingAs($limitedModerator, 'sanctum')->getJson('/api/v1/admin/roles-permissions')->assertForbidden();

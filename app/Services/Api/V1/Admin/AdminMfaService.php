@@ -19,7 +19,7 @@ class AdminMfaService
     public function beginEnrollment(User $user): array
     {
         $secret = $this->newSecret();
-        $expiresAt = now()->addMinutes(10);
+        $expiresAt = now()->addMinutes(max(1, (int) config('auth.admin_mfa.enrollment_minutes', 10)));
         DB::transaction(function () use ($user, $secret, $expiresAt): void {
             $locked = User::query()->lockForUpdate()->findOrFail($user->id);
             if ($locked->mfa_enabled_at) abort(409, 'MFA is already enabled.');

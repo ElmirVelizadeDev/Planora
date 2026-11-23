@@ -3,12 +3,12 @@
 namespace App\Console\Commands;
 
 use App\Models\User;
+use App\Support\PasswordPolicy;
 use App\Services\Api\V1\Shared\UserActivityLogger;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Validation\Rules\Password;
 
 class CreateAdminAccount extends Command
 {
@@ -47,7 +47,7 @@ class CreateAdminAccount extends Command
             'password' => $password,
             'confirmation' => $confirmation,
         ], [
-            'password' => ['required', 'string', Password::min(12)->mixedCase()->numbers()],
+            'password' => PasswordPolicy::rules(),
             'confirmation' => ['required', 'same:password'],
         ]);
 

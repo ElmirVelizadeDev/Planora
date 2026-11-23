@@ -35,7 +35,9 @@ Route::get('/maintenance/status', [MaintenanceStatusController::class, 'show'])-
 Route::prefix('auth')->name('auth.')
     ->middleware(['maintenance.scope:public_website', 'maintenance.scope:authentication'])->group(function () {
     Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:auth-login')->name('login');
-    Route::post('/admin/mfa/verify-login', [AuthController::class, 'verifyAdminMfa'])->middleware('throttle:10,1')->name('admin-mfa.verify-login');
+    Route::post('/admin/mfa/verify-login', [AuthController::class, 'verifyAdminMfa'])->middleware('throttle:admin-mfa-login')->name('admin-mfa.verify-login');
+    Route::post('/admin/mfa/enroll-login', [AdminMfaController::class, 'beginLoginEnrollment'])->middleware('throttle:admin-mfa-enrollment')->name('admin-mfa.enroll-login');
+    Route::post('/admin/mfa/enroll-login/verify', [AdminMfaController::class, 'verifyLoginEnrollment'])->middleware('throttle:admin-mfa-enrollment')->name('admin-mfa.enroll-login.verify');
     Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:5,1')->name('register');
     Route::post('/register/verify', [AuthController::class, 'verifyRegistration'])->middleware('throttle:10,1')->name('register.verify');
     Route::post('/register/resend', [AuthController::class, 'resendRegistrationCode'])->middleware('throttle:3,1')->name('register.resend');
@@ -63,15 +65,15 @@ Route::middleware(['maintenance.scope:dashboard_workspace', 'auth:sanctum', 'act
 Route::prefix('admin/mfa')->name('admin.mfa.')
     ->middleware(['maintenance.bootstrap', 'maintenance.scope:dashboard_workspace', 'auth:sanctum', 'active', 'role:admin'])->group(function () {
         Route::get('/', [AdminMfaController::class, 'status'])->name('status');
-        Route::post('/enrollment', [AdminMfaController::class, 'begin'])->middleware('throttle:5,1')->name('enrollment.start');
-        Route::post('/enrollment/verify', [AdminMfaController::class, 'enable'])->middleware('throttle:10,1')->name('enrollment.verify');
+        Route::post('/enrollment', [AdminMfaController::class, 'begin'])->middleware('throttle:admin-mfa-enrollment')->name('enrollment.start');
+        Route::post('/enrollment/verify', [AdminMfaController::class, 'enable'])->middleware('throttle:admin-mfa-enrollment')->name('enrollment.verify');
         Route::delete('/enrollment', [AdminMfaController::class, 'cancelEnrollment'])->name('enrollment.cancel');
         Route::post('/disable', [AdminMfaController::class, 'disable'])->middleware('step-up:mfa.disable')->name('disable');
         Route::post('/recovery-codes', [AdminMfaController::class, 'regenerateRecoveryCodes'])->middleware(['step-up:mfa.recovery', 'throttle:5,1'])->name('recovery.regenerate');
     });
 
 Route::post('/admin/step-up/verify', [AdminMfaController::class, 'verifyStepUp'])
-    ->middleware(['maintenance.bootstrap', 'maintenance.scope:dashboard_workspace', 'auth:sanctum', 'active', 'role:admin', 'throttle:5,1'])
+    ->middleware(['maintenance.bootstrap', 'maintenance.scope:dashboard_workspace', 'auth:sanctum', 'active', 'role:admin', 'throttle:admin-mfa-step-up'])
     ->name('admin.step-up.verify');
 
 Route::prefix('notifications')->name('notifications.')

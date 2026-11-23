@@ -87,7 +87,7 @@
                             <input id="password" v-model="form.password" :type="showPassword ? 'text' : 'password'" autocomplete="new-password" minlength="12" maxlength="128" placeholder="Create a strong password" :aria-invalid="Boolean(errors.password)" :aria-describedby="errors.password ? 'password-error password-hint' : 'password-hint'" @input="clearError('password')">
                             <button class="admin-user-create-password-toggle" type="button" :aria-label="showPassword ? 'Hide password' : 'Show password'" :aria-pressed="showPassword" @click="showPassword = !showPassword">{{ showPassword ? 'Hide' : 'Show' }}</button>
                         </div>
-                        <small id="password-hint" class="admin-user-create-hint">At least 12 characters, with uppercase, lowercase and a number.</small>
+                        <small id="password-hint" class="admin-user-create-hint">At least 12 characters and no more than 128. Common, compromised, and configured disallowed passwords are rejected.</small>
                         <small v-if="errors.password" id="password-error" class="admin-user-create-field-error">{{ errors.password }}</small>
                     </div>
                     <div class="admin-user-create-field">
@@ -198,8 +198,8 @@ function validateForm() {
         errors.moderator_permissions = 'User visibility is required for status management.';
     }
     if (!form.password) errors.password = 'Password is required.';
-    else if (form.password.length < 12 || form.password.length > 128 || !/[A-Z]/.test(form.password) || !/[a-z]/.test(form.password) || !/\d/.test(form.password)) {
-        errors.password = 'Use at least 12 characters, including uppercase, lowercase and a number.';
+    else if (form.password.length < 12 || form.password.length > 128) {
+        errors.password = 'Use a password between 12 and 128 characters.';
     }
     if (!form.password_confirmation) errors.password_confirmation = 'Please confirm the password.';
     else if (form.password !== form.password_confirmation) errors.password_confirmation = 'Passwords do not match.';

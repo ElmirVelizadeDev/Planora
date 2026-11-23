@@ -2,14 +2,17 @@
 
 namespace Tests\Feature\Auth;
 
+use App\Jobs\DeliverAuthenticationOtp;
 use App\Mail\PasswordRecoveryOtpMail;
 use App\Models\PasswordResetOtp;
 use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Str;
 use RuntimeException;
 use Tests\TestCase;
@@ -159,15 +162,19 @@ class PasswordRecoveryTest extends TestCase
     public function test_email_delivery_failure_is_generic_and_leaves_no_otp_record(): void
     {
         $user = User::factory()->create(['email' => 'recovery-'.Str::uuid().'@example.test']);
-        Mail::shouldReceive('to')->once()->with($user->email)->andThrow(new RuntimeException('SMTP connection failed'));
-        Log::shouldReceive('warning')->once()->with('Password recovery email delivery failed.', [
-            'exception_type' => RuntimeException::class,
+        Queue::fake();
+        Log::shouldReceive('warning')->once()->with('Authentication OTP delivery failed after retries.', [
+            'flow' => 'recovery', 'exception_type' => RuntimeException::class,
         ]);
 
         $this->withHeaders($this->headers())->postJson('/api/v1/auth/password/forgot', ['email' => $user->email])
             ->assertAccepted()
             ->assertJsonPath('message', 'If an account exists for this email, a recovery code has been sent.');
 
+        $otp = PasswordResetOtp::query()->where('user_id', $user->id)->firstOrFail();
+        Queue::assertPushed(DeliverAuthenticationOtp::class, fn (DeliverAuthenticationOtp $job) => $job->flow === 'recovery' && $job->userId === $user->id);
+        (new DeliverAuthenticationOtp('recovery', $user->email, Crypt::encryptString('000000'), $otp->otp_hash, $user->id))
+            ->failed(new RuntimeException('SMTP connection failed'));
         $this->assertDatabaseMissing('password_reset_otps', ['user_id' => $user->id]);
     }
 

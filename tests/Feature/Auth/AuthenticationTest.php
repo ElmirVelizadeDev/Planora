@@ -8,6 +8,7 @@ use App\Models\PendingRegistration;
 use App\Mail\RegistrationOtpMail;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Carbon;
@@ -351,19 +352,23 @@ class AuthenticationTest extends TestCase
         Mail::assertNothingSent();
     }
 
-    public function test_registration_accepts_eight_character_passwords_and_long_lowercase_passphrases(): void
+    public function test_registration_rejects_short_passwords_and_accepts_long_lowercase_passphrases(): void
     {
         Mail::fake();
-        foreach (['sunbeamx', 'blue orchard beside river'] as $password) {
+        foreach (['sunbeamx', 'blue orchard beside river'] as $index => $password) {
             $attributes = $this->attributes([
                 'email' => 'password-'.Str::uuid().'@gmail.com',
                 'password' => $password,
                 'password_confirmation' => $password,
             ]);
 
-            $this->withHeaders($this->statefulHeaders())
-                ->postJson('/api/v1/auth/register', $attributes)
-                ->assertAccepted();
+            $response = $this->withHeaders($this->statefulHeaders())->postJson('/api/v1/auth/register', $attributes);
+            if ($index === 0) {
+                $response->assertUnprocessable()->assertJsonValidationErrors('password');
+                $this->assertDatabaseMissing('pending_registrations', ['email' => $attributes['email']]);
+                continue;
+            }
+            $response->assertAccepted();
             $this->assertDatabaseMissing('users', ['email' => $attributes['email']]);
             $pending = PendingRegistration::where('email', $attributes['email'])->firstOrFail();
             $this->assertTrue(Hash::check($password, $pending->password_hash));
@@ -656,6 +661,21 @@ class AuthenticationTest extends TestCase
             ->assertUnauthorized();
     }
 
+    public function test_authentication_version_prevents_old_session_from_returning_after_reactivation(): void
+    {
+        $headers = $this->statefulHeaders();
+        $user = User::factory()->create(['role' => 'user', 'status' => 'active']);
+        $this->actingAs($user, 'web')->withHeaders($headers)->withCredentials()->getJson('/api/v1/user')->assertOk();
+
+        $user->forceFill(['status' => 'suspended', 'auth_version' => 2])->save();
+        $this->withHeaders($headers)->getJson('/api/v1/user')->assertUnauthorized();
+        $user->forceFill(['status' => 'active'])->save();
+        Auth::forgetGuards();
+        $this->withHeaders($headers)->getJson('/api/v1/user')->assertUnauthorized();
+
+        $this->actingAs($user->fresh(), 'web')->getJson('/api/v1/user')->assertOk();
+    }
+
     public function test_signing_into_another_account_revokes_the_previous_remember_session(): void
     {
         $first = User::factory()->create([
@@ -703,15 +723,18 @@ class AuthenticationTest extends TestCase
             'password' => Hash::make('Test-password-123'),
             'role' => 'admin',
         ]);
+        $secret = 'GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ';
+        $admin->forceFill(['mfa_secret' => Crypt::encryptString($secret), 'mfa_enabled_at' => now()])->save();
 
         $this->withHeaders($this->statefulHeaders())
             ->postJson('/api/v1/auth/login', [
                 'email' => $admin->email,
                 'password' => 'Test-password-123',
             ])
-            ->assertOk()
-            ->assertJsonPath('user.role', 'admin')
-            ->assertJsonPath('redirect_to', '/admin/dashboard');
+            ->assertOk()->assertJsonPath('mfa_required', true)->assertJsonMissingPath('user');
+        $this->assertGuest('web');
+        $this->postJson('/api/v1/auth/admin/mfa/verify-login', ['code' => $this->currentTotpCode($secret)])
+            ->assertOk()->assertJsonPath('user.role', 'admin')->assertJsonPath('redirect_to', '/admin/dashboard');
 
         $this->assertAuthenticatedAs($admin, 'web');
     }
@@ -816,6 +839,7 @@ class AuthenticationTest extends TestCase
 
         $admin = User::factory()->create(['role' => 'admin']);
         $this->assertSame('admin', $admin->fresh()->role);
+        $this->grantAdminStepUp('roles.manage', $admin);
         $response = $this->actingAs($admin, 'sanctum')
             ->withHeaders($this->statefulHeaders())
             ->patchJson($endpoint, ['role' => 'admin']);

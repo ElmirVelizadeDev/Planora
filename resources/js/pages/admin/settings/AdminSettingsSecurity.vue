@@ -1,5 +1,5 @@
 <template>
-    <AdminSettingsLayout page-title="Security settings" page-description="Set the rules used for future sign-ins, passwords and verification codes.">
+    <AdminSettingsLayout page-title="Security settings" page-description="Set the rules used for new passwords, sign-ins and verification codes.">
         <div class="admin-settings-detail" :aria-busy="form.loading">
             <SettingsIntro title="Security policies" description="These controls affect future registration, password recovery and login attempts. Existing passwords and active sessions are not changed." tone="is-green" />
             <p v-if="form.error" class="settings-feedback is-error" role="alert">{{ form.error }} <button v-if="!form.dirty" type="button" @click="form.load">Retry</button></p>
@@ -7,29 +7,20 @@
             <section v-if="form.loading" class="admin-settings-section settings-loading" aria-label="Loading settings"><span></span><span></span></section>
             <template v-else-if="form.loaded">
                 <section class="admin-settings-section settings-form-card" aria-labelledby="admin-mfa-title">
-                    <header class="settings-form-heading"><div><h2 id="admin-mfa-title">Administrator multi-factor authentication</h2><p>Add an authenticator code to protect administrator sign-ins and sensitive changes.</p></div><span class="admin-mfa-state" :class="{ 'is-enabled': mfaStatus.enabled }">{{ mfaStatus.enabled ? 'Enabled' : 'Not enabled' }}</span></header>
+                    <header class="settings-form-heading"><div><h2 id="admin-mfa-title">Administrator multi-factor authentication</h2><p>MFA is mandatory for all administrator sign-ins.</p></div><span class="admin-mfa-state" :class="{ 'is-enabled': mfaStatus.enabled }">{{ mfaStatus.enabled ? 'Enabled' : 'Required' }}</span></header>
                     <p v-if="mfaError" class="settings-feedback is-error" role="alert">{{ mfaError }}</p>
                     <p v-if="mfaNotice" class="settings-feedback is-success" role="status">{{ mfaNotice }}</p>
-                    <template v-if="!mfaStatus.enabled && !setup.secret">
-                        <form class="admin-mfa-form" @submit.prevent="beginEnrollment"><label class="settings-field"><span>Confirm your password to start setup</span><input v-model="setup.password" type="password" autocomplete="current-password" required maxlength="128"></label><button class="settings-button settings-button--primary" type="submit" :disabled="mfaBusy">{{ mfaBusy ? 'Starting…' : 'Set up authenticator' }}</button></form>
-                    </template>
-                    <template v-else-if="setup.secret">
-                        <img class="admin-mfa-qr" :src="setup.qrCodeDataUri" alt="Scan this QR code with your authenticator app">
-                        <p>Enter this key manually in your authenticator app. It is shown only during setup.</p>
-                        <code class="admin-mfa-secret">{{ setup.secret }}</code>
-                        <p class="admin-mfa-uri-label">Setup URI</p><code class="admin-mfa-uri">{{ setup.otpauthUri }}</code>
-                        <form class="admin-mfa-form" @submit.prevent="enableMfa"><label class="settings-field"><span>Enter the six-digit authenticator code</span><input v-model.trim="setup.code" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" required></label><div class="admin-mfa-actions"><button class="settings-button" type="button" :disabled="mfaBusy" @click="cancelSetup">Cancel setup</button><button class="settings-button settings-button--primary" type="submit" :disabled="mfaBusy">{{ mfaBusy ? 'Verifying…' : 'Verify and enable' }}</button></div></form>
-                    </template>
-                    <template v-else-if="mfaStatus.enabled">
+                    <template v-if="mfaStatus.enabled">
                         <p>MFA is active for this administrator account. Store recovery codes securely; they are displayed only once.</p>
-                        <div class="admin-mfa-actions"><button class="settings-button" type="button" :disabled="mfaBusy" @click="regenerateCodes">Regenerate recovery codes</button><button class="settings-button settings-button--danger" type="button" :disabled="mfaBusy" @click="disableMfa">Disable MFA</button></div>
+                        <div class="admin-mfa-actions"><button class="settings-button" type="button" :disabled="mfaBusy" @click="regenerateCodes">Regenerate recovery codes</button></div>
                     </template>
+                    <p v-else>Complete MFA setup from the administrator sign-in page before accessing the workspace.</p>
                     <div v-if="recoveryCodes.length" class="admin-mfa-recovery" role="region" aria-label="New recovery codes"><strong>Save these recovery codes now</strong><p>Each code can be used once. They will not be shown again.</p><code v-for="code in recoveryCodes" :key="code">{{ code }}</code><button class="settings-button" type="button" @click="recoveryCodes = []">I have saved these codes</button></div>
                 </section>
                 <section class="admin-settings-section settings-form-card" aria-labelledby="settings-security-password-title">
-                    <header class="settings-form-heading"><div><h2 id="settings-security-password-title">Password policy</h2><p>Requirements apply to new registrations and password resets. Existing passwords remain unchanged.</p></div></header>
+                    <header class="settings-form-heading"><div><h2 id="settings-security-password-title">Password policy</h2><p>The shared policy applies to registration, password reset, password change, and Admin-managed account creation. Existing passwords remain valid for login.</p></div></header>
                     <div class="settings-form-grid">
-                        <label class="settings-field"><span>Minimum password length</span><input v-model.number="form.values.minimum_password_length" type="number" min="8" max="64"><small v-if="form.validationErrors.minimum_password_length">{{ form.validationErrors.minimum_password_length[0] }}</small></label>
+                        <label class="settings-field"><span>Minimum password length</span><input v-model.number="form.values.minimum_password_length" type="number" min="12" max="64"><small v-if="form.validationErrors.minimum_password_length">{{ form.validationErrors.minimum_password_length[0] }}</small></label>
                     </div>
                     <div class="settings-toggle-list">
                         <label v-for="item in passwordRules" :key="item.key" class="settings-toggle"><span><strong>{{ item.title }}</strong><small>{{ item.description }}</small></span><input v-model="form.values[item.key]" type="checkbox" :aria-label="item.title"></label>
@@ -62,7 +53,7 @@ import AdminSettingsLayout from './AdminSettingsLayout.vue';
 import SettingsIntro from './components/SettingsIntro.vue';
 import SettingsSaveBar from './components/SettingsSaveBar.vue';
 import { useAdminSettingsForm } from '../../../features/settings/admin/composables/useAdminSettingsForm.js';
-import { cancelAdminMfaEnrollment, disableAdminMfa as disableMfaRequest, fetchAdminMfaStatus, regenerateAdminMfaRecoveryCodes, startAdminMfaEnrollment, verifyAdminMfaEnrollment } from '../../../features/auth/admin/services/adminMfaApi.js';
+import { fetchAdminMfaStatus, regenerateAdminMfaRecoveryCodes } from '../../../features/auth/admin/services/adminMfaApi.js';
 import { reactive, ref } from 'vue';
 
 const form = useAdminSettingsForm('security');
@@ -73,7 +64,6 @@ const passwordRules = [
     { key: 'require_special_character', title: 'Require a special character', description: 'At least one non-alphanumeric character is required.' },
 ];
 const mfaStatus = reactive({ enabled: false });
-const setup = reactive({ password: '', secret: '', otpauthUri: '', qrCodeDataUri: '', code: '' });
 const recoveryCodes = ref([]);
 const mfaError = ref('');
 const mfaNotice = ref('');
@@ -83,33 +73,10 @@ async function loadMfaStatus() {
     try { Object.assign(mfaStatus, (await fetchAdminMfaStatus()).data); }
     catch { mfaError.value = 'Could not load administrator MFA status.'; }
 }
-async function beginEnrollment() {
-    mfaBusy.value = true; mfaError.value = '';
-    try { const data = (await startAdminMfaEnrollment(setup.password)).data; Object.assign(setup, { secret: data.secret, otpauthUri: data.otpauth_uri, qrCodeDataUri: data.qr_code_data_uri }); setup.password = ''; }
-    catch (error) { mfaError.value = error.response?.data?.errors?.password?.[0] || error.response?.data?.message || 'MFA setup could not be started.'; }
-    finally { mfaBusy.value = false; }
-}
-async function enableMfa() {
-    mfaBusy.value = true; mfaError.value = '';
-    try { const { data } = await verifyAdminMfaEnrollment(setup.code); recoveryCodes.value = data.recovery_codes; mfaStatus.enabled = true; Object.assign(setup, { secret: '', otpauthUri: '', qrCodeDataUri: '', code: '' }); mfaNotice.value = 'MFA is enabled.'; }
-    catch (error) { mfaError.value = error.response?.data?.errors?.code?.[0] || error.response?.data?.message || 'MFA could not be enabled.'; }
-    finally { mfaBusy.value = false; }
-}
-async function cancelSetup() {
-    try { await cancelAdminMfaEnrollment(); }
-    catch { mfaError.value = 'The pending MFA setup could not be cleared on the server.'; }
-    finally { Object.assign(setup, { secret: '', otpauthUri: '', qrCodeDataUri: '', code: '', password: '' }); }
-}
 async function regenerateCodes() {
     mfaBusy.value = true; mfaError.value = '';
     try { recoveryCodes.value = (await regenerateAdminMfaRecoveryCodes()).data.recovery_codes; mfaNotice.value = 'Previous recovery codes were invalidated.'; }
     catch (error) { mfaError.value = error.response?.data?.message || 'Recovery codes could not be regenerated.'; }
-    finally { mfaBusy.value = false; }
-}
-async function disableMfa() {
-    mfaBusy.value = true; mfaError.value = '';
-    try { await disableMfaRequest(); mfaStatus.enabled = false; recoveryCodes.value = []; mfaNotice.value = 'MFA has been disabled.'; }
-    catch (error) { mfaError.value = error.response?.data?.message || 'MFA could not be disabled.'; }
     finally { mfaBusy.value = false; }
 }
 
@@ -120,7 +87,7 @@ function openResetConfirmation() {
     form.openResetConfirmation('Are you sure you want to reset Security settings to their default values? This will replace the current security configuration.');
 }
 onMounted(() => { form.load(); loadMfaStatus(); });
-onBeforeUnmount(() => { Object.assign(setup, { password: '', secret: '', otpauthUri: '', qrCodeDataUri: '', code: '' }); recoveryCodes.value = []; });
+onBeforeUnmount(() => { recoveryCodes.value = []; });
 </script>
 
 <style scoped>

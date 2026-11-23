@@ -18,6 +18,16 @@ export async function verifyAdminMfaLogin(payload) {
     return api.post('/auth/admin/mfa/verify-login', payload);
 }
 
+export async function beginAdminMfaLoginEnrollment() {
+    await initializeCsrfProtection();
+    return api.post('/auth/admin/mfa/enroll-login');
+}
+
+export async function verifyAdminMfaLoginEnrollment(code) {
+    await initializeCsrfProtection();
+    return api.post('/auth/admin/mfa/enroll-login/verify', { code });
+}
+
 export async function register(attributes) {
     await initializeCsrfProtection();
     return api.post('/auth/register', attributes);

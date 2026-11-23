@@ -137,6 +137,7 @@ class CurrentUserProfileService
         return DB::transaction(function () use ($account, $password): User {
             $user = User::query()->lockForUpdate()->findOrFail($account->id);
             $user->password = Hash::make($password);
+            $user->auth_version = (int) ($user->auth_version ?? 1) + 1;
             $user->setRememberToken(Str::random(60));
             $user->save();
             $user->tokens()->delete();
