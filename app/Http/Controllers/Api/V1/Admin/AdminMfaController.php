@@ -164,7 +164,9 @@ class AdminMfaController extends Controller
     {
         abort_unless(is_array($challenge) && (int) ($challenge['expires_at'] ?? 0) > now()->timestamp && filled($challenge['challenge_id'] ?? null), 401, 'The administrator enrollment challenge has expired. Sign in again.');
         $user = User::query()->findOrFail($challenge['user_id'] ?? 0);
-        abort_unless($user->role === 'admin' && $user->status === 'active' && $user->email_verified_at && ! $user->mfa_enabled_at, 401, 'The administrator enrollment challenge is no longer valid.');
+        abort_unless((int) ($challenge['auth_version'] ?? 0) === (int) ($user->auth_version ?? 1)
+            && $user->role === 'admin' && $user->status === 'active' && $user->email_verified_at && ! $user->mfa_enabled_at,
+            401, 'The administrator enrollment challenge is no longer valid.');
         return $user;
     }
 }

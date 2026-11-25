@@ -57,7 +57,7 @@ Do not test restore against a production database. Use an isolated disposable My
 
 ## API and access
 
-All routes are under `/api/v1/admin/backups` and require authenticated, active Admin access. The API supports listing/filtering/pagination, creation, metadata detail, encrypted download, deletion, and restore. Delete and restore confirmations must match `DELETE <backup-uuid>` or `RESTORE <backup-uuid>`, respectively. Moderator access is intentionally not granted. API resources expose safe metadata only; artifact keys, checksums, and encryption details are not returned. See [API documentation](API_DOCUMENTATION.md) for the endpoint and validation reference.
+All routes are under `/api/v1/admin/backups` and require authenticated, active Admin access. The API supports listing/filtering/pagination, creation, metadata detail, encrypted download, deletion, and restore. Delete and restore confirmations must match `DELETE <backup-uuid>` or `RESTORE <backup-uuid>`, respectively. Moderator access is intentionally not granted. API resources expose safe metadata only; artifact keys, checksums, and encryption details are not returned. See [API documentation](../api/API_DOCUMENTATION.md) for the endpoint and validation reference.
 
 ## Limitations and operational checks
 

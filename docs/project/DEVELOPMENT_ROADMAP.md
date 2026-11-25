@@ -13,9 +13,9 @@ This document records implementation boundaries visible in the current repositor
 - Admin Task soft-delete recovery with an audited restore flow; Project deletion remains permanent and detaches linked Tasks.
 - Server-configured administrator entry, independently enforced maintenance scopes, and persisted User/Admin notifications for task and administrative events.
 - Role-aware Global Search backed by scoped database queries, and Admin-only encrypted Backup & Recovery with verification, retention, and guarded restore.
-- Optional Admin authenticator-based MFA, single-use recovery codes, and one-use step-up verification for sensitive Admin actions.
+- Mandatory Admin authenticator-based MFA, single-use recovery codes, and one-use step-up verification for sensitive Admin actions.
 - Account appearance preferences and guest light/dark theme persistence.
-- Local-only idempotent demo seeders for Categories, Projects, linked Project Tasks, and standalone Tasks. The account seeder is invoked unconditionally by `DatabaseSeeder`; do not use `db:seed` or `migrate --seed` outside a disposable local database. See [seeder notes](../database/seeders/README.md).
+- Local-only idempotent demo seeders for Categories, Projects, linked Project Tasks, and standalone Tasks. The account seeder is invoked unconditionally by `DatabaseSeeder`; do not use `db:seed` or `migrate --seed` outside a disposable local database. See [seeder notes](../development/LOCAL_DEMO_SEEDERS.md).
 
 ## Planned
 
@@ -23,4 +23,4 @@ This document records implementation boundaries visible in the current repositor
 - Add additional Moderator module permissions only when business purpose, object-level rules, backend authorization, UI behavior, and tests are defined together.
 - Expand automated coverage and browser verification for the current feature set.
 
-Do not treat a route, placeholder component, or unverified external mail configuration as a finished workflow. Current APIs and schema are listed in [API documentation](API_DOCUMENTATION.md) and [database design](DATABASE_DESIGN.md).
+Do not treat a route, placeholder component, or unverified external mail configuration as a finished workflow. Current APIs and schema are listed in [API documentation](../api/API_DOCUMENTATION.md) and [database design](../architecture/DATABASE_DESIGN.md).

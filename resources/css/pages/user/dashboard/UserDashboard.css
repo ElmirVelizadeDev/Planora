@@ -16,7 +16,7 @@
 .dashboard-stat-icon.is-success { color: var(--color-success); background: var(--color-success-subtle); }
 .dashboard-stat-icon.is-warning { color: var(--color-warning); background: var(--color-warning-subtle); }
 .dashboard-stat-icon.is-neutral { color: var(--color-neutral); background: var(--color-neutral-subtle); }
-.dashboard-stat-card strong { color: var(--color-text-secondary); font-size: 21px; font-weight: 600; line-height: 1; }
+.dashboard-stat-card strong { color: var(--color-text); font-size: 21px; font-weight: 600; line-height: 1; }
 .dashboard-stat-card > span:last-child { margin-top: 5px; color: var(--color-text-secondary); font-size: 11px; }
 .dashboard-main-grid { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(280px, .8fr); align-items: start; gap: 16px; }
 .dashboard-panel { padding: 19px; }

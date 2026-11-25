@@ -3,7 +3,7 @@
         <div class="section-shell public-footer-inner">
             <RouterLink class="public-brand" :to="{ name: 'home' }"><img :src="'/images/branding/planora-master-512.png'" width="30" height="30" alt="" /><span>Planora</span></RouterLink>
             <p>Thoughtful tools for focused work.</p>
-            <nav aria-label="Footer navigation"><RouterLink :to="{ name: 'home' }">Home</RouterLink><RouterLink :to="{ name: 'login' }">Login</RouterLink><RouterLink :to="{ name: 'register' }">Register</RouterLink></nav>
+            <nav aria-label="Footer navigation"><RouterLink :to="{ name: 'home' }">Home</RouterLink><RouterLink :to="{ name: 'login' }">Login</RouterLink><RouterLink :to="{ name: 'register' }">Register</RouterLink><RouterLink :to="{ name: 'terms-and-conditions' }">Terms &amp; Conditions</RouterLink><RouterLink :to="{ name: 'privacy-policy' }">Privacy Policy</RouterLink></nav>
             <small>© {{ year }} Planora</small>
         </div>
     </footer>

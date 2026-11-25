@@ -1,6 +1,6 @@
 # Database design
 
-Laravel database settings come from the environment; `.env.example` selects MySQL. Schema changes are tracked in `database/migrations/`. Feature tests use an isolated MySQL database described in [Testing database](TESTING_DATABASE.md).
+Laravel database settings come from the environment; `.env.example` selects MySQL. Schema changes are tracked in `database/migrations/`. Feature tests use an isolated MySQL database described in [Testing database](../testing/TESTING_DATABASE.md).
 
 ## Core tables
 
@@ -53,13 +53,13 @@ Planora maintenance scope state is not stored in MySQL. `MaintenanceScopeStore` 
 
 Global Search queries the existing `users`, `tasks`, `projects`, and `categories` tables using the current user's permissions and record scope. It does not add a search index, denormalized search table, or migration.
 
-Backup history and operation records are JSON metadata stored alongside encrypted artifacts on the configured private Laravel filesystem disk. The Backup feature intentionally adds no MySQL table or schema migration. Backup encryption keys and artifact contents must be protected as described in [backup and disaster recovery](BACKUPS_AND_DISASTER_RECOVERY.md).
+Backup history and operation records are JSON metadata stored alongside encrypted artifacts on the configured private Laravel filesystem disk. The Backup feature intentionally adds no MySQL table or schema migration. Backup encryption keys and artifact contents must be protected as described in [backup and disaster recovery](../operations/BACKUPS_AND_DISASTER_RECOVERY.md).
 
 ## Migrations and demo data
 
 The Project schema is created by `2026_11_11_000001_create_projects_table.php`; the nullable Task-to-Project relationship is added by `2026_11_11_000002_add_project_id_to_tasks_table.php`. Categories are created by `2026_11_12_000001_create_categories_table.php`; nullable Category foreign keys on Projects and Tasks are added by `2026_11_13_000001_add_category_id_to_projects_and_tasks_tables.php`. Earlier migrations create account, authentication, activity, and Task tables.
 
-`DatabaseSeeder` always invokes `PlanoraUsersSeeder`; it invokes Category, Project, and User Task demo seeders only under `APP_ENV=local`. The three demo seeders are individually guarded for local use. Because the account seeder is not guarded, do not run `db:seed` or `migrate --seed` outside a disposable local database. See [seeder notes](../database/seeders/README.md).
+`DatabaseSeeder` always invokes `PlanoraUsersSeeder`; it invokes Category, Project, and User Task demo seeders only under `APP_ENV=local`. The three demo seeders are individually guarded for local use. Because the account seeder is not guarded, do not run `db:seed` or `migrate --seed` outside a disposable local database. See [seeder notes](../development/LOCAL_DEMO_SEEDERS.md).
 
 The ten CategorySeeder names are inserted only when no case-insensitive active or archived name match exists. Existing Categories are not updated. Project and Task demo seeders create marked records for active normal Users; they preserve an existing non-null category association, including an archived Category, and only fill an absent association from a matching active Category. They do not rewrite unrelated records.
 

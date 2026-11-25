@@ -12,18 +12,18 @@ const errorPages = {
 };
 
 export const routes = [
-    { path: '/', name: 'home', component: () => import('../pages/public/Home.vue'), meta: { initializeAuth: true, maintenanceScopes: ['public_website'] } },
+    { path: '/', name: 'home', component: () => import('../pages/public/Home.vue'), meta: { initializeAuth: true, maintenanceScopes: ['public_website'], pageTitle: 'Planora — Plan tasks and projects', pageDescription: 'Planora helps you organize tasks, projects, categories, priorities, and progress in one workspace.', canonical: true, publicIndex: true } },
     {
         path: '/',
         component: () => import('../layouts/AuthLayout.vue'),
         children: [
-            { path: 'login', name: 'login', component: authPage('Login'), meta: { guestOnly: true, maintenanceScopes: ['public_website', 'authentication'] } },
-            { path: 'register', name: 'register', component: authPage('Register'), meta: { guestOnly: true, maintenanceScopes: ['public_website', 'authentication'] } },
-            { path: 'terms-and-conditions', name: 'terms-and-conditions', component: () => import('../pages/public/TermsAndConditions.vue'), meta: { maintenanceScopes: ['public_website'] } },
-            { path: 'privacy-policy', name: 'privacy-policy', component: () => import('../pages/public/PrivacyPolicy.vue'), meta: { maintenanceScopes: ['public_website'] } },
-            { path: 'forgot-password', name: 'forgot-password', component: authPage('ForgotPassword'), meta: { maintenanceScopes: ['public_website', 'authentication'] } },
-            { path: 'reset-password', name: 'reset-password', component: authPage('ResetPassword'), meta: { maintenanceScopes: ['public_website', 'authentication'] } },
-            { path: 'verify-email', name: 'verify-email', component: authPage('VerifyEmail'), meta: { guestOnly: true, maintenanceScopes: ['public_website', 'authentication'] } },
+            { path: 'login', name: 'login', component: authPage('Login'), meta: { guestOnly: true, maintenanceScopes: ['public_website', 'authentication'], pageTitle: 'Sign in — Planora', pageDescription: 'Sign in to your Planora account.', noIndex: true } },
+            { path: 'register', name: 'register', component: authPage('Register'), meta: { guestOnly: true, maintenanceScopes: ['public_website', 'authentication'], pageTitle: 'Create an account — Planora', pageDescription: 'Create a Planora account to organize your tasks and projects.', noIndex: true } },
+            { path: 'terms-and-conditions', name: 'terms-and-conditions', component: () => import('../pages/public/TermsAndConditions.vue'), meta: { maintenanceScopes: ['public_website'], pageTitle: 'Terms & Conditions — Planora', pageDescription: 'Terms for creating an account and using Planora.', canonical: true, publicIndex: true } },
+            { path: 'privacy-policy', name: 'privacy-policy', component: () => import('../pages/public/PrivacyPolicy.vue'), meta: { maintenanceScopes: ['public_website'], pageTitle: 'Privacy Policy — Planora', pageDescription: 'How Planora handles account, workspace, and security information.', canonical: true, publicIndex: true } },
+            { path: 'forgot-password', name: 'forgot-password', component: authPage('ForgotPassword'), meta: { maintenanceScopes: ['public_website', 'authentication'], pageTitle: 'Recover your account — Planora', pageDescription: 'Request an account recovery code for Planora.', noIndex: true } },
+            { path: 'reset-password', name: 'reset-password', component: authPage('ResetPassword'), meta: { maintenanceScopes: ['public_website', 'authentication'], pageTitle: 'Reset your password — Planora', pageDescription: 'Choose a new password for your Planora account.', noIndex: true } },
+            { path: 'verify-email', name: 'verify-email', component: authPage('VerifyEmail'), meta: { guestOnly: true, maintenanceScopes: ['public_website', 'authentication'], pageTitle: 'Verify your email — Planora', pageDescription: 'Verify your email address to finish creating your Planora account.', noIndex: true } },
         ],
     },
     {

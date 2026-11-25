@@ -582,6 +582,55 @@ class AuthenticationTest extends TestCase
         $this->assertAuthenticatedAs($user, 'web');
     }
 
+    public function test_moderator_login_returns_the_first_supported_permission_destination(): void
+    {
+        $destinations = [
+            ['users.view', '/admin/users'],
+            ['categories.view', '/admin/categories'],
+            ['projects.view', '/admin/projects'],
+            ['tasks.view', '/admin/tasks'],
+            ['reports.view', '/admin/reports'],
+            ['activity.view', '/admin/activity-logs'],
+        ];
+
+        foreach ($destinations as [$permission, $destination]) {
+            $moderator = User::factory()->create([
+                'email' => 'moderator-'.Str::uuid().'@example.test',
+                'password' => Hash::make('Test-password-123'),
+                'role' => 'moderator',
+                'moderator_permissions' => [$permission],
+            ]);
+
+            $this->withHeaders($this->statefulHeaders())
+                ->postJson('/api/v1/auth/login', [
+                    'email' => $moderator->email,
+                    'password' => 'Test-password-123',
+                ])
+                ->assertOk()
+                ->assertJsonPath('user.role', 'moderator')
+                ->assertJsonPath('redirect_to', $destination);
+        }
+    }
+
+    public function test_moderator_without_a_supported_view_permission_is_sent_to_forbidden_destination(): void
+    {
+        $moderator = User::factory()->create([
+            'email' => 'moderator-'.Str::uuid().'@example.test',
+            'password' => Hash::make('Test-password-123'),
+            'role' => 'moderator',
+            'moderator_permissions' => [],
+        ]);
+
+        $this->withHeaders($this->statefulHeaders())
+            ->postJson('/api/v1/auth/login', [
+                'email' => $moderator->email,
+                'password' => 'Test-password-123',
+            ])
+            ->assertOk()
+            ->assertJsonPath('user.role', 'moderator')
+            ->assertJsonPath('redirect_to', '/403');
+    }
+
     public function test_login_without_remember_uses_the_regular_session_only(): void
     {
         $user = User::factory()->create([

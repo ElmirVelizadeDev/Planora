@@ -2,7 +2,7 @@
 
 The active JSON API is versioned under `/api/v1`. Laravel mounts `routes/api/v1.php` through `routes/api.php`; `php artisan route:list` is the authoritative route inventory. The first-party Vue SPA uses Sanctum stateful sessions and CSRF protection, not bearer tokens for browser login.
 
-Protected routes require an authenticated active account and the role or policy described below. Vue route guards are not an API security boundary. The administrator sign-in entry is a configured Laravel web route, not a JSON API endpoint; see [administrator access and maintenance](ADMIN_ACCESS_AND_MAINTENANCE.md).
+Protected routes require an authenticated active account and the role or policy described below. Vue route guards are not an API security boundary. The administrator sign-in entry is a configured Laravel web route, not a JSON API endpoint; see [administrator access and maintenance](../operations/ADMIN_ACCESS_AND_MAINTENANCE.md).
 
 ## Authentication
 
@@ -29,7 +29,7 @@ Protected routes require an authenticated active account and the role or policy 
 
 These account endpoints accept no user ID and operate only on the authenticated active account. Password changes revoke Sanctum personal access tokens, rotate the remember token, and invalidate other stateful sessions through the stored password hash. Email remains read-only because authenticated email changes do not currently have a verification workflow. Self-service account deletion is not available; account lifecycle remains Admin-managed.
 
-See [authentication and security](AUTHENTICATION_SECURITY.md), [registration OTP lifecycle](REGISTRATION_OTP.md), and [local mail testing](LOCAL_MAIL_TESTING.md) for the authentication flow and development tooling.
+See [authentication and security](../security/AUTHENTICATION_SECURITY.md), [registration OTP lifecycle](../security/REGISTRATION_OTP.md), and [local mail testing](../development/LOCAL_MAIL_TESTING.md) for the authentication flow and development tooling.
 
 Every Admin password login requires MFA. An enabled account returns `mfa_required`; a legacy account without MFA returns `mfa_enrollment_required`. Neither response contains an authenticated User. An MFA challenge is completed in the same first-party session with `code` (six-digit TOTP) or `recovery_code` (ten-character single-use code). Enrollment requires `POST /enroll-login`, followed by a valid six-digit code at `/enroll-login/verify`. Only then is the Admin session established. MFA attempt limits are configurable, tracked per account and challenge in SQL, and supplemented by shared-cache IP limits.
 
@@ -171,7 +171,7 @@ The `PUT` body uses top-level fields. Required fields must be supplied; nullable
 
 ### Backup & Recovery
 
-All endpoints require an authenticated active Admin. Moderators and regular Users are denied. Backup records and encrypted artifacts are stored on the configured private filesystem disk; the API does not expose filesystem paths, artifact keys, checksums, or encryption material. See [backup and disaster recovery](BACKUPS_AND_DISASTER_RECOVERY.md) for storage, restore safety, and operational requirements.
+All endpoints require an authenticated active Admin. Moderators and regular Users are denied. Backup records and encrypted artifacts are stored on the configured private filesystem disk; the API does not expose filesystem paths, artifact keys, checksums, or encryption material. See [backup and disaster recovery](../operations/BACKUPS_AND_DISASTER_RECOVERY.md) for storage, restore safety, and operational requirements.
 
 | Method | Endpoint | Request and response |
 |---|---|---|
@@ -194,7 +194,7 @@ These endpoints require an authenticated active account with the `user` or `admi
 | `PUT` | `/api/v1/notifications/{notification}/read` | Mark one owned notification as read |
 | `POST` | `/api/v1/notifications/read-all` | Mark all of the recipient's unread notifications as read |
 
-The list accepts `filter` (`all` or `unread`), `page`, and `per_page` (1–50; default 15). It returns notification `data` and pagination metadata, including `unread_count`. Notification resources contain the ID, event type, title, description, read/created timestamps, and a role-checked internal destination when the related Task is still available to the recipient. Event types include task assignment, significant task updates, status changes, completion, reopening, and due-soon reminders; Admin events include verified user registration, account status/role/permission changes, account deletion/restoration, other Admin-created tasks, and maintenance changes. Admin events go to other active Admins, while task and account notifications are scoped to their intended active User recipients. Task reminders are scheduled daily for eligible tasks due the next day. Notification persistence is described in [database design](DATABASE_DESIGN.md).
+The list accepts `filter` (`all` or `unread`), `page`, and `per_page` (1–50; default 15). It returns notification `data` and pagination metadata, including `unread_count`. Notification resources contain the ID, event type, title, description, read/created timestamps, and a role-checked internal destination when the related Task is still available to the recipient. Event types include task assignment, significant task updates, status changes, completion, reopening, and due-soon reminders; Admin events include verified user registration, account status/role/permission changes, account deletion/restoration, other Admin-created tasks, and maintenance changes. Admin events go to other active Admins, while task and account notifications are scoped to their intended active User recipients. Task reminders are scheduled daily for eligible tasks due the next day. Notification persistence is described in [database design](../architecture/DATABASE_DESIGN.md).
 
 ## Maintenance APIs
 
@@ -265,4 +265,4 @@ Project and Task creation/update accept an optional nullable `category_id`. New 
 
 Project lifecycle values are `planned`, `active`, `on_hold`, and `completed`. Task statuses and priorities are defined by `app/Enums/TaskStatus.php` and `app/Enums/TaskPriority.php`. Collection responses use `data` and pagination `meta`; validation errors use Laravel's JSON validation response. Request parameter names and bounds are validated by Form Requests under `app/Http/Requests/Api/V1/`.
 
-For table relationships and deletion behavior, see [database design](DATABASE_DESIGN.md). For access boundaries, see [authentication and security](AUTHENTICATION_SECURITY.md).
+For table relationships and deletion behavior, see [database design](../architecture/DATABASE_DESIGN.md). For access boundaries, see [authentication and security](../security/AUTHENTICATION_SECURITY.md).

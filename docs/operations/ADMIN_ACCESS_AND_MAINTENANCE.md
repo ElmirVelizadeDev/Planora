@@ -18,7 +18,7 @@ The GET route serves the normal Vite shell with a server-rendered `data-planora-
 
 Successful administrator sign-in uses the existing `web` guard and `User` record. Credentials, the database role, active status, and verified email are checked on the server. The controller regenerates the session after authentication, returns the existing `UserResource`, and redirects to `/admin/dashboard`. A valid non-admin account is rejected. The entry page and login response are marked private and non-cacheable, use `Referrer-Policy: no-referrer`, and login audit records replace the path with `[protected-admin-entry]`.
 
-Administrators can optionally enroll authenticator-based MFA from **Admin → Settings → Security**. MFA-enabled password login creates a five-minute challenge in the first-party session; successful TOTP or single-use recovery-code verification completes login. Sensitive Admin actions that declare step-up middleware require a separate purpose-bound verification grant. See [authentication and security](AUTHENTICATION_SECURITY.md) and [API documentation](API_DOCUMENTATION.md) for behavior and endpoints.
+Administrator MFA is mandatory. An Admin without an enrolled factor must complete enrollment during sign-in; an enrolled Admin completes a five-minute TOTP or single-use recovery-code challenge after password verification. Enabled Admins can regenerate recovery codes from **Admin → Settings → Security**; MFA cannot be disabled through the application. Sensitive Admin actions that declare step-up middleware require a separate purpose-bound verification grant. See [authentication and security](../security/AUTHENTICATION_SECURITY.md) and [API documentation](../api/API_DOCUMENTATION.md) for behavior and endpoints.
 
 ## Maintenance modes
 
@@ -46,7 +46,7 @@ The local `.env` value is ignored by Git. The repository intentionally does not 
 
 ## Verification
 
-Run focused checks from a configured development environment. PHPUnit feature tests require the isolated MySQL test database described in [testing database](TESTING_DATABASE.md).
+Run focused checks from a configured development environment. PHPUnit feature tests require the isolated MySQL test database described in [testing database](../testing/TESTING_DATABASE.md).
 
 ```sh
 php artisan test tests/Feature/Auth/AdministratorEntryTest.php

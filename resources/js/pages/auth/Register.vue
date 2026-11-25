@@ -54,10 +54,10 @@
                     <small v-else id="password-confirmation-feedback" class="auth-field-hint">Enter the same password again.</small>
                 </div>
                 <div class="auth-terms-field">
-                    <input id="register-terms-accepted" v-model="termsAccepted" type="checkbox" name="terms_accepted" aria-label="I agree to the Terms & Conditions and acknowledge that I have read the Privacy Policy" :aria-invalid="Boolean(fieldErrors.terms_accepted)" :aria-describedby="fieldErrors.terms_accepted ? 'register-terms-error' : undefined" @change="clearFieldError('terms_accepted')">
+                    <input id="register-terms-accepted" v-model="termsAccepted" type="checkbox" name="terms_accepted" aria-labelledby="register-terms-label" :aria-invalid="Boolean(fieldErrors.terms_accepted)" :aria-describedby="fieldErrors.terms_accepted ? 'register-terms-error' : undefined" @change="clearFieldError('terms_accepted')">
                     <div class="auth-terms-copy">
-                        <span>I agree to the <RouterLink :to="{ name: 'terms-and-conditions' }">Terms &amp; Conditions</RouterLink>.</span>
-                        <span>I acknowledge that I have read the <RouterLink :to="{ name: 'privacy-policy' }">Privacy Policy</RouterLink>.</span>
+                        <label id="register-terms-label" for="register-terms-accepted">I agree to the Terms &amp; Conditions and acknowledge that I have read the Privacy Policy.</label>
+                        <small>Read: <RouterLink :to="{ name: 'terms-and-conditions' }">Terms &amp; Conditions</RouterLink> · <RouterLink :to="{ name: 'privacy-policy' }">Privacy Policy</RouterLink></small>
                         <small v-if="fieldErrors.terms_accepted" id="register-terms-error" class="auth-field-error" role="alert">{{ fieldErrors.terms_accepted[0] }}</small>
                     </div>
                 </div>

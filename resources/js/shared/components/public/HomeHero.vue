@@ -5,7 +5,7 @@
             <h1 id="home-title">Make space for <span>meaningful work.</span></h1>
             <p>Planora brings your tasks, priorities, and progress into one calm workspace—so you can stay organized and move forward with focus.</p>
             <div class="home-hero-actions">
-                <RouterLink class="home-button home-button-primary" :to="{ name: 'login' }">Get started <span aria-hidden="true">→</span></RouterLink>
+                <RouterLink class="home-button home-button-primary" :to="{ name: 'register' }">Get started <span aria-hidden="true">→</span></RouterLink>
                 <RouterLink class="home-button home-button-secondary" :to="{ name: 'login' }">Log in</RouterLink>
             </div>
             <div class="home-hero-note"><span class="home-note-mark" aria-hidden="true">✓</span> A thoughtful place for the work ahead</div>

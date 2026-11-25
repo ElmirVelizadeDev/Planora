@@ -124,7 +124,10 @@ async function submit() {
         } else if (error.response?.status === 429) {
             errorMessage.value = rateLimitMessage(error, 'Too many sign-in attempts. Please wait before trying again.');
         } else {
-            errorMessage.value = 'We could not verify this administrator account. Check your details and try again.';
+            const responseMessage = error.response?.data?.message;
+            errorMessage.value = responseMessage === 'The given data was invalid.'
+                ? ''
+                : responseMessage || 'We could not verify this administrator account. Check your details and try again.';
         }
     } finally {
         loading.value = false;

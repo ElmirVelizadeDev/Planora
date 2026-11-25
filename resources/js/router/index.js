@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import { routes } from './routes.js';
 import { installRouteGuards } from './guards.js';
+import { applyPageMetadata } from './pageMetadata.js';
 
 const router = createRouter({
     // Laravel serves the SPA at the domain root. Vite's BASE_URL points to /build/
@@ -11,5 +12,8 @@ const router = createRouter({
 });
 
 installRouteGuards(router);
+router.afterEach((to, _from, failure) => {
+    if (!failure) applyPageMetadata(to);
+});
 
 export default router;

@@ -74,6 +74,7 @@ class AuthController extends Controller
             $key = $mfa->isEnabled($user) ? 'admin_mfa_login_challenge' : 'admin_mfa_enrollment_challenge';
             $request->session()->put($key, [
                 'user_id' => $user->id,
+                'auth_version' => (int) ($user->auth_version ?? 1),
                 'challenge_id' => Str::random(64),
                 'expires_at' => now()->addMinutes(max(1, (int) config('auth.admin_mfa.'.($mfa->isEnabled($user) ? 'login_challenge_minutes' : 'enrollment_challenge_minutes'), 5)))->timestamp,
                 'remember' => $request->boolean('remember'),
@@ -122,7 +123,8 @@ class AuthController extends Controller
         }
 
         $user = \App\Models\User::query()->find($challenge['user_id'] ?? 0);
-        if (! $user || $user->role !== 'admin' || $user->status !== 'active' || ! $user->email_verified_at || ! $mfa->isEnabled($user)) {
+        if (! $user || (int) ($challenge['auth_version'] ?? 0) !== (int) ($user->auth_version ?? 1)
+            || $user->role !== 'admin' || $user->status !== 'active' || ! $user->email_verified_at || ! $mfa->isEnabled($user)) {
             $request->session()->invalidate();
             $request->session()->regenerateToken();
             return response()->json(['message' => 'The administrator verification challenge is no longer valid. Sign in again.'], 401);
@@ -225,9 +227,15 @@ class AuthController extends Controller
         return match ($user->role) {
             'admin' => '/admin/dashboard',
             'user' => '/dashboard',
-            'moderator' => in_array('users.view', $user->moderator_permissions ?? [], true)
-                ? '/admin/users'
-                : (in_array('activity.view', $user->moderator_permissions ?? [], true) ? '/admin/activity-logs' : '/403'),
+            'moderator' => match (true) {
+                in_array('users.view', $user->moderator_permissions ?? [], true) => '/admin/users',
+                in_array('categories.view', $user->moderator_permissions ?? [], true) => '/admin/categories',
+                in_array('projects.view', $user->moderator_permissions ?? [], true) => '/admin/projects',
+                in_array('tasks.view', $user->moderator_permissions ?? [], true) => '/admin/tasks',
+                in_array('reports.view', $user->moderator_permissions ?? [], true) => '/admin/reports',
+                in_array('activity.view', $user->moderator_permissions ?? [], true) => '/admin/activity-logs',
+                default => '/403',
+            },
             default => '/403',
         };
     }

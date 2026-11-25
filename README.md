@@ -2,86 +2,48 @@
 
 **Plan your day. Shape your future.**
 
-Planora is a project and task management application built with Laravel 10 and Vue 3. It combines session-authenticated User workspaces with an Admin panel for account and platform operations.
+Planora is a project and task management application built with Laravel 10 and Vue 3. Laravel serves the Vue single-page application and a versioned JSON API; the first-party SPA uses Sanctum stateful sessions.
 
 ## Capabilities
 
-- User Tasks and Projects, with owner/assignee access rules, due dates, statuses, priorities, and optional Category associations.
-- Admin account, Task, Project, and Category management, plus reports, activity logs, dashboard data, and platform settings.
-- Role-aware Global Search across records each signed-in User, Moderator, or Admin may access.
-- Admin-only encrypted database, managed-file, and full backups with integrity verification and a guarded restore workflow.
-- Session authentication with verified registration, one-time-code password recovery, active-account checks, and role-based authorization.
-- Optional administrator authenticator-based multi-factor authentication, recovery codes, and short-lived step-up verification for sensitive operations.
-- A server-configured administrator sign-in route, independent maintenance scopes, and recipient-scoped notifications for task and administrative events.
-- Per-account appearance preferences and persistent guest light/dark theme selection.
+- User task and project workspaces with ownership-aware access, calendars, reports, and notifications.
+- Admin account, role and permission, task, project, category, reporting, settings, maintenance, and backup workflows.
+- Individually permissioned Moderator access, server-side authorization, and mandatory administrator MFA.
+- Registration verification, password recovery, activity logging, global search, and account appearance preferences.
 
-User Category details and related-record counts are limited to Projects owned by the signed-in User and Tasks owned by or assigned to that User; Admin usage counts are global. The User Calendar provides month, week, day, and agenda views backed by the authorized Task calendar API. Productivity reports and account appearance preferences are implemented; Tags routes redirect to Categories because a separate Tag workflow is not implemented. Some legacy settings URLs redirect to the current account, notification, or report pages. A Vue route alone does not imply a separate persisted workflow.
+## Technology
 
-## Technology stack
-
-| Area | Technology |
+| Area | Stack |
 |---|---|
-| Backend | PHP `^8.1`, Laravel `^10.10` (locked to 10.50.4), MySQL |
-| Frontend | Vue `^3.5`, Vue Router `^4.6`, Pinia `^3` |
-| API and authentication | Versioned `/api/v1` JSON API, Sanctum stateful sessions, Axios |
-| Assets | Vite `^5`, `@vitejs/plugin-vue` `^6` |
+| Backend | PHP `^8.1`, Laravel `^10.10`, MySQL |
+| Frontend | Vue `^3.5`, Vue Router `^4.6`, Pinia `^3`, Axios |
+| Build | Vite `^5`, Laravel Vite plugin, Vue plugin for Vite |
+| API authentication | Versioned `/api/v1` API, Sanctum stateful sessions |
 
-## Architecture
+## Quick start
 
-Laravel serves the Vue single-page application shell and versioned JSON API. Vue Router lazy-loads pages into separate authentication, Admin, and User layouts. Backend middleware, Form Requests, policies, services, and record-scoped queries enforce access; client route guards provide navigation behavior only.
-
-The frontend is organized under `resources/js/features/`, `resources/js/shared/`, and `resources/js/pages/`. The shared workspace header hosts Global Search; the Admin Backup page uses its own API service and feature styles. Global CSS is loaded from `resources/css/app.css`; Vue single-file component style imports keep page and component styles with their consumers.
-
-For implementation details, see [Planora architecture](PLANORA_ARCHITECTURE.md), [system architecture](docs/SYSTEM_ARCHITECTURE.md), and [frontend page structure](PLANORA_FRONTEND_PAGE_STRUCTURE.md).
-
-## Local setup
-
-Requirements: PHP 8.1 or later compatible with the Composer constraints, Composer, Node.js `^20.19.0` or `>=22.12.0`, npm, and MySQL. The Node.js constraint comes from the locked Vue Vite plugin.
+Requirements: PHP 8.1 or later compatible with Composer constraints, Composer, Node.js `^20.19.0` or `>=22.12.0`, npm, and MySQL.
 
 ```sh
 composer install
 npm ci
 ```
 
-Copy `.env.example` to `.env`, set `APP_URL`, and configure `DB_CONNECTION=mysql` with the host, port, database name, username, and password for a local MySQL database. Create that database, then generate the application key, migrate the schema, and link public storage:
-
-```powershell
-Copy-Item .env.example .env
-php artisan key:generate
-php artisan migrate
-php artisan storage:link
-```
-
-On macOS/Linux, use `cp .env.example .env` in place of the PowerShell copy command, then run:
+Copy `.env.example` to `.env` (`Copy-Item .env.example .env` in PowerShell), configure the application URL and a local MySQL database, then run:
 
 ```sh
 php artisan key:generate
 php artisan migrate
 php artisan storage:link
-```
-
-For local administrator access, set `PLANORA_ADMIN_ENTRY_PATH` to a generated URL-safe value of at least 48 characters. Production requires this setting. Follow [administrator access and maintenance](docs/ADMIN_ACCESS_AND_MAINTENANCE.md) to generate and deploy it securely.
-
-Start the frontend development server and Laravel application in separate terminals:
-
-```sh
 npm run dev
 php artisan serve
 ```
 
-Open the URL printed by `php artisan serve`, or use the configured local web server. To run scheduled tasks locally, start `php artisan schedule:work` in another terminal. Use `npm run build` to compile production assets.
-
-### Demo data safety
-
-Review [seeder notes](database/seeders/README.md) before seeding. `CategorySeeder`, `ProjectDemoSeeder`, and `UserTasksDemoSeeder` are guarded to `APP_ENV=local`.
-
-> **Warning:** `DatabaseSeeder` also invokes `PlanoraUsersSeeder` without an environment guard. Do not run `php artisan db:seed` or `php artisan migrate --seed` against production or any database containing non-disposable data.
-
-For development, verify `.env` points to the intended local database first. Seeder behavior and preservation limits are described in the seeder notes.
+Configure `PLANORA_ADMIN_ENTRY_PATH` with a generated URL-safe value of at least 48 characters; production requires it. See [administrator access and maintenance](docs/operations/ADMIN_ACCESS_AND_MAINTENANCE.md). Review the [local demo seeder guide](docs/development/LOCAL_DEMO_SEEDERS.md) before running any seeder: `DatabaseSeeder` invokes an account seeder without an environment guard.
 
 ## Testing
 
-Feature tests require an isolated MySQL test database. The test bootstrap rejects non-MySQL connections and database names without a standalone `test` or `testing` segment. Configure `.env.testing` using a dedicated database and user; never point tests at the development database. See [testing database](docs/TESTING_DATABASE.md).
+Feature tests require a dedicated MySQL test database configured through `.env.testing`; never point them at a development or production database. See [testing setup](docs/testing/TESTING_DATABASE.md).
 
 ```sh
 php artisan test
@@ -89,24 +51,8 @@ node --experimental-test-module-mocks --test tests/js/*.test.js
 npm run build
 ```
 
-PHPUnit feature tests require the isolated MySQL database configured in `.env.testing`. JavaScript tests use Node's built-in test runner with Node's experimental module-mocking flag; no separate test script is defined in `package.json`. A production build does not replace either test suite.
-
 ## Documentation
 
-- [API documentation](docs/API_DOCUMENTATION.md)
-- [Project overview](docs/PROJECT_OVERVIEW.md)
-- [Authentication and security](docs/AUTHENTICATION_SECURITY.md)
-- [Administrator access and maintenance](docs/ADMIN_ACCESS_AND_MAINTENANCE.md)
-- [Database design](docs/DATABASE_DESIGN.md)
-- [System architecture](docs/SYSTEM_ARCHITECTURE.md)
-- [Development roadmap](docs/DEVELOPMENT_ROADMAP.md)
-- [Registration OTP lifecycle](docs/REGISTRATION_OTP.md)
-- [Local mail testing](docs/LOCAL_MAIL_TESTING.md)
-- [Testing database](docs/TESTING_DATABASE.md)
-- [Error handling and maintenance operations](docs/ERROR_HANDLING_AND_MAINTENANCE.md)
-- [Backup and disaster recovery](docs/BACKUPS_AND_DISASTER_RECOVERY.md)
-- [Local demo seeders](database/seeders/README.md)
-- [Frontend route and page structure](PLANORA_FRONTEND_PAGE_STRUCTURE.md)
-- [Detailed architecture](PLANORA_ARCHITECTURE.md)
+Browse the [documentation index](docs/README.md) for API, architecture, security, operations, development, project scope, and testing guides.
 
-The project declares the MIT license in `composer.json`.
+Planora declares the MIT license in `composer.json`.

@@ -32,6 +32,13 @@ test('both Admin login entry points require the server MFA challenge before sett
     assert.match(adminLogin, /auth\.verifyAdminMfaLogin/);
 });
 
+test('Admin login displays safe API messages and suppresses Laravel’s generic validation envelope', () => {
+    const adminLogin = source('../../resources/js/features/auth/admin/components/AdminLogin.vue');
+    assert.match(adminLogin, /const responseMessage = error\.response\?\.data\?\.message/);
+    assert.match(adminLogin, /responseMessage === 'The given data was invalid\.'/);
+    assert.match(adminLogin, /responseMessage \|\| 'We could not verify this administrator account/);
+});
+
 test('critical operation step-up is backend prompted and submitted without browser storage', () => {
     const api = source('../../resources/js/shared/services/api.js');
     const dialog = source('../../resources/js/shared/components/AdminStepUpDialog.vue');

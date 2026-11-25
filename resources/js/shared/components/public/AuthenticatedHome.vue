@@ -72,6 +72,7 @@
 import { computed } from 'vue';
 import { RouterLink } from 'vue-router';
 import { useAuthStore } from '../../../features/auth/stores/authStore.js';
+import { dashboardRouteFor, moderatorLandingRoute } from '../../../features/auth/managementAccess.js';
 import { useAppearancePreferences } from '../../../features/appearance/composables/appearancePreferences.js';
 import ProfileDropdown from '../ProfileDropdown.vue';
 import ThemeSelector from './ThemeSelector.vue';
@@ -83,7 +84,7 @@ const displayName = computed(() => auth.user?.name?.trim() || 'there');
 const isAdmin = computed(() => auth.hasRole('admin'));
 const isUser = computed(() => auth.hasRole('user'));
 const profileVariant = computed(() => isAdmin.value ? 'admin' : isUser.value ? 'user' : 'limited');
-const dashboardRoute = computed(() => ({ name: isAdmin.value ? 'admin.dashboard' : isUser.value ? 'dashboard' : 'error.403' }));
+const dashboardRoute = computed(() => ({ name: dashboardRouteFor(auth) }));
 const quickLinks = computed(() => {
     if (isAdmin.value) {
         return [
@@ -97,6 +98,10 @@ const quickLinks = computed(() => {
             { name: 'profile.show', label: 'My Profile', description: 'View your account profile.', icon: 'profile' },
             { name: 'settings.index', label: 'Settings', description: 'Manage your account settings.', icon: 'settings' },
         ];
+    }
+    if (auth.hasRole('moderator')) {
+        const destination = moderatorLandingRoute(auth);
+        return destination === 'error.403' ? [] : [{ name: destination, label: 'Workspace', description: 'Open an area available to your role.', icon: 'settings' }];
     }
     return [];
 });

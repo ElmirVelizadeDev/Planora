@@ -15,8 +15,8 @@
             <section class="terms-intro" aria-labelledby="terms-title">
                 <p class="terms-eyebrow"><span aria-hidden="true"></span> Planora policies</p>
                 <h1 id="terms-title">Terms &amp; Conditions</h1>
-                <p class="terms-lead">These terms explain the basic rules for creating an account and using the Planora service.</p>
-                <p class="terms-updated">Last updated <time datetime="2026-11-09">November 9, 2026</time></p>
+                <p class="terms-lead">These terms describe the rules for using Planora’s account and workspace features. Operator-specific items that need confirmation are identified below.</p>
+                <p class="terms-updated">Last updated <time datetime="2026-11-25">November 25, 2026</time></p>
             </section>
 
             <div class="terms-layout">
@@ -31,14 +31,6 @@
                         <div>
                             <h2>{{ section.title }}</h2>
                             <p v-for="paragraph in section.paragraphs" :key="paragraph">{{ paragraph }}</p>
-                        </div>
-                    </section>
-
-                    <section id="contact-information" class="terms-section">
-                        <div class="terms-section-number">12</div>
-                        <div>
-                            <h2>Contact Information</h2>
-                            <p>Planora’s project configuration does not currently provide a verified legal or support contact address. A contact channel and the responsible service operator should be added here before the service is offered as a production service.</p>
                         </div>
                     </section>
 
@@ -61,58 +53,75 @@ const sections = [
         id: 'introduction',
         title: 'Introduction',
         paragraphs: [
-            'Planora is a personal productivity application intended to help people organize work in a workspace. These Terms & Conditions (“Terms”) apply when you visit or use Planora. In these Terms, “Planora”, “we” and “our” refer to the service; the legal identity of its operator has not been provided in the project configuration.',
-            'Please read these Terms before using the service. They should be reviewed and completed by the service operator for the jurisdictions in which Planora will be offered.',
+            'Planora is a productivity application with accounts and workspace features for tasks, projects, and categories. These Terms describe use of the application. The project does not identify the legal entity or individual operating the deployed service.',
+            'PRE-PRODUCTION ITEM: the operator must identify the responsible service provider and confirm these Terms for the jurisdictions where the service will be offered.',
         ],
     },
     {
         id: 'acceptance-of-terms',
         title: 'Acceptance of Terms',
         paragraphs: [
-            'By selecting the acceptance checkbox during registration or by continuing to use Planora, you confirm that you have read and agree to these Terms. If you do not agree, do not create an account or use the service.',
+            'To register, you must select the Terms acceptance checkbox. The server validates that selection before it starts registration, and the account is created only after email verification. The application does not store a durable record or timestamp of this acceptance. Do not register if you do not agree to these Terms.',
         ],
     },
     {
-        id: 'account-registration',
-        title: 'Account Registration',
+        id: 'eligibility-and-registration',
+        title: 'Eligibility and Account Registration',
         paragraphs: [
-            'Some parts of Planora require an account. You must provide information requested by the registration form and complete the email verification step before the account is created. Keep your sign-in credentials private and tell the service operator promptly if you believe your account has been accessed without your permission.',
-            'You are responsible for activity performed through your account, subject to applicable law and the service operator’s responsibilities. Do not impersonate another person or provide an email address you are not authorized to use.',
+            'Registration currently requires a name, supported email address, password, confirmation, and Terms checkbox. You must complete email verification before an account is created. The service does not implement age verification or specify a minimum age; the operator must determine and publish an eligibility rule before production use.',
+            'Provide information you are authorized to use. Accounts are assigned the regular user role at registration; elevated roles are managed through protected administrative controls.',
         ],
     },
     {
-        id: 'user-responsibilities',
-        title: 'User Responsibilities',
+        id: 'account-responsibilities-and-security',
+        title: 'Account Responsibilities and Security',
         paragraphs: [
-            'Use Planora lawfully and follow these Terms. Keep account information reasonably accurate, protect access to your account, and use care when entering or sharing information in your workspace. You remain responsible for ensuring that information you submit is appropriate for your use of the service.',
+            'Keep your sign-in credentials confidential, use a unique password, and notify the service operator through its verified contact channel if you believe your account has been compromised. The application may require administrators to use multi-factor authentication.',
+            'You are responsible for activity under your account to the extent permitted by applicable law. Keep account details reasonably accurate and use care when entering information into a workspace.',
         ],
     },
     {
-        id: 'task-management-and-platform-usage',
-        title: 'Task Management and Platform Usage',
+        id: 'permitted-use',
+        title: 'Permitted Use',
         paragraphs: [
-            'Planora is designed as a productivity workspace. The available tools and actions may vary as the product is developed and by account permissions. Use only the features currently presented as available to your account, and do not rely on the service as the sole copy of important information.',
+            'Use Planora for lawful personal or workspace planning with the features enabled for your account. Tasks can include descriptions, status, priority, due date, project, and category; projects include descriptions, status, and dates. Do not rely on Planora as the only copy of important information.',
         ],
     },
     {
         id: 'prohibited-activities',
         title: 'Prohibited Activities',
         paragraphs: [
-            'You may not use Planora to break the law, attempt unauthorized access to accounts or systems, interfere with the service or its security, introduce malicious code, abuse or disrupt the service, or misrepresent your identity or authority. Do not use the service in a way that infringes another person’s rights.',
+            'Do not use Planora to violate law or others’ rights, impersonate another person, access accounts or systems without authorization, bypass permissions, probe or disrupt service security, introduce malicious code, or interfere with service availability.',
         ],
     },
     {
-        id: 'user-content-and-data',
-        title: 'User Content and Data',
+        id: 'tasks-projects-and-user-content',
+        title: 'Tasks, Projects, and User Content',
         paragraphs: [
-            'You remain responsible for content and information that you submit through Planora. You should only submit information that you are entitled to use. Planora processes account information to provide account and workspace functionality, including sign-in and account security. Details about personal information handling, retention, and any rights available to you should be set out in a separate Privacy Policy before production use.',
+            'You retain responsibility for the information you enter, including task, project, and category content. Submit only content you are entitled to use and avoid sensitive information that is not necessary for planning work.',
+            'You retain any rights you have in your content. You allow the service to store, reproduce, display, and process it only as needed to operate, secure, and support the workspace features you use. The project does not define a broader content license; applicable law may provide additional rights.',
+        ],
+    },
+    {
+        id: 'intellectual-property',
+        title: 'Intellectual Property',
+        paragraphs: [
+            'The Planora application name, interface, and software are part of the application project. The project does not identify the owner or licensing terms for all branding and software assets. No ownership transfer is stated by these Terms. The operator must confirm and publish the applicable ownership and license information before production use.',
         ],
     },
     {
         id: 'account-suspension-and-termination',
         title: 'Account Suspension and Termination',
         paragraphs: [
-            'Access to an account may be restricted or an account may be disabled where necessary to protect the service, respond to misuse, or comply with applicable law. The project includes administrative account status controls. The operator should provide a verified contact channel for account questions and requests; see Contact Information below.',
+            'The application provides administrative controls to change account status and to soft-delete or restore accounts. Access may therefore be restricted or disabled under these controls. The operator must define the notice, review, and appeal process for the deployed service and publish a verified contact method.',
+        ],
+    },
+    {
+        id: 'account-deletion-and-data',
+        title: 'Account Deletion and Data Handling',
+        paragraphs: [
+            'The application does not offer self-service account deletion. Administrator deletion is a recoverable soft deletion and revokes authentication; it does not itself permanently erase the account or all related workspace content. Task records support soft deletion. Related records may remain, and user references may be nulled according to database relationships.',
+            'The project defines no general permanent deletion schedule for soft-deleted accounts, workspace content, or activity logs. The operator must decide and publish retention and deletion practices. See the Privacy Policy for current implementation details.',
         ],
     },
     {
@@ -126,14 +135,35 @@ const sections = [
         id: 'limitation-of-liability',
         title: 'Limitation of Liability',
         paragraphs: [
-            'To the extent permitted by applicable law, the service is provided on an available basis, and the operator is not responsible for indirect or consequential loss arising from use of the service. Nothing in these Terms excludes or limits liability that cannot lawfully be excluded or limited. This section requires review against the law applicable to the service and its users.',
+            'Planora is provided as available and may contain errors or interruptions. To the extent permitted by applicable law, the operator does not accept liability for indirect or consequential loss arising from use of the service. Nothing in these Terms excludes liability that cannot lawfully be excluded or limited. This clause requires review by the operator for the applicable law and service model before production use.',
+        ],
+    },
+    {
+        id: 'disclaimers',
+        title: 'Disclaimers',
+        paragraphs: [
+            'Planora is a planning tool and does not guarantee that tasks will be completed, information will always be available, or the service will meet every individual requirement. The operator must confirm any additional disclaimers for the actual service and applicable law.',
         ],
     },
     {
         id: 'changes-to-these-terms',
         title: 'Changes to These Terms',
         paragraphs: [
-            'These Terms may be updated as Planora changes. When they are updated, the revised version and its effective date should be published on this page. Continued use after an update takes effect constitutes acceptance only to the extent allowed by applicable law.',
+            'The operator may publish an updated version when the application or its practices change. The revised text and effective date should be shown here, with any notice or renewed consent required by applicable law. This application does not currently keep a durable record of Terms acceptance.',
+        ],
+    },
+    {
+        id: 'governing-law-and-jurisdiction',
+        title: 'Governing Law and Jurisdiction',
+        paragraphs: [
+            'The project does not establish a governing law or court jurisdiction. PRE-PRODUCTION ITEM: the operator must select and publish the governing law and jurisdiction based on the operator, intended users, and applicable legal advice. No jurisdiction is implied by this document.',
+        ],
+    },
+    {
+        id: 'contact-information',
+        title: 'Contact Information',
+        paragraphs: [
+            'The project contains no verified operator name, postal address, or support/legal email. PRE-PRODUCTION ITEM: the operator must identify the responsible entity or person and provide a monitored contact method for account, Terms, and privacy requests. No contact details are invented here.',
         ],
     },
 ];

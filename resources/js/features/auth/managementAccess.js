@@ -28,6 +28,13 @@ export function moderatorLandingRoute(auth) {
     return 'error.403';
 }
 
+export function dashboardRouteFor(auth) {
+    if (auth.hasRole('admin')) return 'admin.dashboard';
+    if (auth.hasRole('user')) return 'dashboard';
+    if (auth.hasRole('moderator')) return moderatorLandingRoute(auth);
+    return 'error.403';
+}
+
 export function moderatorAdminLinks(auth, links) {
     return links.filter((link) => moderatorCanAccessAdminRoute(auth, link.to.name));
 }
